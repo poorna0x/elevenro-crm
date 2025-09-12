@@ -219,6 +219,32 @@
     pointer-events: none !important;
   }
 
+  /* Force visible borders for form inputs */
+  .force-visible-border {
+    border: 3px solid #1f2937 !important; /* gray-800 - darker */
+    border-radius: 0.375rem !important;
+    margin: 0 4px !important; /* Ensure spacing from edges */
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1) !important; /* Additional shadow for visibility */
+    transition: border-color 0.2s ease-in-out !important; /* Smooth transition */
+  }
+  
+  .light-mode .force-visible-border {
+    border: 3px solid #d1d5db !important; /* gray-300 - lighter */
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Focus state - change border color when clicked/selected */
+  .force-visible-border:focus {
+    border-color: #ffffff !important; /* white border when focused in dark mode */
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important; /* white glow */
+  }
+  
+  .light-mode .force-visible-border:focus {
+    border-color: #000000 !important; /* black border when focused in light mode */
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important; /* black glow */
+  }
+
+
   /* Custom scale utilities for smooth navigation */
   .scale-102 {
     transform: scale(1.02);

@@ -3,7 +3,7 @@ import { Shield, Clock, DollarSign } from 'lucide-react';
 
 const AboutSection = () => {
   return (
-    <section id="about" className="py-16 px-6 md:px-12 bg-background">
+    <section id="about" className="py-16 px-2 md:px-12 bg-background">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">

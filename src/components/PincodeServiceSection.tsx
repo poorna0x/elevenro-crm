@@ -20,7 +20,7 @@ const PincodeServiceSection = () => {
   ];
 
   return (
-    <section id="pincode-services" className="py-8 px-6 md:px-12 bg-background">
+    <section id="pincode-services" className="py-8 px-2 md:px-12 bg-background">
       <div className="max-w-7xl mx-auto">
 
 
