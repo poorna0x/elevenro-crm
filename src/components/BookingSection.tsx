@@ -221,9 +221,12 @@ const BookingSection = () => {
                   {/* Step 1: Basic Information */}
                   {currentStep === 1 && (
                     <div className="space-y-4">
-                      <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-lg p-4 mb-4">
-                        <p className="text-sm text-gray-800 dark:text-gray-200">
-                          <strong>Note:</strong> We don't ask you to create an account. Email is only for sending confirmation and service updates.
+                      <div className="bg-muted border border-border rounded-lg p-4 mb-4">
+                        <p className="text-sm text-foreground">
+                          <strong>Note:</strong> We won't ask you to create an account. Email is only for sending confirmation and service updates.
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          <strong>*</strong> means compulsory fields. Other fields you can skip, but we recommend providing all information for faster service.
                         </p>
                       </div>
                       
