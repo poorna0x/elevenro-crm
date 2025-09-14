@@ -48,6 +48,8 @@ const Booking: React.FC = () => {
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const loadingRef = useRef(false);
   const [brandSuggestions, setBrandSuggestions] = useState<string[]>([]);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [modelSuggestions, setModelSuggestions] = useState<string[]>([]);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
@@ -56,6 +58,29 @@ const Booking: React.FC = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow.toISOString().split('T')[0];
+  };
+
+  const handleGoHome = () => {
+    // Reset form
+    setFormData({
+      fullName: '',
+      phone: '',
+      email: '',
+      alternatePhone: '',
+      serviceType: 'RO',
+      service: '',
+      brandName: '',
+      modelName: '',
+      address: '',
+      coordinates: { lat: 0, lng: 0 },
+      serviceDate: getTomorrowDate(),
+      preferredTime: 'MORNING',
+      description: '',
+      images: []
+    });
+    setCurrentStep(1);
+    setShowConfirmation(false);
+    setBookingDetails(null);
   };
 
   const [formData, setFormData] = useState<FormData>({
@@ -714,26 +739,26 @@ const Booking: React.FC = () => {
       });
 
       const customerAction = isExistingCustomer ? 'updated' : 'created';
-      toast.success(`Booking submitted successfully! Customer ${customerAction} and job scheduled. You will receive a confirmation email shortly.`);
       
-      // Reset form
-      setFormData({
-        fullName: '',
-        phone: '',
-        email: '',
-        alternatePhone: '',
-        serviceType: 'RO',
-        service: '',
-        brandName: '',
-        modelName: '',
-        address: '',
-        coordinates: { lat: 0, lng: 0 },
-        serviceDate: getTomorrowDate(),
-        preferredTime: 'MORNING',
-        description: '',
-        images: []
+      // Set booking details for confirmation page
+      setBookingDetails({
+        customerName: formData.fullName,
+        phone: formData.phone,
+        email: formData.email,
+        serviceType: formData.serviceType,
+        service: formData.service,
+        brandName: formData.brandName,
+        modelName: formData.modelName,
+        address: formData.address,
+        serviceDate: formData.serviceDate,
+        preferredTime: formData.preferredTime,
+        description: formData.description,
+        customerAction,
+        images: formData.images,
       });
-      setCurrentStep(1);
+      
+      // Show confirmation page
+      setShowConfirmation(true);
       
     } catch (error) {
       console.error('Booking error:', error);
@@ -1212,6 +1237,203 @@ const Booking: React.FC = () => {
         return false;
     }
   };
+
+  // Show confirmation page if booking is successful
+  if (showConfirmation && bookingDetails) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background text-foreground">
+        <Header />
+        
+        <main className="flex-1 bg-background">
+          <div className="container mx-auto px-4 py-6">
+            <div className="max-w-2xl mx-auto">
+              {/* Success Header */}
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-10 h-10 text-green-600 dark:text-green-400" />
+                </div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  Booking Confirmed! 🎉
+                </h1>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Your service has been scheduled successfully
+                </p>
+              </div>
+
+              {/* Booking Details Card */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Phone className="w-5 h-5" />
+                    Booking Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+
+                  {/* Customer Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Customer Name</Label>
+                      <p className="text-foreground font-medium">{bookingDetails.customerName}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone Number</Label>
+                      <p className="text-foreground font-medium">{bookingDetails.phone}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</Label>
+                      <p className="text-foreground font-medium">{bookingDetails.email}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Service Type</Label>
+                      <p className="text-foreground font-medium">{bookingDetails.serviceType}</p>
+                    </div>
+                  </div>
+
+                  {/* Service Details */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <Wrench className="w-4 h-4" />
+                      Service Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Service</Label>
+                        <p className="text-foreground font-medium">{bookingDetails.service}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Brand</Label>
+                        <p className="text-foreground font-medium">{bookingDetails.brandName}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Model</Label>
+                        <p className="text-foreground font-medium">{bookingDetails.modelName}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Preferred Time</Label>
+                        <p className="text-foreground font-medium">{bookingDetails.preferredTime}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Schedule */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      Schedule
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Service Date</Label>
+                        <p className="text-foreground font-medium">
+                          {new Date(bookingDetails.serviceDate).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Time Slot</Label>
+                        <p className="text-foreground font-medium">{bookingDetails.preferredTime}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      Service Address
+                    </h4>
+                    <p className="text-foreground">{bookingDetails.address}</p>
+                  </div>
+
+                  {/* Description */}
+                  {bookingDetails.description && (
+                    <div className="border-t pt-4">
+                      <h4 className="font-semibold text-foreground mb-3">Additional Notes</h4>
+                      <p className="text-foreground">{bookingDetails.description}</p>
+                    </div>
+                  )}
+
+                  {/* Images */}
+                  {bookingDetails.images && bookingDetails.images.length > 0 && (
+                    <div className="border-t pt-4">
+                      <h4 className="font-semibold text-foreground mb-3">Images Uploaded</h4>
+                      <p className="text-foreground">{bookingDetails.images.length} image(s) uploaded successfully</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Next Steps */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>What's Next?</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">1</span>
+                    </div>
+                    <div>
+                      <p className="text-foreground font-medium">Confirmation Email</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        You'll receive a confirmation email with all the details shortly.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">2</span>
+                    </div>
+                    <div>
+                      <p className="text-foreground font-medium">Technician Contact</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Our technician will contact you before the scheduled service time.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">3</span>
+                    </div>
+                    <div>
+                      <p className="text-foreground font-medium">Service Day</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Our technician will arrive at your location on the scheduled date and time.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  onClick={handleGoHome}
+                  className="flex items-center gap-2 bg-primary hover:bg-primary/90"
+                >
+                  <Home className="w-4 h-4" />
+                  Book Another Service
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.href = '/'}
+                  className="flex items-center gap-2"
+                >
+                  <Home className="w-4 h-4" />
+                  Go to Homepage
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
