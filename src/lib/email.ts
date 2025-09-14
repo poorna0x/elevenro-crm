@@ -108,7 +108,7 @@ export const emailTemplates = {
             <div class="footer">
               <p>Thank you for choosing our service!</p>
               <p>Best regards,<br>RO Service Team</p>
-              <p>Phone: +91-9876543210 | Email: support@roservice.com</p>
+              <p>Phone: +91-8884944288 | Email: support@roservice.com</p>
             </div>
           </div>
         </div>
@@ -139,7 +139,7 @@ export const emailTemplates = {
       
       Please keep this booking ID for your reference: ${data.jobNumber}
       
-      If you have any questions, please contact us at +91-9876543210
+      If you have any questions, please contact us at +91-8884944288
       
       Thank you for choosing our service!
       RO Service Team
