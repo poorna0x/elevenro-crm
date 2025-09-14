@@ -791,9 +791,9 @@ const BookingSection = () => {
                       
                       {/* Address Suggestions Dropdown */}
                       {showSuggestions && addressSuggestions.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
                           {isLoadingPlaces && (
-                            <div className="p-3 text-center text-gray-500">
+                            <div className="p-3 text-center text-muted-foreground">
                               <Loader2 className="w-4 h-4 animate-spin mx-auto mb-2" />
                               Finding locations...
                             </div>
@@ -801,20 +801,20 @@ const BookingSection = () => {
                           {addressSuggestions.map((suggestion, index) => (
                             <div
                               key={suggestion.place_id}
-                              className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                              className="p-3 hover:bg-accent hover:text-accent-foreground cursor-pointer border-b border-border last:border-b-0 text-foreground"
                               onClick={() => handleAddressSelect(suggestion)}
                             >
                               <div className="flex items-start gap-2">
                                 <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                                 <div className="flex-1">
-                                  <div className="font-medium text-gray-900">
+                                  <div className="font-medium text-foreground">
                                     {suggestion.structured_formatting?.main_text || suggestion.description}
                                   </div>
-                                  <div className="text-sm text-gray-500">
+                                  <div className="text-sm text-muted-foreground">
                                     {suggestion.structured_formatting?.secondary_text || ''}
                                   </div>
                                   {suggestion.types && (
-                                    <div className="text-xs text-blue-600 mt-1">
+                                    <div className="text-xs text-primary mt-1">
                                       {suggestion.types.includes('street_address') && '🏠 Exact Address'}
                                       {suggestion.types.includes('route') && '🛣️ Street/Road'}
                                       {suggestion.types.includes('establishment') && '🏢 Business/Landmark'}

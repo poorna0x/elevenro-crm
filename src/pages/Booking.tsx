@@ -888,11 +888,11 @@ const Booking: React.FC = () => {
                   className="mt-1"
                 />
                 {showBrandSuggestions && brandSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
                     {brandSuggestions.map((brand, index) => (
                       <div
                         key={index}
-                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        className="px-3 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer text-sm text-foreground"
                         onClick={() => selectBrand(brand)}
                       >
                         {brand}
@@ -925,11 +925,11 @@ const Booking: React.FC = () => {
                   className="mt-1"
                 />
                 {showModelSuggestions && modelSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
                     {modelSuggestions.map((model, index) => (
                       <div
                         key={index}
-                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        className="px-3 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer text-sm text-foreground"
                         onClick={() => selectModel(model)}
                       >
                         {model}
