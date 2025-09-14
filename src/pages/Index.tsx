@@ -6,7 +6,7 @@ import AboutSection from '@/components/AboutSection';
 import ServicesSection from '@/components/ServicesSection';
 import ServiceAreasSection from '@/components/ServiceAreasSection';
 import PincodeServiceSection from '@/components/PincodeServiceSection';
-import BookingSection from '@/components/BookingSection';
+import BookingRedirect from '@/components/BookingRedirect';
 import WhyChooseSection from '@/components/WhyChooseSection';
 import Testimonials from '@/components/Testimonials';
 import ContactSection from '@/components/ContactSection';
@@ -22,7 +22,7 @@ const Index = () => {
         <ServicesSection />
         <ServiceAreasSection />
         <PincodeServiceSection />
-        <BookingSection />
+        <BookingRedirect />
         <WhyChooseSection />
         <Testimonials />
         <ContactSection />
