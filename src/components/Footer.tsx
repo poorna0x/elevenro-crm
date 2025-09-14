@@ -44,38 +44,38 @@ const Footer = () => {
             <h4 className="font-medium text-lg text-foreground">RO Services in Bengaluru</h4>
             <ul className="space-y-3">
               <li><a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">RO Installation Bengaluru</a></li>
-              <li><a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">Water Softener Bangalore</a></li>
+              <li><a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">RO Repair & Maintenance</a></li>
               <li><a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">RO Filter Replacement</a></li>
-              <li><a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">RO Maintenance Service</a></li>
-              <li><a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">Emergency RO Repair</a></li>
+              <li><a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">Water Softener Installation</a></li>
+              <li><a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">Emergency RO Service</a></li>
             </ul>
           </div>
           
           <div className="space-y-4">
-            <h4 className="font-medium text-lg text-foreground">Service Areas in Karnataka</h4>
+            <h4 className="font-medium text-lg text-foreground">Service Areas & Company</h4>
             <ul className="space-y-3">
               <li><a href="#about" className="text-muted-foreground hover:text-foreground transition-colors">About Hydrogen RO</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">RO Service Areas Bengaluru</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">RO Service Careers</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Customer Reviews</a></li>
-              <li><a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">Contact RO Service</a></li>
+              <li><a href="#service-areas" className="text-muted-foreground hover:text-foreground transition-colors">RO Service Areas Bengaluru</a></li>
+              <li><a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">Customer Reviews</a></li>
+              <li><a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">Contact Hydrogen RO</a></li>
+              <li><a href="#why-choose" className="text-muted-foreground hover:text-foreground transition-colors">Why Choose Us</a></li>
             </ul>
           </div>
           
           <div className="space-y-4">
-            <h4 className="font-medium text-lg text-foreground">RO Service Support</h4>
+            <h4 className="font-medium text-lg text-foreground">Support & Booking</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Emergency RO Service</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">RO Help Center</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">RO Maintenance Tips</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">RO Warranty Info</a></li>
               <li><a href="#booking" className="text-muted-foreground hover:text-foreground transition-colors">Book RO Service</a></li>
+              <li><a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">Emergency RO Service</a></li>
+              <li><a href="#about" className="text-muted-foreground hover:text-foreground transition-colors">RO Maintenance Tips</a></li>
+              <li><a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">RO Warranty Info</a></li>
+              <li><a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">Service Support</a></li>
             </ul>
           </div>
         </div>
         
         <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center text-muted-foreground text-sm">
-          <div>© 2025 Hydrogen RO - Best RO Water Purifier Services in Bengaluru, Karnataka. All rights reserved.</div>
+          <div className="text-center md:text-left">© 2025 Hydrogen RO - Best RO Water Purifier Services in Bengaluru, Karnataka. All rights reserved.</div>
           <div className="flex gap-6 mt-4 md:mt-0">
             <Link to="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             <Link to="/terms-of-service" className="hover:text-foreground transition-colors">Terms of Service</Link>
