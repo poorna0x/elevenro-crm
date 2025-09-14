@@ -27,6 +27,7 @@ import {
 import { db } from '@/lib/supabase';
 import { Customer, Job, Technician } from '@/types';
 import { toast } from 'sonner';
+import { openInGoogleMaps, extractCoordinates, formatAddressForDisplay } from '@/lib/maps';
 
 const AdminDashboard = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -101,6 +102,21 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error updating job status:', error);
       toast.error('Failed to update job status');
+    }
+  };
+
+  const handleAddressClick = (job: Job) => {
+    console.log('Job location data:', job.location);
+    const location = extractCoordinates(job.location);
+    console.log('Extracted coordinates:', location);
+    
+    if (location) {
+      const address = formatAddressForDisplay(job.customer?.address || '');
+      console.log('Opening Google Maps with:', { location, address });
+      openInGoogleMaps(location, address);
+    } else {
+      console.error('No location data found for job:', job.id);
+      toast.error('Location data not available');
     }
   };
 
@@ -316,6 +332,7 @@ const AdminDashboard = () => {
                       <TableHead>Job Number</TableHead>
                       <TableHead>Customer</TableHead>
                       <TableHead>Service</TableHead>
+                      <TableHead>Address</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Priority</TableHead>
                       <TableHead>Scheduled</TableHead>
@@ -338,6 +355,21 @@ const AdminDashboard = () => {
                             <p className="font-medium">{job.serviceType}</p>
                             <p className="text-sm text-muted-foreground">{job.serviceSubType}</p>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={() => handleAddressClick(job)}
+                            className="p-0 h-auto text-left justify-start"
+                          >
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              <span className="text-xs max-w-32 truncate">
+                                {formatAddressForDisplay(job.customer?.address || '')}
+                              </span>
+                            </div>
+                          </Button>
                         </TableCell>
                         <TableCell>{getStatusBadge(job.status)}</TableCell>
                         <TableCell>{getPriorityBadge(job.priority)}</TableCell>
@@ -406,6 +438,7 @@ const AdminDashboard = () => {
                       <TableHead>Contact</TableHead>
                       <TableHead>Service Type</TableHead>
                       <TableHead>Brand/Model</TableHead>
+                      <TableHead>Address</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -428,6 +461,29 @@ const AdminDashboard = () => {
                             <p className="text-sm">{customer.brand}</p>
                             <p className="text-xs text-muted-foreground">{customer.model}</p>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={() => {
+                              const location = extractCoordinates(customer.location);
+                              if (location) {
+                                const address = formatAddressForDisplay(customer.address);
+                                openInGoogleMaps(location, address);
+                              } else {
+                                toast.error('Location data not available');
+                              }
+                            }}
+                            className="p-0 h-auto text-left justify-start"
+                          >
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              <span className="text-xs max-w-32 truncate">
+                                {formatAddressForDisplay(customer.address)}
+                              </span>
+                            </div>
+                          </Button>
                         </TableCell>
                         <TableCell>
                           <Badge className={customer.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>

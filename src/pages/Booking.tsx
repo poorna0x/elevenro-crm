@@ -45,6 +45,8 @@ const Booking: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const loadingRef = useRef(false);
   const [brandSuggestions, setBrandSuggestions] = useState<string[]>([]);
   const [modelSuggestions, setModelSuggestions] = useState<string[]>([]);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
@@ -148,11 +150,14 @@ const Booking: React.FC = () => {
   ];
 
   const totalSteps = steps.length;
-  const progress = (currentStep / totalSteps) * 100;
+  const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Handle address autocomplete
   };
+
 
   const handleBrandInput = (value: string) => {
     setFormData(prev => ({ ...prev, brandName: value }));
@@ -214,77 +219,243 @@ const Booking: React.FC = () => {
     }
   };
 
-  const getCurrentLocation = async () => {
-    if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by this browser.');
-      return;
+  const checkLocationPermission = async () => {
+    if (!navigator.permissions) {
+      return 'unknown';
     }
-
+    
     try {
+      const permission = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+      return permission.state;
+    } catch (error) {
+      return 'unknown';
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    console.log('Starting location fetch, setting loading to true');
+    loadingRef.current = true;
+    setIsLoadingLocation(true);
+    console.log('Loading state set to true, current state:', isLoadingLocation);
+    
+    // Add a small delay to ensure the loading state is visible
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    try {
+      if (!navigator.geolocation) {
+        toast.error('Geolocation is not supported by this browser.');
+        loadingRef.current = false;
+        setIsLoadingLocation(false);
+        return;
+      }
+
+      // Check if we're on HTTPS or localhost
+      const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (!isSecure) {
+        toast.error('Location access requires HTTPS. Please use a secure connection.');
+        loadingRef.current = false;
+        setIsLoadingLocation(false);
+        return;
+      }
+
+      // Check permission status
+      const permissionStatus = await checkLocationPermission();
+      
+      if (permissionStatus === 'denied') {
+        toast.error('Location permission denied. Please enable location access in your browser settings and refresh the page.');
+        loadingRef.current = false;
+        setIsLoadingLocation(false);
+        return;
+      }
+
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000
-        });
+        navigator.geolocation.getCurrentPosition(
+          resolve, 
+          (error) => {
+            console.error('Geolocation error:', error);
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                reject(new Error('Location access denied. Please allow location permission and try again.'));
+                break;
+              case error.POSITION_UNAVAILABLE:
+                reject(new Error('Location information unavailable. Please check your GPS settings.'));
+                break;
+              case error.TIMEOUT:
+                reject(new Error('Location request timed out. Please try again.'));
+                break;
+              default:
+                reject(new Error('An unknown error occurred while retrieving location.'));
+                break;
+            }
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 300000
+          }
+        );
       });
 
       const { latitude, longitude } = position.coords;
       
-      // Try multiple geocoding services
+      // Try multiple approaches to get detailed addresses
       const geocodingPromises = [
-        // BigDataCloud
-        fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+        // Try OpenStreetMap Nominatim with CORS proxy
+        fetch(`https://corsproxy.io/?${encodeURIComponent(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&extratags=1&namedetails=1&accept-language=en`)}`)
           .then(res => res.json())
-          .then(data => ({
-            service: 'bigdatacloud',
-            address: `${data.city || ''}, ${data.principalSubdivision || ''}, ${data.countryName || ''}, ${data.postcode || ''}`.replace(/^,\s*|,\s*$/g, ''),
-            pincode: data.postcode || '',
-            city: data.city || '',
-            state: data.principalSubdivision || '',
-            area: data.countryName || '',
-            street: data.locality || '',
-            houseNumber: ''
-          }))
+          .then(data => {
+            console.log('Nominatim detailed response:', data);
+            
+            if (data && data.display_name) {
+              // Use the full display_name if it's detailed enough
+              let detailedAddress = data.display_name;
+              
+              // If display_name is too generic, try to build a better one
+              if (data.display_name.length < 50 || data.display_name.includes(data.address?.city + ', ' + data.address?.city)) {
+                const addr = data.address || {};
+                const addressParts = [];
+                
+                // Add house number if available
+                if (addr.house_number) addressParts.push(addr.house_number);
+                
+                // Add street/road information
+                if (addr.road) {
+                  addressParts.push(addr.road);
+                } else if (data.extratags?.ref) {
+                  // Use reference if no street name (like VJVJ+8XW)
+                  addressParts.push(data.extratags.ref);
+                }
+                
+                // Add area/locality information with priority order
+                if (addr.suburb && addr.suburb !== addr.city) addressParts.push(addr.suburb);
+                if (addr.neighbourhood && addr.neighbourhood !== addr.suburb && addr.neighbourhood !== addr.city) addressParts.push(addr.neighbourhood);
+                if (addr.quarter && addr.quarter !== addr.suburb && addr.quarter !== addr.city) addressParts.push(addr.quarter);
+                if (addr.district && addr.district !== addr.city) addressParts.push(addr.district);
+                
+                // Add city
+                if (addr.city) addressParts.push(addr.city);
+                
+                // Add state
+                if (addr.state && addr.state !== addr.city) addressParts.push(addr.state);
+                
+                // Add pincode
+                if (addr.postcode) addressParts.push(addr.postcode);
+                
+                // Add country
+                if (addr.country && addr.country !== 'India') addressParts.push(addr.country);
+                
+                if (addressParts.length >= 4) {
+                  detailedAddress = addressParts.join(', ');
+                }
+              }
+              
+              return {
+                service: 'nominatim',
+                address: detailedAddress,
+                pincode: data.address?.postcode || '',
+                city: data.address?.city || '',
+                state: data.address?.state || '',
+                area: data.address?.suburb || data.address?.neighbourhood || '',
+                street: data.address?.road || '',
+                houseNumber: data.address?.house_number || '',
+                country: data.address?.country || '',
+                fullDetails: data
+              };
+            }
+            return null;
+          })
           .catch(() => null),
         
-        // OpenStreetMap Nominatim
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=en`)
+        // Try alternative CORS proxy
+        fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&extratags=1&namedetails=1&accept-language=en`)}`)
           .then(res => res.json())
-          .then(data => ({
-            service: 'nominatim',
-            address: data.display_name || '',
-            pincode: data.address?.postcode || '',
-            city: data.address?.city || data.address?.town || data.address?.village || '',
-            state: data.address?.state || '',
-            area: data.address?.country || '',
-            street: data.address?.road || '',
-            houseNumber: data.address?.house_number || ''
-          }))
+          .then(data => {
+            console.log('Nominatim alternative response:', data);
+            
+            if (data && data.display_name) {
+              return {
+                service: 'nominatim-alt',
+                address: data.display_name,
+                pincode: data.address?.postcode || '',
+                city: data.address?.city || '',
+                state: data.address?.state || '',
+                area: data.address?.suburb || data.address?.neighbourhood || '',
+                street: data.address?.road || '',
+                houseNumber: data.address?.house_number || '',
+                country: data.address?.country || '',
+                fullDetails: data
+              };
+            }
+            return null;
+          })
+          .catch(() => null),
+        
+        // BigDataCloud as fallback
+        fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en&localityInfo=true`)
+          .then(res => res.json())
+          .then(data => {
+            console.log('BigDataCloud fallback response:', data);
+            
+            const addressParts = [];
+            
+            if (data.localityInfo?.administrative) {
+              const admin = data.localityInfo.administrative;
+              if (admin[4]?.name && admin[4].name !== admin[2]?.name) addressParts.push(admin[4].name);
+              if (admin[3]?.name && admin[3].name !== admin[4]?.name && admin[3].name !== admin[2]?.name) addressParts.push(admin[3].name);
+              if (admin[2]?.name) addressParts.push(admin[2].name);
+              if (admin[1]?.name && admin[1].name !== admin[2]?.name) addressParts.push(admin[1].name);
+              if (data.postcode) addressParts.push(data.postcode);
+            } else {
+              if (data.locality && data.locality !== data.city) addressParts.push(data.locality);
+              if (data.city) addressParts.push(data.city);
+              if (data.principalSubdivision && data.principalSubdivision !== data.city) addressParts.push(data.principalSubdivision);
+              if (data.postcode) addressParts.push(data.postcode);
+            }
+            
+            const address = addressParts.length > 0 
+              ? addressParts.join(', ')
+              : `Current Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+            
+            return {
+              service: 'bigdatacloud',
+              address: address,
+              pincode: data.postcode || '',
+              city: data.city || '',
+              state: data.principalSubdivision || '',
+              area: data.locality || '',
+              street: '',
+              houseNumber: '',
+              country: data.countryName || '',
+              fullDetails: data
+            };
+          })
           .catch(() => null)
       ];
 
-      Promise.race(geocodingPromises.filter(p => p !== null))
-        .then(result => {
-          if (result) {
-            console.log('Setting form data with address:', result.address);
+      // Wait for all geocoding services to complete and pick the best result
+      Promise.allSettled(geocodingPromises.filter(p => p !== null))
+        .then(results => {
+          const successfulResults = results
+            .filter(r => r.status === 'fulfilled' && r.value)
+            .map(r => r.value);
+          
+          
+          // Find the best result based on address detail and length
+          const bestResult = successfulResults.reduce((best, current) => {
+            const currentScore = current.address.length + (current.address.includes(',') ? 10 : 0) + (current.street ? 20 : 0);
+            const bestScore = best.address.length + (best.address.includes(',') ? 10 : 0) + (best.street ? 20 : 0);
+            return currentScore > bestScore ? current : best;
+          }, successfulResults[0]);
+          
+          if (bestResult) {
+            console.log('Setting address to:', bestResult.address);
+            
             setFormData(prev => ({ 
               ...prev, 
-              address: result.address,
+              address: bestResult.address,
               coordinates: { lat: latitude, lng: longitude }
             }));
 
-            const locationDetails = [];
-            if (result.houseNumber) locationDetails.push(result.houseNumber);
-            if (result.street) locationDetails.push(result.street);
-            if (result.city) locationDetails.push(result.city);
-            if (result.state) locationDetails.push(result.state);
-            if (result.pincode) locationDetails.push(result.pincode);
-
-            toast.success(
-              `📍 Current Location Detected!\n${locationDetails.join(', ')}\nCoordinates: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
-              { duration: 5000 }
-            );
           } else {
             const coordinateAddress = `Current Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
             setFormData(prev => ({ 
@@ -292,7 +463,7 @@ const Booking: React.FC = () => {
               address: coordinateAddress,
               coordinates: { lat: latitude, lng: longitude }
             }));
-            toast.warning('Location detected but address lookup failed. Please verify the coordinates.');
+            toast.warning('Location detected but detailed address lookup failed. Please verify the coordinates.');
           }
         })
         .catch(() => {
@@ -306,7 +477,17 @@ const Booking: React.FC = () => {
         });
     } catch (error) {
       console.error('Error getting location:', error);
-      toast.error('Failed to get current location. Please enter address manually.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get current location.';
+      toast.error(`${errorMessage} Please try manual entry or check your browser settings.`, { duration: 8000 });
+      
+      // Show helpful instructions
+      setTimeout(() => {
+        toast.info('💡 Alternative: Start typing your address above for suggestions, or enter manually with full details including pincode.', { duration: 10000 });
+      }, 2000);
+    } finally {
+      console.log('Location fetch completed, setting loading to false');
+      loadingRef.current = false;
+      setIsLoadingLocation(false);
     }
   };
 
@@ -386,36 +567,97 @@ const Booking: React.FC = () => {
         formData.images.map(file => cloudinaryService.uploadImage(file))
       );
 
-      // Create customer data
-      const customerData = {
-        full_name: formData.fullName,
-        phone: formData.phone,
-        email: formData.email,
-        alternate_phone: formData.alternatePhone,
-        address: {
-          street: formData.address,
-          city: 'Bangalore',
-          state: 'Karnataka',
-          pincode: '560001',
-        },
-        location: {
-          latitude: formData.coordinates.lat,
-          longitude: formData.coordinates.lng,
-          formattedAddress: formData.address,
-        },
-        service_type: formData.serviceType,
-        brand: formData.brandName,
-        model: formData.modelName,
-        status: 'ACTIVE' as const,
-        customer_since: new Date().toISOString(),
-        preferred_time_slot: formData.preferredTime,
-        preferred_language: 'ENGLISH' as const,
-      };
-
-      const { data: customer, error: customerError } = await db.customers.create(customerData);
+      // Check if customer already exists by phone number
+      let customer;
+      let isExistingCustomer = false;
+      const { data: existingCustomer, error: findError } = await db.customers.getByPhone(formData.phone);
       
-      if (customerError) {
-        throw new Error(customerError.message);
+      if (findError && findError.code !== 'PGRST116') { // PGRST116 is "not found" error
+        throw new Error(`Error checking existing customer: ${findError.message}`);
+      }
+      
+      if (existingCustomer) {
+        // Customer exists, update their information
+        isExistingCustomer = true;
+        console.log('Customer exists, updating information');
+        console.log('Existing customer data:', existingCustomer);
+        const updateData = {
+          full_name: formData.fullName,
+          email: formData.email,
+          alternate_phone: formData.alternatePhone,
+          address: {
+            street: formData.address,
+            city: 'Bangalore',
+            state: 'Karnataka',
+            pincode: '560001',
+          },
+          location: {
+            latitude: formData.coordinates.lat,
+            longitude: formData.coordinates.lng,
+            formattedAddress: formData.address,
+          },
+          preferred_time_slot: formData.preferredTime,
+          updated_at: new Date().toISOString(),
+        };
+        
+        console.log('Updating customer with ID:', existingCustomer.id);
+        console.log('Update data:', updateData);
+        
+        const { data: updatedCustomer, error: updateError } = await db.customers.update(existingCustomer.id, updateData);
+        
+        console.log('Update result:', { updatedCustomer, updateError });
+        
+        if (updateError) {
+          console.error('Customer update error:', updateError);
+          throw new Error(`Error updating customer: ${updateError.message}`);
+        }
+        
+        if (!updatedCustomer) {
+          console.error('No customer data returned from update');
+          throw new Error('Customer update failed: No data returned');
+        }
+        
+        customer = updatedCustomer;
+      } else {
+        // Customer doesn't exist, create new one
+        console.log('Customer does not exist, creating new customer');
+        const customerData = {
+          full_name: formData.fullName,
+          phone: formData.phone,
+          email: formData.email,
+          alternate_phone: formData.alternatePhone,
+          address: {
+            street: formData.address,
+            city: 'Bangalore',
+            state: 'Karnataka',
+            pincode: '560001',
+          },
+          location: {
+            latitude: formData.coordinates.lat,
+            longitude: formData.coordinates.lng,
+            formattedAddress: formData.address,
+          },
+          service_type: formData.serviceType,
+          brand: formData.brandName,
+          model: formData.modelName,
+          status: 'ACTIVE' as const,
+          customer_since: new Date().toISOString(),
+          preferred_time_slot: formData.preferredTime,
+          preferred_language: 'ENGLISH' as const,
+        };
+
+        const { data: newCustomer, error: customerError } = await db.customers.create(customerData);
+        
+        if (customerError) {
+          console.error('Customer creation error:', customerError);
+          throw new Error(`Error creating customer: ${customerError.message}`);
+        }
+        
+        if (!newCustomer) {
+          throw new Error('Customer creation failed: No data returned');
+        }
+        
+        customer = newCustomer;
       }
 
       // Create job record
@@ -424,18 +666,29 @@ const Booking: React.FC = () => {
         customer_id: customer.id,
         service_type: formData.serviceType,
         service_sub_type: formData.service,
+        brand: formData.brandName,
+        model: formData.modelName,
         status: 'PENDING' as const,
-        priority: 'NORMAL' as const,
+        priority: 'MEDIUM' as const,
         description: formData.description,
         images: imageUrls,
-        scheduled_date: formData.serviceDate ? new Date(formData.serviceDate).toISOString() : new Date().toISOString(),
+        scheduled_date: formData.serviceDate ? new Date(formData.serviceDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        scheduled_time_slot: formData.preferredTime || 'MORNING',
         estimated_duration: 120,
-        location: {
+        service_address: {
+          street: formData.address,
+          city: 'Bangalore',
+          state: 'Karnataka',
+          pincode: '560001',
+        },
+        service_location: {
           latitude: formData.coordinates.lat,
           longitude: formData.coordinates.lng,
           formattedAddress: formData.address,
         },
-        preferred_time_slot: formData.preferredTime,
+        requirements: [],
+        estimated_cost: 0,
+        payment_status: 'PENDING' as const,
       };
 
       const { data: job, error: jobError } = await db.jobs.create(jobData);
@@ -460,7 +713,8 @@ const Booking: React.FC = () => {
         email: formData.email,
       });
 
-      toast.success('Booking submitted successfully! You will receive a confirmation email shortly.');
+      const customerAction = isExistingCustomer ? 'updated' : 'created';
+      toast.success(`Booking submitted successfully! Customer ${customerAction} and job scheduled. You will receive a confirmation email shortly.`);
       
       // Reset form
       setFormData({
@@ -686,24 +940,48 @@ const Booking: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="address">Service Address *</Label>
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="Enter complete address with pincode..."
-                  className="mt-1 min-h-[100px]"
-                />
+                <div className="relative">
+                  <Textarea
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="Please click 'Use Current Location' for easy navigation, or enter your complete address manually..."
+                    className="mt-1 min-h-[100px]"
+                  />
+                </div>
               </div>
               
               <Button
                 type="button"
                 variant="outline"
                 onClick={getCurrentLocation}
-                className="w-full"
+                disabled={isLoadingLocation}
+                className="w-full relative"
               >
-                <MapPin className="w-4 h-4 mr-2" />
-                Use Current Location
+                {isLoadingLocation ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                    Getting Location...
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Use Current Location
+                  </>
+                )}
+                {/* Debug: Loading state = {isLoadingLocation ? 'TRUE' : 'FALSE'} */}
               </Button>
+              
+              {/* Additional loading indicator */}
+              {isLoadingLocation && (
+                <div className="mt-2 text-center">
+                  <div className="inline-flex items-center text-sm text-gray-600 dark:text-gray-400">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2"></div>
+                    Fetching your location...
+                  </div>
+                </div>
+              )}
+              
               
               <div>
                 <Label>Upload Images (Optional)</Label>

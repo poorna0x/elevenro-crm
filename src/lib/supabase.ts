@@ -46,14 +46,25 @@ export const db = {
     },
     
     async update(id: string, updates: Database['public']['Tables']['customers']['Update']) {
+      console.log('DB Update - ID:', id, 'Updates:', updates);
+      
       const { data, error } = await supabase
         .from('customers')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
       
-      return { data, error };
+      console.log('DB Update - Raw response:', { data, error });
+      
+      if (error) {
+        console.error('DB Update - Error:', error);
+        return { data: null, error };
+      }
+      
+      // Return the first (and should be only) updated row
+      const result = { data: data?.[0] || null, error: null };
+      console.log('DB Update - Final result:', result);
+      return result;
     },
     
     async getAll() {
@@ -118,10 +129,14 @@ export const db = {
         .from('jobs')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
       
-      return { data, error };
+      if (error) {
+        return { data: null, error };
+      }
+      
+      // Return the first (and should be only) updated row
+      return { data: data?.[0] || null, error: null };
     },
     
     async getByStatus(status: string) {
@@ -184,10 +199,14 @@ export const db = {
         .from('technicians')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
       
-      return { data, error };
+      if (error) {
+        return { data: null, error };
+      }
+      
+      // Return the first (and should be only) updated row
+      return { data: data?.[0] || null, error: null };
     }
   }
 };
