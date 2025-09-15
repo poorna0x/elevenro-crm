@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, Phone, MessageCircle, MapPin, User, Clock, ChevronLeft, ChevronRight, Check, Settings, Filter, Upload, Camera, Loader2 } from 'lucide-react';
+import { Calendar, Phone, MessageCircle, MapPin, User, Clock, ChevronLeft, ChevronRight, Check, Settings, Filter, Upload, Camera, Loader2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { db, generateJobNumber } from '@/lib/supabase';
 import { emailService } from '@/lib/email';
@@ -65,6 +65,8 @@ const EnhancedBookingForm = () => {
   const [locationLoading, setLocationLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [showCallOptions, setShowCallOptions] = useState(false);
+  const [showSuccessLoader, setShowSuccessLoader] = useState(false);
 
   const {
     register,
@@ -90,6 +92,19 @@ const EnhancedBookingForm = () => {
   });
 
   const watchedValues = watch();
+
+  const handleCall = (number: string) => {
+    window.open(`tel:${number}`, '_self');
+    setShowCallOptions(false);
+  };
+
+  const handleWhatsApp = () => {
+    window.open('https://wa.me/918884944288', '_blank');
+  };
+
+  const handleEmail = () => {
+    window.open('mailto:mail@hydrogenro.com', '_self');
+  };
 
   const handleNext = async () => {
     const isValid = await trigger();
@@ -228,8 +243,14 @@ const EnhancedBookingForm = () => {
       await sendConfirmationEmail(customer, job);
 
       setBookingId(job.jobNumber);
-      setBookingSuccess(true);
-      toast.success('Booking confirmed successfully!');
+      setShowSuccessLoader(true);
+      
+      // Show success loader for 2 seconds before showing success page
+      setTimeout(() => {
+        setShowSuccessLoader(false);
+        setBookingSuccess(true);
+        toast.success('Booking confirmed successfully!');
+      }, 2000);
       
     } catch (error) {
       console.error('Booking error:', error);
@@ -280,16 +301,37 @@ const EnhancedBookingForm = () => {
     }
   };
 
+  // Full screen success loader
+  if (showSuccessLoader) {
+    return (
+      <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <Loader2 className="w-20 h-20 animate-spin mx-auto mb-6 text-primary" />
+            <div className="absolute inset-0 w-20 h-20 mx-auto border-4 border-primary/20 rounded-full animate-pulse"></div>
+          </div>
+          <p className="text-2xl font-bold text-foreground mb-3">Booking Confirmed! 🎉</p>
+          <p className="text-lg text-muted-foreground mb-4">Your service has been scheduled successfully</p>
+          <div className="mt-6 flex justify-center space-x-2">
+            <div className="w-3 h-3 bg-primary rounded-full animate-bounce"></div>
+            <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+            <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (bookingSuccess) {
     return (
       <Card className="max-w-2xl mx-auto">
         <CardContent className="p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Check className="w-8 h-8 text-green-600" />
+          <div className="w-16 h-16 bg-gray-100 dark:bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8 text-black" />
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-4">Booking Confirmed!</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Booking Confirmed! 🎉</h2>
           <p className="text-muted-foreground mb-6">
-            Your service request has been submitted successfully. We'll contact you within 30 minutes to confirm your appointment.
+            Your service has been scheduled successfully
           </p>
           <div className="bg-muted/50 rounded-lg p-4 mb-6">
             <p className="font-semibold text-foreground">Booking ID: {bookingId}</p>
@@ -297,28 +339,133 @@ const EnhancedBookingForm = () => {
               Please keep this ID for your reference
             </p>
           </div>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>• Confirmation email sent to your registered email</p>
-            <p>• SMS notification sent to your phone</p>
-            <p>• Our technician will contact you soon</p>
+          <div className="space-y-4 text-sm text-muted-foreground mb-6">
+            <div className="text-left">
+              <h3 className="font-semibold text-foreground mb-3">What's Next?</h3>
+              <div className="space-y-2">
+                <div className="flex items-start gap-3">
+                  <span className="w-6 h-6 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                  <div>
+                    <p className="font-medium text-foreground">Confirmation Email</p>
+                    <p className="text-muted-foreground">You'll receive a confirmation email with all the details shortly.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="w-6 h-6 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                  <div>
+                    <p className="font-medium text-foreground">Technician Contact</p>
+                    <p className="text-muted-foreground">Our technician will contact you before the scheduled service time.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="w-6 h-6 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                  <div>
+                    <p className="font-medium text-foreground">Service Day</p>
+                    <p className="text-muted-foreground">Our technician will arrive at your location on the scheduled date and time.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <Button 
-            onClick={() => {
-              setBookingSuccess(false);
-              setCurrentStep(1);
-              setBookingId(null);
-            }}
-            className="mt-6"
-          >
-            Book Another Service
-          </Button>
+          
+          {/* Contact Options */}
+          <div className="mt-6">
+            <h3 className="font-semibold text-foreground mb-4 text-center">Need Help?</h3>
+            <p className="text-sm text-muted-foreground mb-4 text-center">If you have any questions or need to make changes to your booking, please contact us:</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Call Button */}
+            <div>
+              {!showCallOptions ? (
+                <Button 
+                  onClick={() => setShowCallOptions(true)}
+                  className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  Call
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Button 
+                    onClick={() => handleCall('+918884944288')}
+                    className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
+                  >
+                    Call: +91-8884944288
+                  </Button>
+                  <Button 
+                    onClick={() => handleCall('+919448944288')}
+                    className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
+                  >
+                    Call: +91-9448944288
+                  </Button>
+                  <Button 
+                    onClick={() => setShowCallOptions(false)}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* WhatsApp Button */}
+            <Button 
+              onClick={handleWhatsApp}
+              className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
+            >
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+              </svg>
+              WhatsApp
+            </Button>
+
+            {/* Email Button */}
+            <Button 
+              onClick={handleEmail}
+              className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Email
+            </Button>
+            </div>
+            
+            {/* Go to Homepage Button */}
+            <div className="mt-6">
+              <Button 
+                onClick={() => window.location.href = '/'}
+                variant="outline"
+                className="w-full"
+              >
+                Go to Homepage
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="max-w-2xl mx-auto">
+    <Card className="max-w-2xl mx-auto relative">
+      {/* Loading Overlay - Enhanced for Step 5 */}
+      {isSubmitting && (
+        <div className="absolute inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
+          <div className="text-center">
+            <div className="relative">
+              <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-primary" />
+              <div className="absolute inset-0 w-16 h-16 mx-auto border-4 border-primary/20 rounded-full animate-pulse"></div>
+            </div>
+            <p className="text-xl font-semibold text-foreground mb-2">Processing Your Booking...</p>
+            <p className="text-sm text-muted-foreground">Please wait while we create your service request</p>
+            <div className="mt-4 flex justify-center space-x-1">
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-primary" />
@@ -733,6 +880,67 @@ const EnhancedBookingForm = () => {
                     </ul>
                   </div>
                 </div>
+                
+                {/* Contact Options */}
+                <div className="mt-6">
+                  <h4 className="font-semibold text-foreground mb-4 text-center">Need Help? Contact Us</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Call Button */}
+                    <div>
+                      {!showCallOptions ? (
+                        <Button 
+                          onClick={() => setShowCallOptions(true)}
+                          className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
+                        >
+                          <Phone className="w-4 h-4 mr-2" />
+                          Call
+                        </Button>
+                      ) : (
+                        <div className="space-y-2">
+                          <Button 
+                            onClick={() => handleCall('+918884944288')}
+                            className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
+                          >
+                            Call: +91-8884944288
+                          </Button>
+                          <Button 
+                            onClick={() => handleCall('+919448944288')}
+                            className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
+                          >
+                            Call: +91-9448944288
+                          </Button>
+                          <Button 
+                            onClick={() => setShowCallOptions(false)}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* WhatsApp Button */}
+                    <Button 
+                      onClick={handleWhatsApp}
+                      className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                      </svg>
+                      WhatsApp
+                    </Button>
+
+                    {/* Email Button */}
+                    <Button 
+                      onClick={handleEmail}
+                      className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      Email
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -764,14 +972,10 @@ const EnhancedBookingForm = () => {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                className="flex items-center gap-2 bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-black"
               >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Check className="w-4 h-4" />
-                )}
-                {isSubmitting ? 'Creating Booking...' : 'Confirm & Book Service'}
+                <Check className="w-4 h-4" />
+                Confirm & Book Service
               </Button>
             )}
           </div>
