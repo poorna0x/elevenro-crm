@@ -493,33 +493,54 @@ const Booking: React.FC = () => {
         return;
       }
 
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve, 
-          (error) => {
-            console.error('Geolocation error:', error);
-            switch (error.code) {
-              case error.PERMISSION_DENIED:
-                reject(new Error('Location access denied. Please allow location permission and try again.'));
-                break;
-              case error.POSITION_UNAVAILABLE:
-                reject(new Error('Location information unavailable. Please check your GPS settings.'));
-                break;
-              case error.TIMEOUT:
-                reject(new Error('Location request timed out. Please try again.'));
-                break;
-              default:
-                reject(new Error('An unknown error occurred while retrieving location.'));
-                break;
+      // Try with mobile-optimized settings first
+      let position: GeolocationPosition;
+      try {
+        position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve, 
+            (error) => {
+              console.error('Geolocation error (first attempt):', error);
+              reject(error);
+            },
+            {
+              enableHighAccuracy: true, // Keep high accuracy for exact location
+              timeout: 30000, // Increased to 30 seconds for mobile
+              maximumAge: 60000 // Reduced to 1 minute for fresher location
             }
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 300000
-          }
-        );
-      });
+          );
+        });
+      } catch (error) {
+        console.log('First attempt failed, trying with fallback settings...');
+        // Fallback with even more relaxed settings
+        position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve, 
+            (error) => {
+              console.error('Geolocation error (fallback):', error);
+              switch (error.code) {
+                case error.PERMISSION_DENIED:
+                  reject(new Error('Location access denied. Please allow location permission and try again.'));
+                  break;
+                case error.POSITION_UNAVAILABLE:
+                  reject(new Error('Location information unavailable. Please check your GPS settings.'));
+                  break;
+                case error.TIMEOUT:
+                  reject(new Error('Location request timed out. Please try again or check your internet connection.'));
+                  break;
+                default:
+                  reject(new Error('An unknown error occurred while retrieving location.'));
+                  break;
+              }
+            },
+            {
+              enableHighAccuracy: true, // Keep high accuracy even in fallback
+              timeout: 45000, // Even longer timeout for fallback
+              maximumAge: 300000 // Allow older cached location
+            }
+          );
+        });
+      }
 
       const { latitude, longitude } = position.coords;
       
@@ -1291,7 +1312,7 @@ const Booking: React.FC = () => {
                       <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
                       <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                     </div>
-                    Getting your location and address...
+                    Getting your exact location and address... (This may take up to 45 seconds on mobile)
                   </div>
                 </div>
               )}
