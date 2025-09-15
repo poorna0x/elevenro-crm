@@ -1218,7 +1218,17 @@ const Booking: React.FC = () => {
                         ? 'border-2 border-black dark:border-white' 
                         : ''
                     }`}
+                    disabled={isLoadingLocation}
                   />
+                  {isLoadingLocation && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 rounded-md">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -1244,7 +1254,6 @@ const Booking: React.FC = () => {
                     Use Current Location
                   </>
                 )}
-                {/* Debug: Loading state = {isLoadingLocation ? 'TRUE' : 'FALSE'} */}
               </Button>
               
               {/* Additional loading indicator */}
@@ -1256,7 +1265,7 @@ const Booking: React.FC = () => {
                       <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
                       <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                     </div>
-                    Fetching your location...
+                    Getting your location and address...
                   </div>
                 </div>
               )}
