@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,20 +57,6 @@ const Booking: React.FC = () => {
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
-  const [lastFieldChangeTime, setLastFieldChangeTime] = useState<number>(0);
-
-  // Auto-validation after 2 seconds of inactivity
-  useEffect(() => {
-    if (lastFieldChangeTime > 0) {
-      const timer = setTimeout(() => {
-        if (!canProceed() && !showValidationFeedback) {
-          validateCurrentStep();
-        }
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [lastFieldChangeTime, currentStep, showValidationFeedback]);
 
   // Get tomorrow's date
   const getTomorrowDate = () => {
@@ -334,7 +320,6 @@ const Booking: React.FC = () => {
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    setLastFieldChangeTime(Date.now());
     
     // Clear validation errors for this field
     if (validationErrors[field]) {
