@@ -83,13 +83,13 @@ export interface Job {
   // Job Details
   description: string;
   requirements: string[];
-  estimatedCost: number;
-  actualCost?: number;
+  estimated_cost: number;
+  actual_cost?: number;
   
   // Tracking
-  startTime?: string;
-  endTime?: string;
-  actualDuration?: number;
+  start_time?: string;
+  end_time?: string;
+  actual_duration?: number;
   
   // Customer Interaction
   customerFeedback?: {
@@ -99,9 +99,9 @@ export interface Job {
   };
   
   // Financial
-  paymentStatus: 'PENDING' | 'PAID' | 'PARTIAL' | 'REFUNDED';
-  paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'BANK_TRANSFER';
-  paymentAmount?: number;
+  payment_status: 'PENDING' | 'PAID' | 'PARTIAL' | 'REFUNDED';
+  payment_method?: 'CASH' | 'CARD' | 'UPI' | 'BANK_TRANSFER';
+  payment_amount?: number;
   
   // Documents
   beforePhotos?: string[];
