@@ -94,43 +94,47 @@ export const emailTemplates = {
             color: #1a1a1a;
             font-weight: 600;
           }
-          .booking-details { 
-            background: #f8f9fa; 
-            padding: 32px; 
-            border-radius: 16px; 
+          .booking-summary {
             margin: 32px 0;
-            border: 1px solid #e5e7eb;
           }
-          .booking-details h3 {
+          .summary-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border-radius: 20px;
+            padding: 32px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          }
+          .summary-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 16px 0;
+          }
+          .summary-item:last-child {
+            margin-bottom: 0;
+          }
+          .summary-icon {
             font-size: 24px;
+            margin-right: 16px;
+            width: 40px;
+            text-align: center;
+          }
+          .summary-content {
+            flex: 1;
+          }
+          .summary-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+          }
+          .summary-value {
+            font-size: 18px;
             font-weight: 700;
             color: #1a1a1a;
-            margin-bottom: 24px;
-            text-align: center;
-            letter-spacing: -0.3px;
-          }
-          .detail-row { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-start;
-            margin: 20px 0; 
-            padding: 16px 0; 
-            border-bottom: 1px solid #e5e7eb; 
-          }
-          .detail-row:last-child { border-bottom: none; }
-          .detail-label { 
-            font-weight: 700; 
-            color: #1a1a1a;
-            font-size: 16px;
-            min-width: 120px;
-          }
-          .detail-value { 
-            color: #4a4a4a; 
-            font-size: 16px;
-            text-align: right;
-            max-width: 60%;
-            font-weight: 500;
-            line-height: 1.4;
+            line-height: 1.3;
           }
           .status-badge { 
             background: linear-gradient(135deg, #059669 0%, #047857 100%); 
@@ -160,9 +164,9 @@ export const emailTemplates = {
           }
           .contact-buttons {
             display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
             margin: 28px 0;
           }
           .contact-btn {
@@ -174,25 +178,21 @@ export const emailTemplates = {
             font-size: 16px;
             transition: all 0.3s ease;
             border: 2px solid transparent;
-            margin: 0 8px;
+            width: 200px;
+            text-align: center;
           }
           .btn-phone {
-            background: #3b82f6;
+            background: #000000;
             color: white;
           }
           .btn-message {
-            background: #25d366;
+            background: #000000;
             color: white;
           }
           .contact-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          }
-          .btn-phone:hover {
-            background: #2563eb;
-          }
-          .btn-message:hover {
-            background: #20c55a;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            background: #333333;
           }
           .contact-info {
             margin-top: 24px;
@@ -258,27 +258,25 @@ export const emailTemplates = {
               font-size: 16px;
             }
             .contact-buttons { 
-              gap: 12px;
+              gap: 10px;
             }
             .contact-btn { 
               padding: 10px 20px;
               font-size: 14px;
-              margin: 0 4px;
+              width: 180px;
             }
-            .detail-row { 
-              flex-direction: column; 
-              align-items: flex-start; 
-              gap: 8px; 
-            }
-            .detail-value { 
-              text-align: left; 
-              max-width: 100%; 
-            }
-            .detail-label {
-              min-width: auto;
-            }
-            .booking-details {
+            .summary-card {
               padding: 24px 20px;
+            }
+            .summary-item {
+              margin-bottom: 20px;
+            }
+            .summary-icon {
+              font-size: 20px;
+              width: 32px;
+            }
+            .summary-value {
+              font-size: 16px;
             }
             .contact-section {
               padding: 32px 20px;
@@ -297,10 +295,20 @@ export const emailTemplates = {
             .contact-btn {
               padding: 8px 16px;
               font-size: 13px;
-              margin: 0 2px;
+              width: 160px;
             }
-            .booking-details {
+            .summary-card {
               padding: 20px 16px;
+            }
+            .summary-item {
+              margin-bottom: 16px;
+            }
+            .summary-icon {
+              font-size: 18px;
+              width: 28px;
+            }
+            .summary-value {
+              font-size: 15px;
             }
             .contact-section {
               padding: 24px 16px;
@@ -321,33 +329,39 @@ export const emailTemplates = {
             </div>
             
             <p style="font-size: 16px; color: #4b5563; margin-bottom: 20px;">
-              Your service request has been successfully submitted. Our expert technician will contact you soon to confirm the appointment.
+              Your service request has been successfully submitted. Our expert technician will contact you soon.
             </p>
             
-            <div class="booking-details">
-              <h3>Service Details</h3>
-              ${data.brand && data.model ? `
-              <div class="detail-row">
-                <span class="detail-label">Device:</span>
-                <span class="detail-value">${data.brand} ${data.model}</span>
+            <div class="booking-summary">
+              <div class="summary-card">
+                <div class="summary-item">
+                  <div class="summary-icon">📅</div>
+                  <div class="summary-content">
+                    <div class="summary-label">Service Date</div>
+                    <div class="summary-value">${new Date(data.scheduledDate).toLocaleDateString('en-IN', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}</div>
               </div>
-              ` : ''}
-              <div class="detail-row">
-                <span class="detail-label">Service Date:</span>
-                <span class="detail-value">${new Date(data.scheduledDate).toLocaleDateString('en-IN', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}</span>
               </div>
-              <div class="detail-row">
-                <span class="detail-label">Time Slot:</span>
-                <span class="detail-value">${formatTimeSlot(data.scheduledTimeSlot)}</span>
+                
+                <div class="summary-item">
+                  <div class="summary-icon">🕐</div>
+                  <div class="summary-content">
+                    <div class="summary-label">Time Slot</div>
+                    <div class="summary-value">${formatTimeSlot(data.scheduledTimeSlot)}</div>
               </div>
-              <div class="detail-row">
-                <span class="detail-label">Address:</span>
-                <span class="detail-value">${data.serviceAddress}</span>
+              </div>
+                
+                <div class="summary-item">
+                  <div class="summary-icon">📍</div>
+                  <div class="summary-content">
+                    <div class="summary-label">Location</div>
+                    <div class="summary-value">${data.serviceAddress}</div>
+              </div>
+              </div>
               </div>
             </div>
             
@@ -369,10 +383,10 @@ export const emailTemplates = {
               
               <div class="contact-buttons">
                 <a href="tel:+919876543210" class="contact-btn btn-phone">
-                  Phone
+                  📞 Phone
                 </a>
                 <a href="https://wa.me/919876543210?text=Hi, I have a booking for ${data.serviceType} service. My name is ${data.customerName}" class="contact-btn btn-message">
-                  Message Us
+                  💬 Message Us
                 </a>
               </div>
               
