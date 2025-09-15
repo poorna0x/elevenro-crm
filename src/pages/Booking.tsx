@@ -514,12 +514,7 @@ const Booking: React.FC = () => {
       // Try multiple approaches to get detailed addresses
       const geocodingPromises = [
         // Try OpenStreetMap Nominatim with CORS proxy
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&extratags=1&namedetails=1&accept-language=en`, {
-          mode: 'cors',
-          headers: {
-            'User-Agent': 'HydrogenRO/1.0'
-          }
-        })
+        fetch(`/.netlify/functions/geocode?lat=${latitude}&lon=${longitude}`)
           .then(res => res.json())
           .then(data => {
             console.log('Nominatim detailed response:', data);
@@ -585,12 +580,7 @@ const Booking: React.FC = () => {
           .catch(() => null),
         
         // Try alternative CORS proxy
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&extratags=1&namedetails=1&accept-language=en`, {
-          mode: 'cors',
-          headers: {
-            'User-Agent': 'HydrogenRO/1.0'
-          }
-        })
+        fetch(`/.netlify/functions/geocode?lat=${latitude}&lon=${longitude}`)
           .then(res => res.json())
           .then(data => {
             console.log('Nominatim alternative response:', data);

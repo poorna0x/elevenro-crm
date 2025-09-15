@@ -31,8 +31,12 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { to, subject, html, text } = JSON.parse(event.body);
-    console.log('Parsed data:', { to, subject, html: html ? 'HTML present' : 'No HTML' });
+    console.log('Raw body:', event.body);
+    const bodyData = JSON.parse(event.body);
+    console.log('Parsed body:', bodyData);
+    
+    const { to, subject, html, text } = bodyData;
+    console.log('Extracted data:', { to, subject, html: html ? 'HTML present' : 'No HTML', text: text ? 'Text present' : 'No text' });
 
     // Check environment variables
     console.log('Environment check:', {
