@@ -182,17 +182,17 @@ export const emailTemplates = {
             text-align: center;
           }
           .btn-phone {
-            background: #000000;
+            background: #6b7280;
             color: white;
           }
           .btn-message {
-            background: #000000;
+            background: #6b7280;
             color: white;
           }
           .contact-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            background: #333333;
+            background: #4b5563;
           }
           .contact-info {
             margin-top: 24px;
@@ -335,6 +335,14 @@ export const emailTemplates = {
             <div class="booking-summary">
               <div class="summary-card">
                 <div class="summary-item">
+                  <div class="summary-icon">🔧</div>
+                  <div class="summary-content">
+                    <div class="summary-label">Service Type</div>
+                    <div class="summary-value">${data.serviceType || 'RO'} - ${data.serviceSubType || 'Service'}</div>
+                  </div>
+                </div>
+                
+                <div class="summary-item">
                   <div class="summary-icon">📅</div>
                   <div class="summary-content">
                     <div class="summary-label">Service Date</div>
@@ -344,8 +352,8 @@ export const emailTemplates = {
                       month: 'long', 
                       day: 'numeric' 
                     })}</div>
-              </div>
-              </div>
+                  </div>
+                </div>
                 
                 <div class="summary-item">
                   <div class="summary-icon">🕐</div>
@@ -391,7 +399,6 @@ export const emailTemplates = {
               </div>
               
               <div class="contact-info">
-                <p><strong>Phone:</strong> +91-9876543210</p>
                 <p><strong>Email:</strong> info@hydrogenro.com</p>
                 <p><strong>Available:</strong> 24/7 Emergency Support</p>
               </div>
