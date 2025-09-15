@@ -188,7 +188,14 @@ export class EmailService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        
+        // If it's a configuration error, log it but don't fail the booking
+        if (response.status === 500 && errorData.error?.includes('configuration')) {
+          console.warn('Email service not configured, booking will continue without email notification:', errorData);
+          return true; // Return true to not block the booking process
+        }
+        
         throw new Error(`Email service error: ${errorData.error || response.statusText}`);
       }
 
@@ -198,7 +205,11 @@ export class EmailService {
 
     } catch (error) {
       console.error('Error sending email:', error);
-      return false;
+      
+      // Don't fail the entire booking process if email fails
+      // Just log the error and continue
+      console.warn('Email notification failed, but booking will continue');
+      return true;
     }
   }
 

@@ -70,7 +70,8 @@ exports.handler = async (event, context) => {
         },
         body: JSON.stringify({ 
           error: 'Email configuration missing',
-          details: 'Environment variables not set'
+          details: 'Environment variables HOSTINGER_EMAIL_USER and HOSTINGER_EMAIL_PASS not set. Please configure these in your hosting platform.',
+          configuration: 'missing'
         }),
       };
     }
