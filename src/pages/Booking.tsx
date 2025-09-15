@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +55,23 @@ const Booking: React.FC = () => {
   const [modelSuggestions, setModelSuggestions] = useState<string[]>([]);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
+  const [showValidationFeedback, setShowValidationFeedback] = useState(false);
+  const [lastFieldChangeTime, setLastFieldChangeTime] = useState<number>(0);
+
+  // Auto-validation after 2 seconds of inactivity
+  useEffect(() => {
+    if (lastFieldChangeTime > 0) {
+      const timer = setTimeout(() => {
+        if (!canProceed() && !showValidationFeedback) {
+          validateCurrentStep();
+        }
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [lastFieldChangeTime, currentStep, showValidationFeedback]);
+
   // Get tomorrow's date
   const getTomorrowDate = () => {
     const tomorrow = new Date();
@@ -317,6 +334,16 @@ const Booking: React.FC = () => {
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setLastFieldChangeTime(Date.now());
+    
+    // Clear validation errors for this field
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
     
     // Reset service when service type changes
     if (field === 'serviceType') {
@@ -378,7 +405,13 @@ const Booking: React.FC = () => {
 
   const nextStep = () => {
     if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+      if (canProceed()) {
+        setCurrentStep(currentStep + 1);
+        setValidationErrors({});
+        setShowValidationFeedback(false);
+      } else {
+        validateCurrentStep();
+      }
     }
   };
 
@@ -938,8 +971,11 @@ const Booking: React.FC = () => {
                   value={formData.fullName}
                   onChange={(e) => handleInputChange('fullName', e.target.value)}
                   placeholder="Enter your full name"
-                  className="mt-1"
+                  className={`mt-1 ${validationErrors.fullName ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
                 />
+                {validationErrors.fullName && showValidationFeedback && (
+                  <p className="text-red-500 text-sm mt-1">Full name is required</p>
+                )}
               </div>
               
               <div>
@@ -950,8 +986,11 @@ const Booking: React.FC = () => {
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="+91 98765 43210"
-                  className="mt-1"
+                  className={`mt-1 ${validationErrors.phone ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
                 />
+                {validationErrors.phone && showValidationFeedback && (
+                  <p className="text-red-500 text-sm mt-1">Phone number is required</p>
+                )}
               </div>
               
               <div>
@@ -962,8 +1001,11 @@ const Booking: React.FC = () => {
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="your.email@example.com"
-                  className="mt-1"
+                  className={`mt-1 ${validationErrors.email ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
                 />
+                {validationErrors.email && showValidationFeedback && (
+                  <p className="text-red-500 text-sm mt-1">Email address is required</p>
+                )}
               </div>
               
               <div>
@@ -1007,7 +1049,7 @@ const Booking: React.FC = () => {
               <div>
                 <Label htmlFor="service">Service Required *</Label>
                 <Select value={formData.service} onValueChange={(value) => handleInputChange('service', value)}>
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className={`mt-1 ${validationErrors.service ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}>
                     <SelectValue placeholder="Select service" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1018,6 +1060,9 @@ const Booking: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {validationErrors.service && showValidationFeedback && (
+                  <p className="text-red-500 text-sm mt-1">Please select a service</p>
+                )}
               </div>
               
               {/* Show custom service input when "Other" is selected */}
@@ -1029,8 +1074,11 @@ const Booking: React.FC = () => {
                     value={formData.customService}
                     onChange={(e) => handleInputChange('customService', e.target.value)}
                     placeholder="Describe the specific service you need..."
-                    className="mt-1"
+                    className={`mt-1 ${validationErrors.customService ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
                   />
+                  {validationErrors.customService && showValidationFeedback && (
+                    <p className="text-red-500 text-sm mt-1">Please specify the service details</p>
+                  )}
                 </div>
               )}
               
@@ -1137,9 +1185,12 @@ const Booking: React.FC = () => {
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     placeholder="Please click 'Use Current Location' for easy navigation, or enter your complete address manually..."
-                    className="mt-1 min-h-[100px]"
+                    className={`mt-1 min-h-[100px] ${validationErrors.address ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
                   />
                 </div>
+                {validationErrors.address && showValidationFeedback && (
+                  <p className="text-red-500 text-sm mt-1">Service address is required</p>
+                )}
               </div>
               
               <Button
@@ -1292,14 +1343,17 @@ const Booking: React.FC = () => {
                   value={formData.serviceDate}
                   onChange={(e) => handleInputChange('serviceDate', e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
-                  className="mt-1"
+                  className={`mt-1 ${validationErrors.serviceDate ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
                 />
+                {validationErrors.serviceDate && showValidationFeedback && (
+                  <p className="text-red-500 text-sm mt-1">Please select a service date</p>
+                )}
               </div>
               
               <div>
                 <Label htmlFor="preferredTime">Time Slot *</Label>
                 <Select value={formData.preferredTime} onValueChange={(value: 'FIRST_HALF' | 'SECOND_HALF') => handleInputChange('preferredTime', value)}>
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className={`mt-1 ${validationErrors.preferredTime ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}>
                     <SelectValue placeholder="Select preferred time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1307,6 +1361,9 @@ const Booking: React.FC = () => {
                     <SelectItem value="SECOND_HALF">Second Half (2 PM - 8 PM)</SelectItem>
                   </SelectContent>
                 </Select>
+                {validationErrors.preferredTime && showValidationFeedback && (
+                  <p className="text-red-500 text-sm mt-1">Please select a time slot</p>
+                )}
               </div>
               
               <div className="bg-muted/50 p-4 rounded-lg">
@@ -1384,6 +1441,52 @@ const Booking: React.FC = () => {
       default:
         return null;
     }
+  };
+
+  const validateCurrentStep = () => {
+    const errors: {[key: string]: boolean} = {};
+    
+    switch (currentStep) {
+      case 1:
+        if (!formData.fullName) errors.fullName = true;
+        if (!formData.phone) errors.phone = true;
+        if (!formData.email) errors.email = true;
+        break;
+      case 2:
+        if (!formData.service) errors.service = true;
+        if (formData.service === 'Other' && !formData.customService) errors.customService = true;
+        break;
+      case 3:
+        if (!formData.address) errors.address = true;
+        break;
+      case 4:
+        if (!formData.serviceDate) errors.serviceDate = true;
+        if (!formData.preferredTime) errors.preferredTime = true;
+        break;
+    }
+    
+    setValidationErrors(errors);
+    setShowValidationFeedback(true);
+    
+    // Auto-focus on first missing field
+    const firstErrorField = Object.keys(errors)[0];
+    if (firstErrorField) {
+      setTimeout(() => {
+        const element = document.getElementById(firstErrorField);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.focus();
+        }
+      }, 100);
+    }
+    
+    // Hide validation feedback after 3 seconds
+    setTimeout(() => {
+      setShowValidationFeedback(false);
+      setValidationErrors({});
+    }, 3000);
+    
+    return Object.keys(errors).length === 0;
   };
 
   const canProceed = () => {
@@ -1743,6 +1846,25 @@ const Booking: React.FC = () => {
               })}
             </div>
 
+            {/* Validation Feedback Banner */}
+            {showValidationFeedback && Object.keys(validationErrors).length > 0 && (
+              <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">!</span>
+                  </div>
+                  <div>
+                    <p className="text-red-800 dark:text-red-200 font-medium">
+                      Please complete the required fields to continue
+                    </p>
+                    <p className="text-red-600 dark:text-red-300 text-sm mt-1">
+                      Missing fields are highlighted in red below
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Form Content */}
             <Card className="mb-6">
               <CardContent className="p-6 max-h-[70vh] overflow-y-auto">
@@ -1766,7 +1888,11 @@ const Booking: React.FC = () => {
                 <Button
                   onClick={nextStep}
                   disabled={!canProceed()}
-                  className="flex items-center"
+                  className={`flex items-center ${
+                    !canProceed() 
+                      ? 'opacity-50 cursor-not-allowed hover:opacity-50' 
+                      : 'hover:scale-105 transition-transform'
+                  }`}
                 >
                   Next
                   <ChevronRight className="w-4 h-4 ml-1" />
