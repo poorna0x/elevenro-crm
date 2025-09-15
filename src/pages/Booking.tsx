@@ -691,9 +691,11 @@ const Booking: React.FC = () => {
             toast.warning('Location detected but detailed address lookup failed. Please verify the coordinates.');
           }
           
-          // Turn off loading state after address is updated
-          loadingRef.current = false;
-          setIsLoadingLocation(false);
+          // Add a small delay to ensure the address field is fully updated and visible
+          setTimeout(() => {
+            loadingRef.current = false;
+            setIsLoadingLocation(false);
+          }, 800); // 800ms delay to ensure smooth transition
         })
         .catch(() => {
           const coordinateAddress = `Current Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
@@ -704,9 +706,11 @@ const Booking: React.FC = () => {
           }));
           toast.warning('Location detected but address lookup failed. Please verify the coordinates.');
           
-          // Turn off loading state after address is updated
-          loadingRef.current = false;
-          setIsLoadingLocation(false);
+          // Add a small delay to ensure the address field is fully updated and visible
+          setTimeout(() => {
+            loadingRef.current = false;
+            setIsLoadingLocation(false);
+          }, 800); // 800ms delay to ensure smooth transition
         });
     } catch (error) {
       console.error('Error getting location:', error);
