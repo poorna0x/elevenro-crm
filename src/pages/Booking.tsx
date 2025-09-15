@@ -691,11 +691,16 @@ const Booking: React.FC = () => {
             toast.warning('Location detected but detailed address lookup failed. Please verify the coordinates.');
           }
           
-          // Add a small delay to ensure the address field is fully updated and visible
-          setTimeout(() => {
-            loadingRef.current = false;
-            setIsLoadingLocation(false);
-          }, 800); // 800ms delay to ensure smooth transition
+          // Use requestAnimationFrame to ensure the DOM is updated before turning off loading
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              // Double requestAnimationFrame ensures the address field is fully rendered
+              setTimeout(() => {
+                loadingRef.current = false;
+                setIsLoadingLocation(false);
+              }, 300); // Shorter delay after DOM update
+            });
+          });
         })
         .catch(() => {
           const coordinateAddress = `Current Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
@@ -706,11 +711,16 @@ const Booking: React.FC = () => {
           }));
           toast.warning('Location detected but address lookup failed. Please verify the coordinates.');
           
-          // Add a small delay to ensure the address field is fully updated and visible
-          setTimeout(() => {
-            loadingRef.current = false;
-            setIsLoadingLocation(false);
-          }, 800); // 800ms delay to ensure smooth transition
+          // Use requestAnimationFrame to ensure the DOM is updated before turning off loading
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              // Double requestAnimationFrame ensures the address field is fully rendered
+              setTimeout(() => {
+                loadingRef.current = false;
+                setIsLoadingLocation(false);
+              }, 300); // Shorter delay after DOM update
+            });
+          });
         });
     } catch (error) {
       console.error('Error getting location:', error);
