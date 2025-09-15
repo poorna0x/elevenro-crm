@@ -35,7 +35,7 @@ interface FormData {
   
   // Scheduling
   serviceDate: string;
-  preferredTime: 'MORNING' | 'AFTERNOON' | 'EVENING';
+  preferredTime: 'FIRST_HALF' | 'SECOND_HALF';
   
   // Additional Information
   description: string;
@@ -77,7 +77,7 @@ const Booking: React.FC = () => {
       address: '',
       coordinates: { lat: 0, lng: 0 },
       serviceDate: getTomorrowDate(),
-      preferredTime: 'MORNING',
+      preferredTime: 'FIRST_HALF',
       description: '',
       images: []
     });
@@ -99,7 +99,7 @@ const Booking: React.FC = () => {
     address: '',
     coordinates: { lat: 0, lng: 0 },
     serviceDate: getTomorrowDate(),
-    preferredTime: 'MORNING',
+    preferredTime: 'FIRST_HALF',
     description: '',
     images: []
   });
@@ -710,6 +710,7 @@ const Booking: React.FC = () => {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setShowSuccessLoader(true);
     
     try {
       // Upload images to Cloudinary
@@ -882,9 +883,6 @@ const Booking: React.FC = () => {
         images: formData.images,
       });
       
-      // Show success loader first
-      setShowSuccessLoader(true);
-      
       // Show confirmation page after 2 seconds
       setTimeout(() => {
         setShowSuccessLoader(false);
@@ -894,6 +892,7 @@ const Booking: React.FC = () => {
     } catch (error) {
       console.error('Booking error:', error);
       toast.error(`Booking failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setShowSuccessLoader(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -1278,14 +1277,13 @@ const Booking: React.FC = () => {
               
               <div>
                 <Label htmlFor="preferredTime">Time Slot *</Label>
-                <Select value={formData.preferredTime} onValueChange={(value: 'MORNING' | 'AFTERNOON' | 'EVENING') => handleInputChange('preferredTime', value)}>
+                <Select value={formData.preferredTime} onValueChange={(value: 'FIRST_HALF' | 'SECOND_HALF') => handleInputChange('preferredTime', value)}>
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select preferred time" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="MORNING">Morning (9 AM - 12 PM)</SelectItem>
-                    <SelectItem value="AFTERNOON">Afternoon (12 PM - 5 PM)</SelectItem>
-                    <SelectItem value="EVENING">Evening (5 PM - 8 PM)</SelectItem>
+                    <SelectItem value="FIRST_HALF">First Half (9 AM - 2 PM)</SelectItem>
+                    <SelectItem value="SECOND_HALF">Second Half (2 PM - 8 PM)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1294,7 +1292,7 @@ const Booking: React.FC = () => {
                 <h4 className="font-medium mb-2">Service Information</h4>
                 <div className="space-y-1 text-sm text-muted-foreground">
                   <p>• We'll call you to confirm the exact time</p>
-                  <p>• Our technician will arrive within the selected slot</p>
+                  <p>• Our technician will arrive within the selected time slot</p>
                   <p>• Service typically takes 1-2 hours</p>
                   <p>• Free consultation and quote provided</p>
                 </div>
@@ -1454,7 +1452,9 @@ const Booking: React.FC = () => {
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Service Type</Label>
-                      <p className="text-foreground font-medium">{bookingDetails.serviceType}</p>
+                      <p className="text-foreground font-medium">
+                        {bookingDetails.serviceType === 'RO' ? 'RO Water Purifier' : 'Water Softener'}
+                      </p>
                     </div>
                   </div>
 
@@ -1467,21 +1467,29 @@ const Booking: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Service</Label>
-                        <p className="text-foreground font-medium">{bookingDetails.service}</p>
+                        <p className="text-foreground font-medium">
+                          {bookingDetails.service.charAt(0).toUpperCase() + bookingDetails.service.slice(1).toLowerCase()}
+                        </p>
                       </div>
                       <div>
                         <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Brand</Label>
-                        <p className="text-foreground font-medium">{bookingDetails.brandName}</p>
+                        <p className="text-foreground font-medium">
+                          {bookingDetails.brandName.charAt(0).toUpperCase() + bookingDetails.brandName.slice(1).toLowerCase()}
+                        </p>
                       </div>
                       {bookingDetails.modelName && (
                         <div>
                           <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Model</Label>
-                          <p className="text-foreground font-medium">{bookingDetails.modelName}</p>
+                          <p className="text-foreground font-medium">
+                            {bookingDetails.modelName.charAt(0).toUpperCase() + bookingDetails.modelName.slice(1).toLowerCase()}
+                          </p>
                         </div>
                       )}
                       <div>
                         <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Preferred Time</Label>
-                        <p className="text-foreground font-medium">{bookingDetails.preferredTime}</p>
+                        <p className="text-foreground font-medium">
+                          {bookingDetails.preferredTime === 'FIRST_HALF' ? 'First Half' : 'Second Half'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1506,7 +1514,9 @@ const Booking: React.FC = () => {
                       </div>
                       <div>
                         <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Time Slot</Label>
-                        <p className="text-foreground font-medium">{bookingDetails.preferredTime}</p>
+                        <p className="text-foreground font-medium">
+                          {bookingDetails.preferredTime === 'FIRST_HALF' ? 'First Half' : 'Second Half'}
+                        </p>
                       </div>
                     </div>
                   </div>
