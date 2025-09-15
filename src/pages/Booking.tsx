@@ -55,8 +55,7 @@ const Booking: React.FC = () => {
   const [modelSuggestions, setModelSuggestions] = useState<string[]>([]);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
-  const [showValidationFeedback, setShowValidationFeedback] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
 
   // Get tomorrow's date
   const getTomorrowDate = () => {
@@ -321,13 +320,9 @@ const Booking: React.FC = () => {
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Clear validation errors for this field
-    if (validationErrors[field]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+    // Clear validation when user starts typing
+    if (showValidation) {
+      setShowValidation(false);
     }
     
     // Reset service when service type changes
@@ -392,10 +387,41 @@ const Booking: React.FC = () => {
     if (currentStep < totalSteps) {
       if (canProceed()) {
         setCurrentStep(currentStep + 1);
-        setValidationErrors({});
-        setShowValidationFeedback(false);
+        setShowValidation(false);
       } else {
-        validateCurrentStep();
+        // Show validation and move to first missing field
+        setShowValidation(true);
+        let firstMissingField = '';
+        
+        switch (currentStep) {
+          case 1:
+            if (!formData.fullName) { firstMissingField = 'fullName'; }
+            else if (!formData.phone) { firstMissingField = 'phone'; }
+            else if (!formData.email) { firstMissingField = 'email'; }
+            break;
+          case 2:
+            if (!formData.service) { firstMissingField = 'service'; }
+            else if (formData.service === 'Other' && !formData.customService) { firstMissingField = 'customService'; }
+            break;
+          case 3:
+            if (!formData.address) { firstMissingField = 'address'; }
+            break;
+          case 4:
+            if (!formData.serviceDate) { firstMissingField = 'serviceDate'; }
+            else if (!formData.preferredTime) { firstMissingField = 'preferredTime'; }
+            break;
+        }
+        
+        // Auto-focus on first missing field
+        if (firstMissingField) {
+          setTimeout(() => {
+            const element = document.getElementById(firstMissingField);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.focus();
+            }
+          }, 100);
+        }
       }
     }
   };
@@ -956,11 +982,12 @@ const Booking: React.FC = () => {
                   value={formData.fullName}
                   onChange={(e) => handleInputChange('fullName', e.target.value)}
                   placeholder="Enter your full name"
-                  className={`mt-1 ${validationErrors.fullName ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
+                  className={`mt-1 ${
+                    showValidation && !formData.fullName 
+                      ? 'border-2 border-black dark:border-white' 
+                      : ''
+                  }`}
                 />
-                {validationErrors.fullName && showValidationFeedback && (
-                  <p className="text-red-500 text-sm mt-1">Full name is required</p>
-                )}
               </div>
               
               <div>
@@ -971,11 +998,12 @@ const Booking: React.FC = () => {
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="+91 98765 43210"
-                  className={`mt-1 ${validationErrors.phone ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
+                  className={`mt-1 ${
+                    showValidation && !formData.phone 
+                      ? 'border-2 border-black dark:border-white' 
+                      : ''
+                  }`}
                 />
-                {validationErrors.phone && showValidationFeedback && (
-                  <p className="text-red-500 text-sm mt-1">Phone number is required</p>
-                )}
               </div>
               
               <div>
@@ -986,11 +1014,12 @@ const Booking: React.FC = () => {
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="your.email@example.com"
-                  className={`mt-1 ${validationErrors.email ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
+                  className={`mt-1 ${
+                    showValidation && !formData.email 
+                      ? 'border-2 border-black dark:border-white' 
+                      : ''
+                  }`}
                 />
-                {validationErrors.email && showValidationFeedback && (
-                  <p className="text-red-500 text-sm mt-1">Email address is required</p>
-                )}
               </div>
               
               <div>
@@ -1034,7 +1063,11 @@ const Booking: React.FC = () => {
               <div>
                 <Label htmlFor="service">Service Required *</Label>
                 <Select value={formData.service} onValueChange={(value) => handleInputChange('service', value)}>
-                  <SelectTrigger className={`mt-1 ${validationErrors.service ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}>
+                  <SelectTrigger className={`mt-1 ${
+                    showValidation && !formData.service 
+                      ? 'border-2 border-black dark:border-white' 
+                      : ''
+                  }`}>
                     <SelectValue placeholder="Select service" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1045,9 +1078,6 @@ const Booking: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {validationErrors.service && showValidationFeedback && (
-                  <p className="text-red-500 text-sm mt-1">Please select a service</p>
-                )}
               </div>
               
               {/* Show custom service input when "Other" is selected */}
@@ -1059,11 +1089,12 @@ const Booking: React.FC = () => {
                     value={formData.customService}
                     onChange={(e) => handleInputChange('customService', e.target.value)}
                     placeholder="Describe the specific service you need..."
-                    className={`mt-1 ${validationErrors.customService ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
+                    className={`mt-1 ${
+                      showValidation && formData.service === 'Other' && !formData.customService 
+                        ? 'border-2 border-black dark:border-white' 
+                        : ''
+                    }`}
                   />
-                  {validationErrors.customService && showValidationFeedback && (
-                    <p className="text-red-500 text-sm mt-1">Please specify the service details</p>
-                  )}
                 </div>
               )}
               
@@ -1170,12 +1201,13 @@ const Booking: React.FC = () => {
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     placeholder="Please click 'Use Current Location' for easy navigation, or enter your complete address manually..."
-                    className={`mt-1 min-h-[100px] ${validationErrors.address ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
+                    className={`mt-1 min-h-[100px] ${
+                      showValidation && !formData.address 
+                        ? 'border-2 border-black dark:border-white' 
+                        : ''
+                    }`}
                   />
                 </div>
-                {validationErrors.address && showValidationFeedback && (
-                  <p className="text-red-500 text-sm mt-1">Service address is required</p>
-                )}
               </div>
               
               <Button
@@ -1328,17 +1360,22 @@ const Booking: React.FC = () => {
                   value={formData.serviceDate}
                   onChange={(e) => handleInputChange('serviceDate', e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
-                  className={`mt-1 ${validationErrors.serviceDate ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}
+                  className={`mt-1 ${
+                    showValidation && !formData.serviceDate 
+                      ? 'border-2 border-black dark:border-white' 
+                      : ''
+                  }`}
                 />
-                {validationErrors.serviceDate && showValidationFeedback && (
-                  <p className="text-red-500 text-sm mt-1">Please select a service date</p>
-                )}
               </div>
               
               <div>
                 <Label htmlFor="preferredTime">Time Slot *</Label>
                 <Select value={formData.preferredTime} onValueChange={(value: 'FIRST_HALF' | 'SECOND_HALF') => handleInputChange('preferredTime', value)}>
-                  <SelectTrigger className={`mt-1 ${validationErrors.preferredTime ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : ''}`}>
+                  <SelectTrigger className={`mt-1 ${
+                    showValidation && !formData.preferredTime 
+                      ? 'border-2 border-black dark:border-white' 
+                      : ''
+                  }`}>
                     <SelectValue placeholder="Select preferred time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1346,9 +1383,6 @@ const Booking: React.FC = () => {
                     <SelectItem value="SECOND_HALF">Second Half (2 PM - 8 PM)</SelectItem>
                   </SelectContent>
                 </Select>
-                {validationErrors.preferredTime && showValidationFeedback && (
-                  <p className="text-red-500 text-sm mt-1">Please select a time slot</p>
-                )}
               </div>
               
               <div className="bg-muted/50 p-4 rounded-lg">
@@ -1428,51 +1462,6 @@ const Booking: React.FC = () => {
     }
   };
 
-  const validateCurrentStep = () => {
-    const errors: {[key: string]: boolean} = {};
-    
-    switch (currentStep) {
-      case 1:
-        if (!formData.fullName) errors.fullName = true;
-        if (!formData.phone) errors.phone = true;
-        if (!formData.email) errors.email = true;
-        break;
-      case 2:
-        if (!formData.service) errors.service = true;
-        if (formData.service === 'Other' && !formData.customService) errors.customService = true;
-        break;
-      case 3:
-        if (!formData.address) errors.address = true;
-        break;
-      case 4:
-        if (!formData.serviceDate) errors.serviceDate = true;
-        if (!formData.preferredTime) errors.preferredTime = true;
-        break;
-    }
-    
-    setValidationErrors(errors);
-    setShowValidationFeedback(true);
-    
-    // Auto-focus on first missing field
-    const firstErrorField = Object.keys(errors)[0];
-    if (firstErrorField) {
-      setTimeout(() => {
-        const element = document.getElementById(firstErrorField);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          element.focus();
-        }
-      }, 100);
-    }
-    
-    // Hide validation feedback after 3 seconds
-    setTimeout(() => {
-      setShowValidationFeedback(false);
-      setValidationErrors({});
-    }, 3000);
-    
-    return Object.keys(errors).length === 0;
-  };
 
   const canProceed = () => {
     switch (currentStep) {
@@ -1490,6 +1479,10 @@ const Booking: React.FC = () => {
       default:
         return false;
     }
+  };
+
+  const hasMissingFields = () => {
+    return !canProceed();
   };
 
   // Show full screen success loader
@@ -1831,24 +1824,6 @@ const Booking: React.FC = () => {
               })}
             </div>
 
-            {/* Validation Feedback Banner */}
-            {showValidationFeedback && Object.keys(validationErrors).length > 0 && (
-              <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">!</span>
-                  </div>
-                  <div>
-                    <p className="text-red-800 dark:text-red-200 font-medium">
-                      Please complete the required fields to continue
-                    </p>
-                    <p className="text-red-600 dark:text-red-300 text-sm mt-1">
-                      Missing fields are highlighted in red below
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Form Content */}
             <Card className="mb-6">
@@ -1872,11 +1847,10 @@ const Booking: React.FC = () => {
               {currentStep < totalSteps ? (
                 <Button
                   onClick={nextStep}
-                  disabled={!canProceed()}
-                  className={`flex items-center ${
-                    !canProceed() 
-                      ? 'opacity-50 cursor-not-allowed hover:opacity-50' 
-                      : 'hover:scale-105 transition-transform'
+                  className={`flex items-center hover:scale-105 transition-transform ${
+                    showValidation && hasMissingFields() 
+                      ? 'border-2 border-black dark:border-white' 
+                      : ''
                   }`}
                 >
                   Next
