@@ -81,7 +81,7 @@ const Testimonials = () => {
       gender: "female"
     },
     {
-      quote: "Best RO repair service in Bengaluru! They fixed our RO system quickly in BTM Layout. The service was prompt and the pricing was very reasonable.",
+      quote: "Best RO repair service in Bengaluru! They fixed our RO system quickly in BTM Layout. The service was prompt, quick and the pricing was very reasonable.",
       author: "Naveen Kumar",
       position: "Homeowner, BTM Layout",
       gender: "male"
