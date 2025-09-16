@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Header from '@/components/Header';
+import AdminHeader from '@/components/AdminHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -335,7 +335,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <AdminHeader />
       
       <main className="container mx-auto px-4 py-4 sm:py-8">
         {/* Page Header */}
