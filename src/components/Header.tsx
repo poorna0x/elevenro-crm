@@ -54,8 +54,13 @@ const Header = () => {
     setActivePage(page);
     
     if (page === 'home') {
-      // Navigate to homepage
-      navigate('/');
+      if (location.pathname === '/') {
+        // Already on homepage, just scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        // Navigate to homepage
+        navigate('/');
+      }
     } else if (page === 'booking') {
       // Navigate to booking page
       navigate('/book');
@@ -64,13 +69,9 @@ const Header = () => {
       navigate('/admin');
     } else if (location.pathname === '/') {
       // On homepage, scroll to sections
-      if (page === 'home') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        const element = document.getElementById(page);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
+      const element = document.getElementById(page);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
       }
     } else {
       // On other pages, navigate to homepage and then scroll to section

@@ -1,9 +1,30 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User } from 'lucide-react';
+import { User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Testimonials = () => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: -320, // Width of one testimonial card + gap
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: 320, // Width of one testimonial card + gap
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const testimonials = [
     {
       quote: "Hydrogen RO installed our new RO system perfectly in Koramangala. The water taste is amazing and the service was professional throughout. Best RO installation service in Bengaluru!",
@@ -82,8 +103,31 @@ const Testimonials = () => {
           </p>
         </div>
         
-        <div className="overflow-x-auto pb-4 infinite-scroll">
-          <div className="flex gap-6 min-w-max">
+        <div className="relative">
+          {/* Navigation arrows - only show on desktop */}
+          <div className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 -ml-16">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={scrollLeft}
+              className="rounded-full bg-background/80 backdrop-blur-sm border-border/50 hover:scale-110 transition-transform duration-200 shadow-lg"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 -mr-16">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={scrollRight}
+              className="rounded-full bg-background/80 backdrop-blur-sm border-border/50 hover:scale-110 transition-transform duration-200 shadow-lg"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div ref={scrollContainerRef} className="overflow-x-auto pb-4 infinite-scroll">
+            <div className="flex gap-6 min-w-max">
             {/* First set of testimonials */}
             {testimonials.map((testimonial, index) => (
               <div 
@@ -159,6 +203,7 @@ const Testimonials = () => {
                 </div>
               </div>
             ))}
+            </div>
           </div>
         </div>
       </div>
