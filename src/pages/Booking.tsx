@@ -14,6 +14,7 @@ import { db } from '@/lib/supabase';
 import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { emailService } from '@/lib/email';
 import { generateJobNumber } from '@/lib/supabase';
+import MathCaptcha from '@/components/MathCaptcha';
 
 interface FormData {
   // Customer Information
@@ -56,6 +57,7 @@ const Booking: React.FC = () => {
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
 
   // Get tomorrow's date
   const getTomorrowDate = () => {
@@ -323,11 +325,11 @@ const Booking: React.FC = () => {
     { id: 2, title: 'Service Details', icon: Wrench, emoji: '🔧' },
     { id: 3, title: 'Location', icon: MapPin, emoji: '📍' },
     { id: 4, title: 'Schedule', icon: Clock, emoji: '⏰' },
-    { id: 5, title: 'Review & Submit', icon: Check, emoji: '✅' }
+    { id: 5, title: 'Review', icon: Check, emoji: '✅' }
   ];
 
   const totalSteps = steps.length;
-  const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+  const progress = currentStep === 6 ? 100 : ((currentStep - 1) / (totalSteps - 1)) * 100;
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -396,7 +398,7 @@ const Booking: React.FC = () => {
   };
 
   const nextStep = () => {
-    if (currentStep < totalSteps) {
+    if (currentStep < 6) {
       if (canProceed()) {
         setCurrentStep(currentStep + 1);
         setShowValidation(false);
@@ -855,6 +857,16 @@ const Booking: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    // Check if CAPTCHA is verified before proceeding
+    if (!isCaptchaVerified) {
+      toast.error('Please complete the security check before submitting your booking.');
+      return;
+    }
+    
+    await handleAutoSubmit();
+  };
+
+  const handleAutoSubmit = async () => {
     setIsSubmitting(true);
     setShowSuccessLoader(true);
     
@@ -1494,7 +1506,7 @@ const Booking: React.FC = () => {
           <div className="space-y-6">
             <div className="text-center mb-6">
               <Check className="w-12 h-12 mx-auto mb-3 text-primary" />
-              <h3 className="text-xl font-semibold text-foreground">Review & Submit</h3>
+              <h3 className="text-xl font-semibold text-foreground">Review Your Booking</h3>
               <p className="text-muted-foreground">Please review your booking details</p>
             </div>
             
@@ -1548,6 +1560,27 @@ const Booking: React.FC = () => {
           </div>
         );
 
+      case 6:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-foreground">Security Verification</h3>
+              <p className="text-muted-foreground">Complete the security check to submit your booking</p>
+            </div>
+            
+            <div className="max-w-md mx-auto">
+              <MathCaptcha 
+                onVerify={setIsCaptchaVerified}
+                onAutoSubmit={handleAutoSubmit}
+                className="mb-4"
+              />
+              <p className="text-xs text-muted-foreground text-center">
+                This helps us prevent automated submissions and ensure your booking is processed securely.
+              </p>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -1567,6 +1600,8 @@ const Booking: React.FC = () => {
         return formData.serviceDate && formData.preferredTime;
       case 5:
         return true;
+      case 6:
+        return isCaptchaVerified;
       default:
         return false;
     }
@@ -1870,48 +1905,52 @@ const Booking: React.FC = () => {
               </div>
             </div>
 
-            {/* Progress Bar */}
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Step {currentStep} of {totalSteps}
-                </span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {Math.round(progress)}% Complete
-                </span>
+            {/* Progress Bar - Hidden on step 6 */}
+            {currentStep !== 6 && (
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Step {currentStep} of {totalSteps}
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {Math.round(progress)}% Complete
+                  </span>
+                </div>
+                <Progress value={progress} className="h-2" />
               </div>
-              <Progress value={progress} className="h-2" />
-            </div>
+            )}
 
-            {/* Step Indicators */}
-            <div className="flex justify-between mb-8">
-              {steps.map((step) => {
-                const Icon = step.icon;
-                const isActive = currentStep === step.id;
-                const isCompleted = currentStep > step.id;
-                
-                return (
-                  <div key={step.id} className="flex flex-col items-center">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
-                      isActive ? 'bg-primary text-primary-foreground' :
-                      isCompleted ? 'bg-green-500 text-white' :
-                      'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                    }`}>
-                      {/* Keep Lucide icons as primary, emojis as fallback */}
-                      <Icon className="w-5 h-5" />
+            {/* Step Indicators - Hidden on step 6 */}
+            {currentStep !== 6 && (
+              <div className="flex justify-between mb-8">
+                {steps.map((step) => {
+                  const Icon = step.icon;
+                  const isActive = currentStep === step.id;
+                  const isCompleted = currentStep > step.id;
+                  
+                  return (
+                    <div key={step.id} className="flex flex-col items-center">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
+                        isActive ? 'bg-primary text-primary-foreground' :
+                        isCompleted ? 'bg-green-500 text-white' :
+                        'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                      }`}>
+                        {/* Keep Lucide icons as primary, emojis as fallback */}
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      {/* Show text only on desktop */}
+                      <span className={`hidden md:block text-xs text-center ${
+                        isActive ? 'text-primary font-medium' :
+                        isCompleted ? 'text-green-600 dark:text-green-400 font-medium' :
+                        'text-gray-500 dark:text-gray-400'
+                      }`}>
+                        {step.title}
+                      </span>
                     </div>
-                    {/* Show text only on desktop */}
-                    <span className={`hidden md:block text-xs text-center ${
-                      isActive ? 'text-primary font-medium' :
-                      isCompleted ? 'text-green-600 dark:text-green-400 font-medium' :
-                      'text-gray-500 dark:text-gray-400'
-                    }`}>
-                      {step.title}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
 
 
             {/* Form Content */}
@@ -1921,19 +1960,20 @@ const Booking: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-                className="flex items-center"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
-              </Button>
+            {/* Navigation Buttons - Hidden on step 6 */}
+            {currentStep !== 6 && (
+              <div className="flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                  className="flex items-center"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Previous
+                </Button>
 
-              {currentStep < totalSteps ? (
+              {currentStep < 6 ? (
                 <Button
                   onClick={nextStep}
                   className={`flex items-center hover:scale-105 transition-transform ${
@@ -1942,7 +1982,7 @@ const Booking: React.FC = () => {
                       : ''
                   }`}
                 >
-                  Next
+                  {currentStep === 5 ? 'Security Check' : 'Next'}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
@@ -1955,7 +1995,8 @@ const Booking: React.FC = () => {
                   <Check className="w-4 h-4 ml-1" />
                 </Button>
               )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

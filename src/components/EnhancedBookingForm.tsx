@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { db, generateJobNumber } from '@/lib/supabase';
 import { emailService } from '@/lib/email';
 import { BookingFormData } from '@/types';
+import MathCaptcha from '@/components/MathCaptcha';
 
 // Validation schema
 const bookingSchema = z.object({
@@ -67,6 +68,7 @@ const EnhancedBookingForm = () => {
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [showCallOptions, setShowCallOptions] = useState(false);
   const [showSuccessLoader, setShowSuccessLoader] = useState(false);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
 
   const {
     register,
@@ -107,9 +109,14 @@ const EnhancedBookingForm = () => {
   };
 
   const handleNext = async () => {
-    const isValid = await trigger();
-    if (isValid && currentStep < 5) {
+    if (currentStep === 5) {
+      // Step 5 (Review) doesn't need form validation
       setCurrentStep(currentStep + 1);
+    } else {
+      const isValid = await trigger();
+      if (isValid && currentStep < 6) {
+        setCurrentStep(currentStep + 1);
+      }
     }
   };
 
@@ -186,6 +193,16 @@ const EnhancedBookingForm = () => {
   };
 
   const onSubmit = async (data: BookingFormValues) => {
+    // Check if CAPTCHA is verified before proceeding
+    if (!isCaptchaVerified) {
+      toast.error('Please complete the security check before submitting your booking.');
+      return;
+    }
+    
+    await handleAutoSubmit(data);
+  };
+
+  const handleAutoSubmit = async (data: BookingFormValues) => {
     setIsSubmitting(true);
     
     try {
@@ -299,6 +316,8 @@ const EnhancedBookingForm = () => {
         return watchedValues.preferredDate && watchedValues.preferredTimeSlot;
       case 5:
         return true;
+      case 6:
+        return isCaptchaVerified;
       default:
         return false;
     }
@@ -476,33 +495,37 @@ const EnhancedBookingForm = () => {
           Book RO Service
         </CardTitle>
         
-        {/* Progress Steps */}
-        <div className="flex items-center justify-between mt-4">
-          {[1, 2, 3, 4, 5].map((step) => (
-            <div key={step} className="flex items-center">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                step <= currentStep 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-muted text-muted-foreground'
-              }`}>
-                {step < currentStep ? <Check className="w-3 h-3" /> : step}
-              </div>
-              {step < 5 && (
-                <div className={`w-6 h-1 mx-1 ${
-                  step < currentStep ? 'bg-primary' : 'bg-muted'
-                }`} />
-              )}
+        {/* Progress Steps - Hidden on step 6 */}
+        {currentStep !== 6 && (
+          <>
+            <div className="flex items-center justify-between mt-4">
+              {[1, 2, 3, 4, 5].map((step) => (
+                <div key={step} className="flex items-center">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                    step <= currentStep 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {step < currentStep ? <Check className="w-3 h-3" /> : step}
+                  </div>
+                  {step < 5 && (
+                    <div className={`w-6 h-1 mx-1 ${
+                      step < currentStep ? 'bg-primary' : 'bg-muted'
+                    }`} />
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        
-        <div className="flex justify-between text-xs text-muted-foreground mt-2">
-          <span>Basic</span>
-          <span>Service</span>
-          <span>Device</span>
-          <span>Schedule</span>
-          <span>Confirm</span>
-        </div>
+            
+            <div className="flex justify-between text-xs text-muted-foreground mt-2">
+              <span>Basic</span>
+              <span>Service</span>
+              <span>Device</span>
+              <span>Schedule</span>
+              <span>Review</span>
+            </div>
+          </>
+        )}
       </CardHeader>
       
       <CardContent className="p-6">
@@ -951,42 +974,67 @@ const EnhancedBookingForm = () => {
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-between pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentStep === 1}
-              className="flex items-center gap-2"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </Button>
-            
-            {currentStep < 5 ? (
-              <Button
-                type="button"
-                onClick={handleNext}
-                disabled={!isStepValid(currentStep)}
-                className="flex items-center gap-2"
-              >
-                {currentStep === 4 ? 'Review & Confirm' : 'Next'}
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black hover:scale-105 transition-transform duration-300"
-              >
-                <Check className="w-4 h-4" />
-                Confirm & Book Service
-              </Button>
+            {/* Step 6: Security Check */}
+            {currentStep === 6 && (
+              <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-lg font-semibold">Security Verification</h3>
+                  <p className="text-muted-foreground">
+                    Complete the security check to submit your booking
+                  </p>
+                </div>
+                
+                <div className="max-w-md mx-auto">
+                  <MathCaptcha 
+                    onVerify={setIsCaptchaVerified}
+                    onAutoSubmit={() => handleAutoSubmit(watchedValues)}
+                    className="mb-4"
+                  />
+                  <p className="text-xs text-muted-foreground text-center">
+                    This helps us prevent automated submissions and ensure your booking is processed securely.
+                  </p>
+                </div>
+              </div>
             )}
           </div>
+
+          {/* Navigation Buttons - Hidden on step 6 */}
+          {currentStep !== 6 && (
+            <div className="flex justify-between pt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentStep === 1}
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </Button>
+              
+              {currentStep < 6 ? (
+                <Button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!isStepValid(currentStep)}
+                  className="flex items-center gap-2"
+                >
+                  {currentStep === 5 ? 'Security Check' : currentStep === 4 ? 'Review & Confirm' : 'Next'}
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !isCaptchaVerified}
+                  className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black hover:scale-105 transition-transform duration-300"
+                >
+                  <Check className="w-4 h-4" />
+                  Confirm & Book Service
+                </Button>
+              )}
+            </div>
+          )}
         </form>
       </CardContent>
     </Card>
