@@ -338,8 +338,57 @@ const Booking: React.FC = () => {
   const totalSteps = steps.length;
   const progress = currentStep === 6 ? 100 : ((currentStep - 1) / (totalSteps - 1)) * 100;
 
+  // Phone number validation and normalization
+  const normalizePhoneNumber = (phone: string): string => {
+    // Remove all non-digit characters
+    let cleaned = phone.replace(/\D/g, '');
+    
+    // Handle different formats
+    if (cleaned.startsWith('91') && cleaned.length === 12) {
+      // Remove country code 91
+      cleaned = cleaned.substring(2);
+    } else if (cleaned.startsWith('0') && cleaned.length === 11) {
+      // Remove leading 0
+      cleaned = cleaned.substring(1);
+    } else if (cleaned.length > 10) {
+      // If longer than 10, take last 10 digits
+      cleaned = cleaned.slice(-10);
+    }
+    
+    // Ensure exactly 10 digits
+    if (cleaned.length === 10) {
+      return cleaned;
+    }
+    
+    return phone; // Return original if can't normalize
+  };
+
+  // Email validation
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Phone number validation
+  const validatePhoneNumber = (phone: string): boolean => {
+    const normalized = normalizePhoneNumber(phone);
+    return normalized.length === 10 && /^[6-9]\d{9}$/.test(normalized);
+  };
+
   const handleInputChange = (field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    let processedValue = value;
+    
+    // Process phone numbers
+    if (field === 'phone' || field === 'alternatePhone') {
+      processedValue = normalizePhoneNumber(value);
+    }
+    
+    // Process email
+    if (field === 'email') {
+      processedValue = value.toLowerCase().trim();
+    }
+    
+    setFormData(prev => ({ ...prev, [field]: processedValue }));
     
     // Clear validation when user starts typing
     if (showValidation) {
@@ -1113,13 +1162,25 @@ const Booking: React.FC = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="+91 98765 43210"
+                  placeholder="9876543210"
                   className={`mt-1 ${
-                    showValidation && !formData.phone 
-                      ? 'border-2 border-black dark:border-white' 
+                    showValidation && (!formData.phone || !validatePhoneNumber(formData.phone))
+                      ? 'border-2 border-red-500' 
+                      : formData.phone && validatePhoneNumber(formData.phone)
+                      ? 'border-2 border-green-500'
                       : ''
                   }`}
                 />
+                {formData.phone && !validatePhoneNumber(formData.phone) && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Please enter a valid 10-digit phone number
+                  </p>
+                )}
+                {formData.phone && validatePhoneNumber(formData.phone) && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Valid phone number
+                  </p>
+                )}
               </div>
               
               <div>
@@ -1131,11 +1192,23 @@ const Booking: React.FC = () => {
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="your.email@example.com"
                   className={`mt-1 ${
-                    showValidation && !formData.email 
-                      ? 'border-2 border-black dark:border-white' 
+                    showValidation && (!formData.email || !validateEmail(formData.email))
+                      ? 'border-2 border-red-500' 
+                      : formData.email && validateEmail(formData.email)
+                      ? 'border-2 border-green-500'
                       : ''
                   }`}
                 />
+                {formData.email && !validateEmail(formData.email) && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Please enter a valid email address
+                  </p>
+                )}
+                {formData.email && validateEmail(formData.email) && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Valid email address
+                  </p>
+                )}
               </div>
               
               <div>
@@ -1145,9 +1218,25 @@ const Booking: React.FC = () => {
                   type="tel"
                   value={formData.alternatePhone}
                   onChange={(e) => handleInputChange('alternatePhone', e.target.value)}
-                  placeholder="+91 98765 43211"
-                  className="mt-1"
+                  placeholder="9876543211"
+                  className={`mt-1 ${
+                    formData.alternatePhone && !validatePhoneNumber(formData.alternatePhone)
+                      ? 'border-2 border-red-500' 
+                      : formData.alternatePhone && validatePhoneNumber(formData.alternatePhone)
+                      ? 'border-2 border-green-500'
+                      : ''
+                  }`}
                 />
+                {formData.alternatePhone && !validatePhoneNumber(formData.alternatePhone) && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Please enter a valid 10-digit phone number
+                  </p>
+                )}
+                {formData.alternatePhone && validatePhoneNumber(formData.alternatePhone) && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Valid phone number
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -1611,7 +1700,12 @@ const Booking: React.FC = () => {
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.fullName && formData.phone && formData.email;
+        return formData.fullName && 
+               formData.phone && 
+               formData.email &&
+               validatePhoneNumber(formData.phone) &&
+               validateEmail(formData.email) &&
+               (formData.alternatePhone === '' || validatePhoneNumber(formData.alternatePhone));
       case 2:
         const serviceValid = formData.service && (formData.service !== 'Other' || formData.customService);
         return serviceValid; // Brand name and model name are now optional
