@@ -15,6 +15,10 @@ import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { emailService } from '@/lib/email';
 import { generateJobNumber } from '@/lib/supabase';
 import MathCaptcha from '@/components/MathCaptcha';
+import HoneypotField from '@/components/HoneypotField';
+import BehavioralTracker from '@/components/BehavioralTracker';
+import SecurityStatus from '@/components/SecurityStatus';
+import { useSecurity } from '@/contexts/SecurityContext';
 
 interface FormData {
   // Customer Information
@@ -48,6 +52,9 @@ const Booking: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  
+  // Security context
+  const { getSecurityStatus, isHoneypotTriggered, resetSecurity } = useSecurity();
   const loadingRef = useRef(false);
   const [brandSuggestions, setBrandSuggestions] = useState<string[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -860,6 +867,20 @@ const Booking: React.FC = () => {
     // Check if CAPTCHA is verified before proceeding
     if (!isCaptchaVerified) {
       toast.error('Please complete the security check before submitting your booking.');
+      return;
+    }
+    
+    // Check security status (silent background check)
+    const securityStatus = getSecurityStatus();
+    if (!securityStatus.isSecure) {
+      toast.error('Please complete the form properly and try again.');
+      return;
+    }
+    
+    // Check honeypot (silent background check)
+    if (isHoneypotTriggered) {
+      toast.error('Please refresh the page and try again.');
+      resetSecurity();
       return;
     }
     
@@ -1954,11 +1975,18 @@ const Booking: React.FC = () => {
 
 
             {/* Form Content */}
-            <Card className="mb-6">
-              <CardContent className="p-6 max-h-[70vh] overflow-y-auto">
-                {renderStepContent()}
-              </CardContent>
-            </Card>
+            <BehavioralTracker>
+              <Card className="mb-6">
+                <CardContent className="p-6 max-h-[70vh] overflow-y-auto">
+                  {/* Honeypot field - hidden from users */}
+                  <HoneypotField />
+                  
+                  {/* Security runs silently in background - no UI display */}
+                  
+                  {renderStepContent()}
+                </CardContent>
+              </Card>
+            </BehavioralTracker>
 
             {/* Navigation Buttons - Hidden on step 6 */}
             {currentStep !== 6 && (
