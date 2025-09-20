@@ -341,7 +341,8 @@
 
   /* Safari mobile fix for double close buttons */
   @media screen and (max-width: 768px) {
-    button[class*="p-2"] {
+    /* Only target the specific mobile menu close button, not all buttons with p-2 */
+    .fixed.inset-0 button[class*="p-2 rounded-lg"] {
       -webkit-appearance: none !important;
       appearance: none !important;
       background: none !important;
@@ -351,8 +352,8 @@
       z-index: 10 !important;
     }
     
-    button[class*="p-2"]::before,
-    button[class*="p-2"]::after {
+    .fixed.inset-0 button[class*="p-2 rounded-lg"]::before,
+    .fixed.inset-0 button[class*="p-2 rounded-lg"]::after {
       display: none !important;
     }
     
@@ -366,7 +367,7 @@
     }
     
     /* Ensure close button is unique */
-    button[class*="p-2"] svg {
+    .fixed.inset-0 button[class*="p-2 rounded-lg"] svg {
       position: relative !important;
       z-index: 11 !important;
     }
@@ -388,6 +389,45 @@
       transform: translateZ(0) !important;
       -webkit-backface-visibility: hidden !important;
       backface-visibility: hidden !important;
+    }
+    
+    /* Mobile button color fixes */
+    button[class*="bg-primary"] {
+      background-color: hsl(var(--primary)) !important;
+      color: hsl(var(--primary-foreground)) !important;
+    }
+    
+    button[class*="border-border"] {
+      border-color: hsl(var(--border)) !important;
+      color: hsl(var(--foreground)) !important;
+    }
+    
+    /* Ensure button colors are visible on mobile */
+    .bg-primary {
+      background-color: hsl(var(--primary)) !important;
+    }
+    
+    .text-primary-foreground {
+      color: hsl(var(--primary-foreground)) !important;
+    }
+    
+    /* Force button colors in mobile view */
+    button {
+      -webkit-appearance: none !important;
+      appearance: none !important;
+    }
+    
+    /* Ensure primary buttons are visible */
+    button.bg-primary,
+    .bg-primary {
+      background-color: hsl(var(--primary)) !important;
+      color: hsl(var(--primary-foreground)) !important;
+    }
+    
+    /* Ensure outline buttons are visible */
+    button[class*="border-"],
+    .border-border {
+      border-color: hsl(var(--border)) !important;
     }
   }
 }
