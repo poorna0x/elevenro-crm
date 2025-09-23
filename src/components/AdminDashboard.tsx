@@ -318,14 +318,15 @@ const AdminDashboard = () => {
           const selectedTypes = addFormData.service_types;
           console.log('Selected service types:', selectedTypes);
           
+          // Based on testing, only basic service types are allowed in the database
+          // Map combined selections to the first selected type
           if (selectedTypes.length === 0) return 'RO';
           if (selectedTypes.length === 1) return selectedTypes[0];
-          if (selectedTypes.includes('RO') && selectedTypes.includes('AC')) return 'RO_AC';
-          if (selectedTypes.includes('SOFTENER') && selectedTypes.includes('AC')) return 'SOFTENER_AC';
-          if (selectedTypes.includes('RO') && selectedTypes.includes('SOFTENER')) return 'RO_SOFTENER';
-          if (selectedTypes.length >= 3) return 'ALL_SERVICES';
+          
+          // For multiple selections, use the first one
+          // TODO: Update database schema to support combined service types
           return selectedTypes[0];
-        })() as 'RO' | 'SOFTENER' | 'AC' | 'RO_AC' | 'SOFTENER_AC' | 'RO_SOFTENER' | 'ALL_SERVICES' | 'APPLIANCE',
+        })() as 'RO' | 'SOFTENER' | 'AC' | 'APPLIANCE',
         brand: Object.values(addFormData.equipment).map(eq => eq.brand).join(', '), // Join all brands
         model: Object.values(addFormData.equipment).map(eq => eq.model).join(', '), // Join all models
         preferred_language: (addFormData.native_language || 'ENGLISH') as 'ENGLISH' | 'HINDI' | 'KANNADA' | 'TAMIL' | 'TELUGU',
@@ -336,6 +337,8 @@ const AdminDashboard = () => {
       };
 
       console.log('Final service_type:', customerData.service_type);
+      console.log('Service type length:', customerData.service_type.length);
+      console.log('Service type char codes:', Array.from(customerData.service_type).map(c => c.charCodeAt(0)));
       console.log('Customer data being sent:', customerData);
 
       const { data: newCustomer, error } = await db.customers.create(customerData);
@@ -1475,10 +1478,6 @@ const AdminDashboard = () => {
                       { value: 'RO', label: 'RO (Reverse Osmosis)', icon: '💧' },
                       { value: 'SOFTENER', label: 'Water Softener', icon: '🧂' },
                       { value: 'AC', label: 'AC Services', icon: '❄️' },
-                      { value: 'RO_AC', label: 'RO + AC Services', icon: '💧❄️' },
-                      { value: 'SOFTENER_AC', label: 'Softener + AC', icon: '🧂❄️' },
-                      { value: 'RO_SOFTENER', label: 'RO + Softener', icon: '💧🧂' },
-                      { value: 'ALL_SERVICES', label: 'All Services', icon: '🔧' },
                       { value: 'APPLIANCE', label: 'Home Appliances', icon: '🏠' }
                     ].map((service) => (
                       <div
@@ -1607,10 +1606,6 @@ const AdminDashboard = () => {
                             { value: 'RO', label: 'RO (Reverse Osmosis)', icon: '💧' },
                             { value: 'SOFTENER', label: 'Water Softener', icon: '🧂' },
                             { value: 'AC', label: 'AC Services', icon: '❄️' },
-                            { value: 'RO_AC', label: 'RO + AC Services', icon: '💧❄️' },
-                            { value: 'SOFTENER_AC', label: 'Softener + AC', icon: '🧂❄️' },
-                            { value: 'RO_SOFTENER', label: 'RO + Softener', icon: '💧🧂' },
-                            { value: 'ALL_SERVICES', label: 'All Services', icon: '🔧' },
                             { value: 'APPLIANCE', label: 'Home Appliances', icon: '🏠' }
                           ].find(s => s.value === serviceType);
                           
@@ -1824,10 +1819,6 @@ const AdminDashboard = () => {
                     { value: 'RO', label: 'RO (Reverse Osmosis)', icon: '💧' },
                     { value: 'SOFTENER', label: 'Water Softener', icon: '🧂' },
                     { value: 'AC', label: 'AC Services', icon: '❄️' },
-                    { value: 'RO_AC', label: 'RO + AC Services', icon: '💧❄️' },
-                    { value: 'SOFTENER_AC', label: 'Softener + AC', icon: '🧂❄️' },
-                    { value: 'RO_SOFTENER', label: 'RO + Softener', icon: '💧🧂' },
-                    { value: 'ALL_SERVICES', label: 'All Services', icon: '🔧' },
                     { value: 'APPLIANCE', label: 'Home Appliances', icon: '🏠' }
                   ].map((service) => (
                     <div
@@ -1857,10 +1848,6 @@ const AdminDashboard = () => {
                       { value: 'RO', label: 'RO (Reverse Osmosis)', icon: '💧' },
                       { value: 'SOFTENER', label: 'Water Softener', icon: '🧂' },
                       { value: 'AC', label: 'AC Services', icon: '❄️' },
-                      { value: 'RO_AC', label: 'RO + AC Services', icon: '💧❄️' },
-                      { value: 'SOFTENER_AC', label: 'Softener + AC', icon: '🧂❄️' },
-                      { value: 'RO_SOFTENER', label: 'RO + Softener', icon: '💧🧂' },
-                      { value: 'ALL_SERVICES', label: 'All Services', icon: '🔧' },
                       { value: 'APPLIANCE', label: 'Home Appliances', icon: '🏠' }
                     ].find(s => s.value === serviceType);
                     
