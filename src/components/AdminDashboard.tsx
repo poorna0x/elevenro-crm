@@ -902,18 +902,15 @@ const AdminDashboard = () => {
     };
   });
 
-  // Filter to only show customers with upcoming jobs
-  const customersWithUpcomingJobs = customersWithJobs.filter(({ upcomingJobs }) => upcomingJobs.length > 0);
-
 
   const displayedCustomers = !searchTerm.trim()
-    ? customersWithUpcomingJobs
+    ? customersWithJobs
         .sort((a, b) => {
           const aDate = new Date(a.customer.createdAt).getTime();
           const bDate = new Date(b.customer.createdAt).getTime();
           return bDate - aDate;
         })
-    : customersWithUpcomingJobs.filter(item => {
+    : customersWithJobs.filter(item => {
       const searchLower = searchTerm.toLowerCase();
       return (
         (item.customer as any).customer_id?.toLowerCase().includes(searchLower) ||
@@ -1086,12 +1083,12 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Customers with Upcoming Jobs */}
+        {/* All Customers */}
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Customers with Upcoming Jobs</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-1">All Customers</h2>
           {!searchTerm.trim() && (
             <p className="text-xs text-gray-500 mb-3">
-              Showing {displayedCustomers.length} customers with pending, assigned, or in-progress jobs
+              Showing {displayedCustomers.length} customers
             </p>
           )}
           
@@ -1160,13 +1157,19 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Jobs Section - Only show if there are jobs */}
-                {allJobs.length > 0 && (
-                  <div className="p-4 sm:p-6 bg-gray-50">
-                    <div className="mb-4">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">All Jobs ({allJobs.length})</h3>
-                    </div>
+                {/* Jobs Section */}
+                <div className="p-4 sm:p-6 bg-gray-50">
+                  <div className="mb-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">All Jobs ({allJobs.length})</h3>
+                  </div>
 
+
+                  {allJobs.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Wrench className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p>No jobs for this customer</p>
+                    </div>
+                  ) : (
                     <div className="space-y-3 sm:space-y-4">
                       {allJobs.map((job) => (
                         <Card key={job.id} className={`border-2 ${
