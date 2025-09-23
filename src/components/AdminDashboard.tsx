@@ -183,7 +183,7 @@ const AdminDashboard = () => {
         phone: editFormData.phone,
         alternatePhone: editFormData.alternate_phone,
         email: editFormData.email,
-        serviceType: editFormData.service_types.join(', ') as 'RO' | 'SOFTENER' | 'AC' | 'RO_AC' | 'SOFTENER_AC' | 'RO_SOFTENER' | 'ALL_SERVICES' | 'APPLIANCE',
+        serviceType: editFormData.service_types.join(', ') as 'RO' | 'SOFTENER' | 'AC' | 'APPLIANCE',
         brand: Object.values(editFormData.equipment).map(eq => eq.brand).join(', '),
         model: Object.values(editFormData.equipment).map(eq => eq.model).join(', '),
         preferredLanguage: (editFormData.native_language || 'ENGLISH') as 'ENGLISH' | 'HINDI' | 'KANNADA' | 'TAMIL' | 'TELUGU',
@@ -202,7 +202,7 @@ const AdminDashboard = () => {
               ...c, 
               fullName: editFormData.full_name,
               alternatePhone: editFormData.alternate_phone,
-              serviceType: editFormData.service_types.join(', ') as 'RO' | 'SOFTENER' | 'AC' | 'RO_AC' | 'SOFTENER_AC' | 'RO_SOFTENER' | 'ALL_SERVICES' | 'APPLIANCE',
+              serviceType: editFormData.service_types.join(', ') as 'RO' | 'SOFTENER' | 'AC' | 'APPLIANCE',
               behavior: editFormData.behavior,
               preferredLanguage: (editFormData.native_language || 'ENGLISH') as 'ENGLISH' | 'HINDI' | 'KANNADA' | 'TAMIL' | 'TELUGU',
               status: editFormData.status as 'ACTIVE' | 'INACTIVE' | 'BLOCKED',
@@ -1510,10 +1510,6 @@ const AdminDashboard = () => {
                         { value: 'RO', label: 'RO (Reverse Osmosis)', icon: '💧' },
                         { value: 'SOFTENER', label: 'Water Softener', icon: '🧂' },
                         { value: 'AC', label: 'AC Services', icon: '❄️' },
-                        { value: 'RO_AC', label: 'RO + AC Services', icon: '💧❄️' },
-                        { value: 'SOFTENER_AC', label: 'Softener + AC', icon: '🧂❄️' },
-                        { value: 'RO_SOFTENER', label: 'RO + Softener', icon: '💧🧂' },
-                        { value: 'ALL_SERVICES', label: 'All Services', icon: '🔧' },
                         { value: 'APPLIANCE', label: 'Home Appliances', icon: '🏠' }
                       ].find(s => s.value === serviceType);
                       
