@@ -992,7 +992,20 @@ const AdminDashboard = () => {
                                   {(() => {
                                     const beforePhotos = Array.isArray((job as any).before_photos) ? (job as any).before_photos : [];
                                     const afterPhotos = Array.isArray((job as any).after_photos) ? (job as any).after_photos : [];
-                                    const allPhotos = [...beforePhotos, ...afterPhotos];
+                                    
+                                    // Extract URLs from Cloudinary objects or use as-is if already strings
+                                    const extractPhotoUrls = (photos: any[]) => {
+                                      return photos.map(photo => {
+                                        if (typeof photo === 'string') {
+                                          return photo;
+                                        } else if (photo && typeof photo === 'object' && photo.secure_url) {
+                                          return photo.secure_url;
+                                        }
+                                        return null;
+                                      }).filter(url => url !== null);
+                                    };
+                                    
+                                    const allPhotos = [...extractPhotoUrls(beforePhotos), ...extractPhotoUrls(afterPhotos)];
                                     
                                     return allPhotos.length > 0 && (
                                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
@@ -1025,8 +1038,20 @@ const AdminDashboard = () => {
                                   const beforePhotos = Array.isArray((job as any).before_photos) ? (job as any).before_photos : [];
                                   const afterPhotos = Array.isArray((job as any).after_photos) ? (job as any).after_photos : [];
                                   
+                                  // Extract URLs from Cloudinary objects or use as-is if already strings
+                                  const extractPhotoUrls = (photos: any[]) => {
+                                    return photos.map(photo => {
+                                      if (typeof photo === 'string') {
+                                        return photo;
+                                      } else if (photo && typeof photo === 'object' && photo.secure_url) {
+                                        return photo.secure_url;
+                                      }
+                                      return null;
+                                    }).filter(url => url !== null);
+                                  };
+                                  
                                   // Combine all photos for display
-                                  const allPhotos = [...beforePhotos, ...afterPhotos];
+                                  const allPhotos = [...extractPhotoUrls(beforePhotos), ...extractPhotoUrls(afterPhotos)];
                                   
                                   if (allPhotos.length > 0) {
                                     return (
