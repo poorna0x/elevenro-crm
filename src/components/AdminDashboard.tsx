@@ -297,10 +297,10 @@ const AdminDashboard = () => {
     try {
       // Create customer data with default location (you can enhance this later)
       const customerData = {
-        customerId: `CUST-${Date.now()}`, // Generate customer ID
-        fullName: addFormData.full_name,
+        customer_id: `CUST-${Date.now()}`, // Generate customer ID
+        full_name: addFormData.full_name,
         phone: addFormData.phone,
-        alternatePhone: addFormData.alternate_phone,
+        alternate_phone: addFormData.alternate_phone,
         email: addFormData.email,
         address: {
           street: addFormData.address,
@@ -314,14 +314,14 @@ const AdminDashboard = () => {
           longitude: 77.5946,
           formattedAddress: addFormData.address
         },
-        serviceType: addFormData.service_types.join(', ') as 'RO' | 'SOFTENER' | 'AC' | 'RO_AC' | 'SOFTENER_AC' | 'RO_SOFTENER' | 'ALL_SERVICES' | 'APPLIANCE', // Join multiple service types
+        service_type: addFormData.service_types.join(', ') as 'RO' | 'SOFTENER' | 'AC' | 'RO_AC' | 'SOFTENER_AC' | 'RO_SOFTENER' | 'ALL_SERVICES' | 'APPLIANCE', // Join multiple service types
         brand: Object.values(addFormData.equipment).map(eq => eq.brand).join(', '), // Join all brands
         model: Object.values(addFormData.equipment).map(eq => eq.model).join(', '), // Join all models
-        preferredLanguage: (addFormData.native_language || 'ENGLISH') as 'ENGLISH' | 'HINDI' | 'KANNADA' | 'TAMIL' | 'TELUGU',
+        preferred_language: (addFormData.native_language || 'ENGLISH') as 'ENGLISH' | 'HINDI' | 'KANNADA' | 'TAMIL' | 'TELUGU',
         status: addFormData.status as 'ACTIVE' | 'INACTIVE' | 'BLOCKED',
         notes: addFormData.notes,
-        customerSince: new Date().toISOString(),
-        preferredTimeSlot: 'MORNING' as 'MORNING' | 'AFTERNOON' | 'EVENING'
+        customer_since: new Date().toISOString(),
+        preferred_time_slot: 'MORNING' as 'MORNING' | 'AFTERNOON' | 'EVENING'
       };
 
       const { data: newCustomer, error } = await db.customers.create(customerData);
