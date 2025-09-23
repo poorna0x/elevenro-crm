@@ -25,7 +25,19 @@ import {
   Edit,
   Trash2,
   MoreVertical,
-  Plus
+  Plus,
+  User,
+  ExternalLink,
+  Camera,
+  History,
+  MessageCircle,
+  Receipt,
+  FileText,
+  Settings,
+  Star,
+  Download,
+  Eye,
+  PhoneCall
 } from 'lucide-react';
 import { db } from '@/lib/supabase';
 import { Customer, Job, Technician } from '@/types';
@@ -1098,65 +1110,221 @@ const AdminDashboard = () => {
           {/* Customer Cards with Jobs */}
           <div className="space-y-8">
             {displayedCustomers.map(({ customer, allJobs, upcomingJobs, completedJobs, cancelledJobs }) => (
-              <Card key={customer.id} className="bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden mb-6">
-                {/* Customer Header */}
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                        <div className="bg-black text-white px-3 py-1 rounded-md font-mono text-sm font-medium">
-                        {(customer as any).customer_id || 'N/A'}
+              <Card key={customer.id} className="bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-200 overflow-hidden mb-6">
+                {/* Customer Profile Header */}
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 border-b border-gray-200">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center">
+                        <User className="w-8 h-8 text-white" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-xl font-bold text-gray-900">{(customer as any).full_name}</h3>
+                          <div className="bg-black text-white px-3 py-1 rounded-full font-mono text-sm font-medium">
+                            {(customer as any).customer_id || 'N/A'}
+                          </div>
                         </div>
+                        <div className="text-sm text-gray-600">{customer.serviceType} • {customer.brand} {customer.model}</div>
+                      </div>
+                    </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600">
                           <MoreVertical className="h-4 w-4" />
-                          </Button>
+                        </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleEditCustomer(customer)}>
                           <Edit className="mr-2 h-4 w-4" />
-                              Edit Customer
+                          Edit Profile
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                          </div>
+                  </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm">
-                          <div>
-                          <div className="font-medium text-gray-900 truncate">{(customer as any).full_name}</div>
-                          <div className="text-gray-600 truncate">{customer.phone}</div>
-                            {(customer as any).alternate_phone && (
-                            <div className="text-gray-500 truncate">{(customer as any).alternate_phone}</div>
-                            )}
-                          </div>
-                          <div>
-                          <div className="text-gray-600 truncate">{customer.email}</div>
-                          <div className="text-gray-500 truncate">{customer.serviceType}</div>
-                          </div>
-                        <div>
-                          <div className="text-gray-600 truncate">{customer.brand}</div>
-                          <div className="text-gray-500 truncate">{customer.model}</div>
+                  {/* Quick Action Buttons */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-2 h-10"
+                      onClick={() => handleEditCustomer(customer)}
+                    >
+                      <Edit className="w-4 h-4" />
+                      Edit Profile
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-2 h-10"
+                      onClick={() => toast.info('New job feature coming soon')}
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Job
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-2 h-10"
+                      onClick={() => toast.info('Photos gallery coming soon')}
+                    >
+                      <Camera className="w-4 h-4" />
+                      Photos
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-2 h-10"
+                      onClick={() => toast.info('Service history coming soon')}
+                    >
+                      <History className="w-4 h-4" />
+                      History
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Contact & Communication */}
+                <div className="p-6 border-b border-gray-100">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Contact & Communication
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <Phone className="w-4 h-4 text-green-600" />
                         </div>
                         <div>
-                          <button
-                            onClick={() => {
-                              const location = extractCoordinates(customer.location);
-                              if (location) {
-                                const address = formatAddressForDisplay(customer.address);
-                                openInGoogleMaps(location, address);
-                              } else {
-                                toast.error('Location data not available');
-                              }
-                            }}
-                            className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
-                          >
-                            <MapPin className="w-4 h-4 flex-shrink-0" />
-                            <span className="truncate">View on Map</span>
-                          </button>
+                          <div className="text-sm font-medium text-gray-900">{customer.phone}</div>
+                          <div className="text-xs text-gray-500">Primary Phone</div>
+                        </div>
+                        <Button size="sm" variant="ghost" className="ml-auto">
+                          <PhoneCall className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {(customer as any).alternate_phone && (
+                        <div className="flex items-center gap-3 pl-11">
+                          <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                            <Phone className="w-3 h-3 text-gray-600" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-600">{(customer as any).alternate_phone}</div>
+                            <div className="text-xs text-gray-500">Alternate Phone</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Mail className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{customer.email}</div>
+                          <div className="text-xs text-gray-500">Email Address</div>
+                        </div>
+                        <Button size="sm" variant="ghost" className="ml-auto">
+                          <MessageCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location & Equipment */}
+                <div className="p-6 border-b border-gray-100">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Location & Equipment
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                          <MapPin className="w-4 h-4 text-orange-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">Service Location</div>
+                          <div className="text-xs text-gray-500 truncate">{customer.address}</div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => {
+                            const location = extractCoordinates(customer.location);
+                            if (location) {
+                              const address = formatAddressForDisplay(customer.address);
+                              openInGoogleMaps(location, address);
+                            } else {
+                              toast.error('Location data not available');
+                            }
+                          }}
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          <Wrench className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{customer.brand} {customer.model}</div>
+                          <div className="text-xs text-gray-500">Equipment Details</div>
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Business Actions */}
+                <div className="p-6">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    Business Actions
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-2 h-10"
+                      onClick={() => toast.info('WhatsApp integration coming soon')}
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      WhatsApp
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-2 h-10"
+                      onClick={() => toast.info('Billing system coming soon')}
+                    >
+                      <Receipt className="w-4 h-4" />
+                      Generate Bill
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-2 h-10"
+                      onClick={() => toast.info('AMC management coming soon')}
+                    >
+                      <Star className="w-4 h-4" />
+                      AMC
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-2 h-10"
+                      onClick={() => toast.info('Reports coming soon')}
+                    >
+                      <FileText className="w-4 h-4" />
+                      Reports
+                    </Button>
                   </div>
                 </div>
 
