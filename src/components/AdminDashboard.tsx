@@ -1130,6 +1130,30 @@ const AdminDashboard = () => {
                             {(customer as any).customer_id || 'N/A'}
                           </div>
                         </div>
+                        <div className="flex items-center gap-4 mt-3">
+                          <button
+                            onClick={() => toast.info('WhatsApp integration coming soon')}
+                            className="flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors"
+                          >
+                            <WhatsAppIcon className="w-4 h-4" />
+                            <span>WhatsApp</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              const location = extractCoordinates(customer.location);
+                              if (location) {
+                                const address = formatAddressForDisplay(customer.address);
+                                openInGoogleMaps(location, address);
+                              } else {
+                                toast.error('Location data not available');
+                              }
+                            }}
+                            className="flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors"
+                          >
+                            <MapPin className="w-4 h-4" />
+                            <span>Location</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <DropdownMenu>
@@ -1230,57 +1254,41 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Location & Equipment */}
+                {/* Equipment Information */}
                 <div className="p-6 border-b border-gray-100">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => {
-                            const location = extractCoordinates(customer.location);
-                            if (location) {
-                              const address = formatAddressForDisplay(customer.address);
-                              openInGoogleMaps(location, address);
-                            } else {
-                              toast.error('Location data not available');
-                            }
-                          }}
-                          className="cursor-pointer"
-                        >
-                          <MapPin className="w-4 h-4 text-gray-600 hover:text-black" />
-                        </button>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">Location</div>
-                          <div className="text-xs text-gray-500 truncate">{formatAddressForDisplay(customer.address)}</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <Wrench className="w-4 h-4 text-gray-600" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{customer.brand} {customer.model}</div>
-                        </div>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <Wrench className="w-5 h-5 text-gray-600" />
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{customer.brand} {customer.model}</div>
+                      <div className="text-xs text-gray-500">Equipment Details</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Business Actions */}
-                <div className="p-6">
-                  <div className="flex justify-center">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex items-center gap-2 h-10"
-                      onClick={() => toast.info('WhatsApp integration coming soon')}
+                {/* Location */}
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        const location = extractCoordinates(customer.location);
+                        if (location) {
+                          const address = formatAddressForDisplay(customer.address);
+                          openInGoogleMaps(location, address);
+                        } else {
+                          toast.error('Location data not available');
+                        }
+                      }}
+                      className="cursor-pointer"
                     >
-                      <WhatsAppIcon className="w-4 h-4 text-black" />
-                      WhatsApp
-                    </Button>
+                      <MapPin className="w-5 h-5 text-gray-600 hover:text-black" />
+                    </button>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900">Service Location</div>
+                      <div className="text-xs text-gray-500 truncate">{formatAddressForDisplay(customer.address)}</div>
+                    </div>
                   </div>
                 </div>
+
 
                 {/* Jobs Section - Only show if there are jobs */}
                 {allJobs.length > 0 && (
