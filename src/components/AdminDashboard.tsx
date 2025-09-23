@@ -1223,14 +1223,7 @@ const AdminDashboard = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <MapPin className="w-4 h-4 text-gray-600" />
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">Location</div>
-                          <div className="text-xs text-gray-500 truncate">{formatAddressForDisplay(customer.address)}</div>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
+                        <button
                           onClick={() => {
                             const location = extractCoordinates(customer.location);
                             if (location) {
@@ -1240,9 +1233,14 @@ const AdminDashboard = () => {
                               toast.error('Location data not available');
                             }
                           }}
+                          className="cursor-pointer"
                         >
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
+                          <MapPin className="w-4 h-4 text-gray-600 hover:text-black" />
+                        </button>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">Location</div>
+                          <div className="text-xs text-gray-500 truncate">{formatAddressForDisplay(customer.address)}</div>
+                        </div>
                       </div>
                     </div>
                     
