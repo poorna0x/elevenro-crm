@@ -1098,13 +1098,13 @@ const AdminDashboard = () => {
           {/* Customer Cards with Jobs */}
           <div className="space-y-8">
             {displayedCustomers.map(({ customer, allJobs, upcomingJobs, completedJobs, cancelledJobs }) => (
-              <Card key={customer.id} className="bg-white border-2 border-gray-300 shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden mb-6">
+              <Card key={customer.id} className="bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden mb-6">
                 {/* Customer Header */}
-                <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 sm:p-6 border-b-2 border-gray-300">
+                <div className="p-6 border-b border-gray-100">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                        <div className="font-mono font-bold text-blue-600 text-base sm:text-lg truncate">
+                        <div className="bg-black text-white px-3 py-1 rounded-md font-mono text-sm font-medium">
                         {(customer as any).customer_id || 'N/A'}
                         </div>
                     <DropdownMenu>
