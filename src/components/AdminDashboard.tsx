@@ -1160,19 +1160,13 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Jobs Section */}
-                <div className="p-4 sm:p-6 bg-gray-50">
-                  <div className="mb-4">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">All Jobs ({allJobs.length})</h3>
-                  </div>
-
-
-                  {allJobs.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Wrench className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p>No jobs for this customer</p>
+                {/* Jobs Section - Only show if there are jobs */}
+                {allJobs.length > 0 && (
+                  <div className="p-4 sm:p-6 bg-gray-50">
+                    <div className="mb-4">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">All Jobs ({allJobs.length})</h3>
                     </div>
-                  ) : (
+
                     <div className="space-y-3 sm:space-y-4">
                       {allJobs.map((job) => (
                         <Card key={job.id} className={`border-2 ${
@@ -1330,10 +1324,10 @@ const AdminDashboard = () => {
                   </div>
                 </Card>
               ))}
-            </div>
-                  )}
-          </div>
-            </Card>
+                    </div>
+                  </div>
+                )}
+              </Card>
             ))}
           </div>
         </div>
