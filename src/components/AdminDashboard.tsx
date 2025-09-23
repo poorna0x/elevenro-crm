@@ -1169,8 +1169,6 @@ const AdminDashboard = () => {
 
                     <div className="space-y-3 sm:space-y-4">
                       {allJobs.map((job) => (
-                    <div className="space-y-3 sm:space-y-4">
-                      {allJobs.map((job) => (
                         <Card key={job.id} className={`border-2 ${
                           job.status === 'PENDING' ? 'border-yellow-300 bg-yellow-50' :
                           job.status === 'ASSIGNED' ? 'border-blue-300 bg-blue-50' :
