@@ -1264,7 +1264,7 @@ const AdminDashboard = () => {
                       className="flex items-center gap-2 h-10"
                       onClick={() => toast.info('WhatsApp integration coming soon')}
                     >
-                      <WhatsAppIcon className="w-4 h-4 text-green-600" />
+                      <WhatsAppIcon className="w-4 h-4 text-black" />
                       WhatsApp
                     </Button>
                     <Button 
