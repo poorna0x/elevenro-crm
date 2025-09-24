@@ -1,5 +1,6 @@
 import { PaymentOrder, PaymentResponse, PaymentStatus, RefundRequest, RefundResponse, CashfreeConfig } from '@/types/payment';
 
+// Enhanced Mock Service - No Real API Calls
 class CashfreeRealService {
   private cashfree: any;
   private config: CashfreeConfig;
@@ -9,11 +10,11 @@ class CashfreeRealService {
     this.initializeCashfree();
   }
 
-  private async initializeCashfree() {
+  private initializeCashfree() {
     try {
-      console.log('Initializing real Cashfree SDK...');
+      console.log('Initializing enhanced Cashfree mock...');
       
-      // For now, let's use a mock implementation that simulates real API calls
+      // Use enhanced mock implementation that simulates real API calls
       // This prevents the "endpoint or method is not valid" error
       console.log('Using enhanced mock for production testing...');
       
@@ -31,10 +32,10 @@ class CashfreeRealService {
         }
       };
 
-      console.log('Real Cashfree SDK mock initialized successfully');
+      console.log('Enhanced Cashfree mock initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize real Cashfree SDK:', error);
-      throw new Error('Real Cashfree initialization failed');
+      console.error('Failed to initialize Cashfree mock:', error);
+      throw new Error('Cashfree mock initialization failed');
     }
   }
 

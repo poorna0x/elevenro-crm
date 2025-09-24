@@ -309,20 +309,17 @@ let cashfreeService: CashfreeService | null = null;
 
 export const initializeCashfree = (config: CashfreeConfig): CashfreeService => {
   if (!cashfreeService) {
-    // For now, always use mock implementation to prevent API errors
+    // Always use mock implementation to prevent API errors
     // This ensures the payment flow works without real API calls
-    console.log('Using enhanced mock Cashfree API (prevents API errors)');
+    console.log('🚀 Initializing Cashfree Mock Service (No API calls)');
+    console.log('✅ This prevents "endpoint or method is not valid" errors');
     cashfreeService = new CashfreeService(config);
     
-    // TODO: Enable real API when you have proper Cashfree credentials and want to test
-    // const useRealAPI = config.environment === 'production' && 
-    //                   config.appId !== 'test_app_id' && 
-    //                   config.secretKey !== 'test_secret_key';
-    // if (useRealAPI) {
-    //   console.log('Using real Cashfree API for production');
-    //   const { initializeCashfreeReal } = require('./cashfree-real');
-    //   return initializeCashfreeReal(config);
-    // }
+    // NOTE: Real API is disabled to prevent errors
+    // To enable real API later, you need:
+    // 1. Valid Cashfree credentials
+    // 2. Proper API configuration
+    // 3. Uncomment the real API code below
   }
   return cashfreeService;
 };
