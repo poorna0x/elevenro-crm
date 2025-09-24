@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Logo from './Logo';
-import { Menu, X, CircleDot, LayoutDashboard, DollarSign, Sun, Moon, Phone } from 'lucide-react';
+import { Menu, X, CircleDot, LayoutDashboard, DollarSign, Sun, Moon, Phone, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Switch } from '@/components/ui/switch';
@@ -297,6 +297,28 @@ const Header = () => {
         
         <div className="hidden md:flex items-center gap-4">
           {/* Theme toggle for desktop */}
+          {/* Technician Login Link */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/technician/login')}
+            className="hidden sm:flex items-center gap-2 text-muted-foreground hover:text-foreground bg-card/80 backdrop-blur-sm border border-border/50"
+          >
+            <Wrench size={18} />
+            Technician
+          </Button>
+          
+          {/* Admin Dashboard Link */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/admin')}
+            className="hidden sm:flex items-center gap-2 text-muted-foreground hover:text-foreground bg-card/80 backdrop-blur-sm border border-border/50"
+          >
+            <LayoutDashboard size={18} />
+            Admin
+          </Button>
+          
           <div className="flex items-center gap-2 rounded-full px-3 py-2 bg-card/80 backdrop-blur-sm border border-border/50">
             <Moon size={18} className={`${isDarkMode ? 'text-primary' : 'text-muted-foreground'}`} />
             <Switch 

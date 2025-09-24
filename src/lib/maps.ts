@@ -22,7 +22,13 @@ export interface AddressData {
  */
 export const generateGoogleMapsUrl = (location: LocationData, address?: string): string => {
   const { latitude, longitude } = location;
-  const query = address || `${latitude},${longitude}`;
+  // Always use coordinates for exact location, only use address as fallback if no coordinates
+  if (latitude && longitude) {
+    // Use the place parameter for exact coordinates - most reliable format
+    return `https://www.google.com/maps/place/${latitude},${longitude}`;
+  }
+  // Fallback to address if no coordinates available
+  const query = address || 'Unknown Location';
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 };
 
@@ -30,8 +36,13 @@ export const generateGoogleMapsUrl = (location: LocationData, address?: string):
  * Generate Google Maps directions URL
  */
 export const generateGoogleMapsDirections = (destination: LocationData, address?: string): string => {
-  const { latitude, longitude } = location;
-  const query = address || `${latitude},${longitude}`;
+  const { latitude, longitude } = destination;
+  // Always use coordinates for exact location, only use address as fallback if no coordinates
+  if (latitude && longitude) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+  }
+  // Fallback to address if no coordinates available
+  const query = address || 'Unknown Location';
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`;
 };
 

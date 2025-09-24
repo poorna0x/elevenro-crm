@@ -228,6 +228,19 @@ export const db = {
       return { data, error };
     },
     
+    async getByTechnicianId(technicianId: string) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(`
+          *,
+          customer:customers(*)
+        `)
+        .eq('assigned_technician_id', technicianId)
+        .order('created_at', { ascending: false });
+      
+      return { data, error };
+    },
+    
     async delete(id: string) {
       const { error } = await supabase
         .from('jobs')
@@ -292,6 +305,15 @@ export const db = {
       
       // Return the first (and should be only) updated row
       return { data: data?.[0] || null, error: null };
+    },
+    
+    async delete(id: string) {
+      const { error } = await supabase
+        .from('technicians')
+        .delete()
+        .eq('id', id);
+      
+      return { data: null, error };
     }
   }
 };

@@ -356,6 +356,9 @@ const BookingSection = () => {
           latitude: formData.coordinates.lat,
           longitude: formData.coordinates.lng,
           formattedAddress: formData.address,
+          googleLocation: formData.coordinates.lat !== 0 && formData.coordinates.lng !== 0 
+            ? `https://www.google.com/maps/place/${formData.coordinates.lat},${formData.coordinates.lng}`
+            : null
         },
         service_type: formData.serviceType.toUpperCase() as 'RO' | 'SOFTENER',
         brand: formData.brandName,

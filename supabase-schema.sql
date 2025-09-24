@@ -309,10 +309,14 @@ CREATE POLICY "Allow authenticated users to read customers" ON customers FOR SEL
 CREATE POLICY "Allow authenticated users to update customers" ON customers FOR UPDATE USING (auth.role() = 'authenticated');
 
 CREATE POLICY "Allow authenticated users to read technicians" ON technicians FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to insert technicians" ON technicians FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Allow authenticated users to update technicians" ON technicians FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to delete technicians" ON technicians FOR DELETE USING (auth.role() = 'authenticated');
 
 CREATE POLICY "Allow authenticated users to read jobs" ON jobs FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to insert jobs" ON jobs FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Allow authenticated users to update jobs" ON jobs FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to delete jobs" ON jobs FOR DELETE USING (auth.role() = 'authenticated');
 
 CREATE POLICY "Allow authenticated users to read service areas" ON service_areas FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow authenticated users to read parts inventory" ON parts_inventory FOR SELECT USING (auth.role() = 'authenticated');

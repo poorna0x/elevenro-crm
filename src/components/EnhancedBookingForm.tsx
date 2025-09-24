@@ -40,6 +40,7 @@ const bookingSchema = z.object({
     longitude: z.number(),
     formattedAddress: z.string(),
     googlePlaceId: z.string().optional(),
+    googleLocation: z.string().optional(),
   }),
   
   // Service Details
@@ -150,6 +151,7 @@ const EnhancedBookingForm = () => {
           setValue('location.latitude', latitude);
           setValue('location.longitude', longitude);
           setValue('location.formattedAddress', address);
+          setValue('location.googleLocation', `https://www.google.com/maps/place/${latitude},${longitude}`);
           setValue('address.street', data.localityInfo?.administrative?.[0]?.name || '');
           setValue('address.area', data.localityInfo?.administrative?.[1]?.name || '');
           setValue('address.city', data.locality || '');

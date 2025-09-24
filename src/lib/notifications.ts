@@ -1,0 +1,212 @@
+import { toast } from 'sonner';
+
+// Notification types
+export type NotificationType = 'job_assigned' | 'job_completed' | 'job_cancelled' | 'technician_offline';
+
+export interface NotificationData {
+  type: NotificationType;
+  title: string;
+  message: string;
+  jobId?: string;
+  technicianId?: string;
+  customerName?: string;
+  jobNumber?: string;
+  timestamp: Date;
+}
+
+// Browser notification permission
+export const requestNotificationPermission = async (): Promise<boolean> => {
+  if (!('Notification' in window)) {
+    console.warn('This browser does not support notifications');
+    return false;
+  }
+
+  if (Notification.permission === 'granted') {
+    return true;
+  }
+
+  if (Notification.permission !== 'denied') {
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
+  }
+
+  return false;
+};
+
+// Show browser notification
+export const showBrowserNotification = (data: NotificationData): void => {
+  if (Notification.permission === 'granted') {
+    const notification = new Notification(data.title, {
+      body: data.message,
+      icon: '/favicon.ico',
+      badge: '/favicon.ico',
+      tag: data.jobId || 'job-notification',
+      requireInteraction: true,
+      silent: false
+    });
+
+    // Auto close after 10 seconds
+    setTimeout(() => {
+      notification.close();
+    }, 10000);
+
+    // Handle click
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+      
+      // Navigate to relevant page
+      if (data.type === 'job_assigned' && data.technicianId) {
+        window.location.href = '/technician';
+      } else if (data.jobId) {
+        window.location.href = '/admin';
+      }
+    };
+  }
+};
+
+// Show toast notification
+export const showToastNotification = (data: NotificationData): void => {
+  const getToastConfig = () => {
+    switch (data.type) {
+      case 'job_assigned':
+        return {
+          type: 'success' as const,
+          title: 'New Job Assigned!',
+          description: data.message
+        };
+      case 'job_completed':
+        return {
+          type: 'success' as const,
+          title: 'Job Completed!',
+          description: data.message
+        };
+      case 'job_cancelled':
+        return {
+          type: 'error' as const,
+          title: 'Job Cancelled',
+          description: data.message
+        };
+      case 'technician_offline':
+        return {
+          type: 'warning' as const,
+          title: 'Technician Offline',
+          description: data.message
+        };
+      default:
+        return {
+          type: 'info' as const,
+          title: data.title,
+          description: data.message
+        };
+    }
+  };
+
+  const config = getToastConfig();
+  
+  if (config.type === 'success') {
+    toast.success(config.title, { description: config.description });
+  } else if (config.type === 'error') {
+    toast.error(config.title, { description: config.description });
+  } else if (config.type === 'warning') {
+    toast.warning(config.title, { description: config.description });
+  } else {
+    toast.info(config.title, { description: config.description });
+  }
+};
+
+// Main notification function
+export const sendNotification = async (data: NotificationData): Promise<void> => {
+  // Always show toast notification
+  showToastNotification(data);
+
+  // Show browser notification if permission is granted
+  const hasPermission = await requestNotificationPermission();
+  if (hasPermission) {
+    showBrowserNotification(data);
+  }
+};
+
+// Specific notification creators
+export const createJobAssignedNotification = (
+  jobNumber: string,
+  customerName: string,
+  technicianName: string,
+  jobId: string,
+  technicianId: string
+): NotificationData => ({
+  type: 'job_assigned',
+  title: 'New Job Assigned',
+  message: `Job #${jobNumber} assigned to ${technicianName} for ${customerName}`,
+  jobId,
+  technicianId,
+  customerName,
+  jobNumber,
+  timestamp: new Date()
+});
+
+export const createJobCompletedNotification = (
+  jobNumber: string,
+  customerName: string,
+  technicianName: string,
+  jobId: string
+): NotificationData => ({
+  type: 'job_completed',
+  title: 'Job Completed',
+  message: `Job #${jobNumber} completed by ${technicianName} for ${customerName}`,
+  jobId,
+  customerName,
+  jobNumber,
+  timestamp: new Date()
+});
+
+export const createJobCancelledNotification = (
+  jobNumber: string,
+  customerName: string,
+  jobId: string
+): NotificationData => ({
+  type: 'job_cancelled',
+  title: 'Job Cancelled',
+  message: `Job #${jobNumber} for ${customerName} has been cancelled`,
+  jobId,
+  customerName,
+  jobNumber,
+  timestamp: new Date()
+});
+
+export const createTechnicianOfflineNotification = (
+  technicianName: string,
+  technicianId: string
+): NotificationData => ({
+  type: 'technician_offline',
+  title: 'Technician Offline',
+  message: `${technicianName} has gone offline`,
+  technicianId,
+  timestamp: new Date()
+});
+
+// Notification storage for offline viewing
+export const storeNotification = (data: NotificationData): void => {
+  const notifications = getStoredNotifications();
+  notifications.unshift(data);
+  
+  // Keep only last 50 notifications
+  if (notifications.length > 50) {
+    notifications.splice(50);
+  }
+  
+  localStorage.setItem('job_notifications', JSON.stringify(notifications));
+};
+
+export const getStoredNotifications = (): NotificationData[] => {
+  try {
+    const stored = localStorage.getItem('job_notifications');
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const clearStoredNotifications = (): void => {
+  localStorage.removeItem('job_notifications');
+};

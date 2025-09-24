@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SecurityProvider } from "./contexts/SecurityContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import { Suspense, lazy } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -13,6 +14,9 @@ import PerformanceMonitor from "./components/PerformanceMonitor";
 // Lazy load heavy components for better performance
 const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
 const Booking = lazy(() => import("./pages/Booking"));
+const TechnicianLogin = lazy(() => import("./pages/TechnicianLogin"));
+const TechnicianDashboard = lazy(() => import("./pages/TechnicianDashboard"));
+const Settings = lazy(() => import("./pages/Settings"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
@@ -44,25 +48,30 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <SecurityProvider>
-        <TooltipProvider>
-          <PerformanceMonitor />
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/book" element={<Booking />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/terms-of-service" element={<TermsOfService />} />
-                <Route path="/cookie-policy" element={<CookiePolicy />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <PerformanceMonitor />
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/book" element={<Booking />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/technician/login" element={<TechnicianLogin />} />
+                  <Route path="/technician" element={<TechnicianDashboard />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/terms-of-service" element={<TermsOfService />} />
+                  <Route path="/cookie-policy" element={<CookiePolicy />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
       </SecurityProvider>
     </ThemeProvider>
   </QueryClientProvider>

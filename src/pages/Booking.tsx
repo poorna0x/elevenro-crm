@@ -780,6 +780,7 @@ const Booking: React.FC = () => {
 
           } else {
             const coordinateAddress = `Current Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+            
             setFormData(prev => ({ 
               ...prev, 
               address: coordinateAddress,
@@ -801,6 +802,7 @@ const Booking: React.FC = () => {
         })
         .catch(() => {
           const coordinateAddress = `Current Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+          
           setFormData(prev => ({ 
             ...prev, 
             address: coordinateAddress,
@@ -1017,6 +1019,9 @@ const Booking: React.FC = () => {
             latitude: formData.coordinates.lat,
             longitude: formData.coordinates.lng,
             formattedAddress: formData.address,
+            googleLocation: formData.coordinates.lat !== 0 && formData.coordinates.lng !== 0 
+              ? `https://www.google.com/maps/place/${formData.coordinates.lat},${formData.coordinates.lng}`
+              : null
           },
           service_type: formData.serviceType,
           brand: formData.brandName || 'Not specified',
@@ -1067,6 +1072,9 @@ const Booking: React.FC = () => {
           latitude: formData.coordinates.lat,
           longitude: formData.coordinates.lng,
           formattedAddress: formData.address,
+          googleLocation: formData.coordinates.lat !== 0 && formData.coordinates.lng !== 0 
+            ? `https://www.google.com/maps/place/${formData.coordinates.lat},${formData.coordinates.lng}`
+            : null
         },
         requirements: [],
         estimated_cost: 0,
