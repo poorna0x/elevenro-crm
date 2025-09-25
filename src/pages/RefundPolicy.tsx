@@ -95,6 +95,16 @@ const RefundPolicy = () => {
                   <li>If approved, refund will be processed within 5-7 business days</li>
                   <li>Refund will be credited to your original payment method</li>
                 </ol>
+                
+                <div className="bg-blue-50 p-4 rounded-lg mt-4">
+                  <h3 className="text-lg font-medium text-blue-900 mb-2">Refund Timeline</h3>
+                  <div className="space-y-2 text-blue-800">
+                    <p><strong>Processing Time:</strong> 5-7 business days from approval</p>
+                    <p><strong>Bank Reflection:</strong> Within 1 week (7 days) the refund will reflect in your bank account</p>
+                    <p><strong>UPI Refunds:</strong> May reflect within 2-3 business days</p>
+                    <p><strong>Card Refunds:</strong> May take 7-10 business days depending on your bank</p>
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -178,6 +188,7 @@ const RefundPolicy = () => {
                 <p><strong>WhatsApp:</strong> +91-8884944288</p>
                 <p><strong>Business Hours:</strong> Monday - Sunday, 8:00 AM - 8:00 PM</p>
                 <p><strong>Response Time:</strong> Within 24 hours for refund inquiries</p>
+                <p><strong>Refund Status:</strong> You can track your refund status by calling us or sending a WhatsApp message</p>
               </div>
             </section>
           </CardContent>
