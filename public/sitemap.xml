@@ -11,61 +11,79 @@
   <url>
     <loc>https://hydrogenro.com/</loc>
     <lastmod>2025-01-27</lastmod>
-    <changefreq>weekly</changefreq>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <image:image>
       <image:loc>https://hydrogenro.com/logo.jpg</image:loc>
       <image:title>Hydrogen RO - Best RO Water Purifier Services in Bengaluru</image:title>
       <image:caption>Professional RO water purifier installation, repair and maintenance services in Bengaluru, Karnataka</image:caption>
     </image:image>
+    <image:image>
+      <image:loc>https://hydrogenro.com/og-image.jpg</image:loc>
+      <image:title>RO Water Purifier Services Bengaluru - Installation & Repair</image:title>
+      <image:caption>Expert RO water purifier services in Bengaluru with same-day service and 24/7 emergency support</image:caption>
+    </image:image>
   </url>
 
-  <!-- Services Section -->
+  <!-- Main Service Pages -->
   <url>
-    <loc>https://hydrogenro.com/#services</loc>
-    <lastmod>2025-01-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <!-- Service Areas Section -->
-  <url>
-    <loc>https://hydrogenro.com/#service-areas</loc>
-    <lastmod>2025-01-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Pincode Services Section -->
-  <url>
-    <loc>https://hydrogenro.com/#pincode-services</loc>
-    <lastmod>2025-01-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- About Section -->
-  <url>
-    <loc>https://hydrogenro.com/#about</loc>
-    <lastmod>2025-01-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Booking Section -->
-  <url>
-    <loc>https://hydrogenro.com/#booking</loc>
+    <loc>https://hydrogenro.com/services</loc>
     <lastmod>2025-01-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/services-hero.jpg</image:loc>
+      <image:title>RO Water Purifier Services in Bengaluru</image:title>
+      <image:caption>Professional RO installation, repair and maintenance services across Bengaluru</image:caption>
+    </image:image>
   </url>
 
-  <!-- Contact Section -->
   <url>
-    <loc>https://hydrogenro.com/#contact</loc>
+    <loc>https://hydrogenro.com/about</loc>
     <lastmod>2025-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/about-team.jpg</image:loc>
+      <image:title>About Hydrogen RO - Expert Water Purifier Technicians</image:title>
+      <image:caption>Meet our certified RO technicians and learn about our commitment to clean water solutions</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/contact</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/contact-office.jpg</image:loc>
+      <image:title>Contact Hydrogen RO - Get in Touch</image:title>
+      <image:caption>Contact us for RO water purifier services in Bengaluru - Call +91-8884944288</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/service-areas</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/service-areas-map.jpg</image:loc>
+      <image:title>RO Service Areas in Bengaluru</image:title>
+      <image:caption>We provide RO water purifier services across all areas of Bengaluru including Whitefield, Electronic City, Koramangala and more</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/booking</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/booking-form.jpg</image:loc>
+      <image:title>Book RO Service Online - Hydrogen RO</image:title>
+      <image:caption>Book your RO water purifier service online with our easy booking form</image:caption>
+    </image:image>
   </url>
 
   <!-- Policy Pages -->
@@ -101,29 +119,310 @@
   <url>
     <loc>https://hydrogenro.com/ro-installation</loc>
     <lastmod>2025-01-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/ro-installation-service.jpg</image:loc>
+      <image:title>RO Water Purifier Installation Service in Bengaluru</image:title>
+      <image:caption>Professional RO water purifier installation service by certified technicians across Bengaluru</image:caption>
+    </image:image>
   </url>
 
   <url>
     <loc>https://hydrogenro.com/ro-repair</loc>
     <lastmod>2025-01-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/ro-repair-service.jpg</image:loc>
+      <image:title>RO Water Purifier Repair Service in Bengaluru</image:title>
+      <image:caption>Expert RO water purifier repair and troubleshooting service across Bengaluru</image:caption>
+    </image:image>
   </url>
 
   <url>
     <loc>https://hydrogenro.com/water-softener</loc>
     <lastmod>2025-01-27</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/water-softener-service.jpg</image:loc>
+      <image:title>Water Softener Installation Service in Bengaluru</image:title>
+      <image:caption>Professional water softener installation and maintenance service in Bengaluru</image:caption>
+    </image:image>
   </url>
 
   <url>
     <loc>https://hydrogenro.com/filter-replacement</loc>
     <lastmod>2025-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/filter-replacement-service.jpg</image:loc>
+      <image:title>RO Filter Replacement Service in Bengaluru</image:title>
+      <image:caption>Professional RO filter replacement and maintenance service across Bengaluru</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Location-specific Service Pages -->
+  <url>
+    <loc>https://hydrogenro.com/ro-service-whitefield</loc>
+    <lastmod>2025-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-service-electronic-city</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-service-koramangala</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-service-hsr-layout</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-service-indiranagar</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-service-marathahalli</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-service-btm-layout</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-service-jayanagar</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-service-malleshwaram</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-service-rajajinagar</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Emergency Service Pages -->
+  <url>
+    <loc>https://hydrogenro.com/emergency-ro-repair</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/emergency-ro-repair-service.jpg</image:loc>
+      <image:title>Emergency RO Repair Service in Bengaluru - 24/7</image:title>
+      <image:caption>24/7 emergency RO water purifier repair service across Bengaluru with same-day response</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/same-day-ro-service</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/same-day-ro-service.jpg</image:loc>
+      <image:title>Same Day RO Service in Bengaluru - Quick Response</image:title>
+      <image:caption>Same-day RO water purifier service across Bengaluru with quick response and professional technicians</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Service Type Pages -->
+  <url>
+    <loc>https://hydrogenro.com/ro-maintenance</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-troubleshooting</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-spare-parts</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Information Pages -->
+  <url>
+    <loc>https://hydrogenro.com/ro-brands</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-price-list</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/ro-warranty</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Blog Articles for Content Marketing -->
+  <url>
+    <loc>https://hydrogenro.com/blog</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/blog-hero.jpg</image:loc>
+      <image:title>RO Water Purifier Blog - Tips and Guides</image:title>
+      <image:caption>Expert tips, guides and information about RO water purifiers and water treatment solutions</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/blog/how-to-maintain-ro-purifier-at-home</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/blog/ro-maintenance-guide.jpg</image:loc>
+      <image:title>How to Maintain Your RO Purifier at Home - Complete Guide</image:title>
+      <image:caption>Step-by-step guide to maintain your RO water purifier at home for optimal performance</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/blog/ro-vs-uv-vs-uf-water-purifiers-bengaluru</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/blog/ro-vs-uv-vs-uf-comparison.jpg</image:loc>
+      <image:title>RO vs UV vs UF Water Purifiers - Which is Best for Bengaluru Water?</image:title>
+      <image:caption>Complete comparison of RO, UV and UF water purifiers for Bengaluru's water quality</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/blog/water-softeners-important-karnataka-homes</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/blog/water-softener-benefits.jpg</image:loc>
+      <image:title>Why Water Softeners are Important in Karnataka Homes</image:title>
+      <image:caption>Learn why water softeners are essential for Karnataka homes and their benefits</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/blog/ro-filter-replacement-schedule-bengaluru</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/blog/ro-filter-replacement.jpg</image:loc>
+      <image:title>RO Filter Replacement Schedule for Bengaluru Water Quality</image:title>
+      <image:caption>Complete guide to RO filter replacement schedule based on Bengaluru's water quality</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/blog/signs-ro-purifier-needs-repair</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/blog/ro-repair-signs.jpg</image:loc>
+      <image:title>10 Signs Your RO Purifier Needs Repair - Bengaluru Guide</image:title>
+      <image:caption>Warning signs that indicate your RO water purifier needs immediate repair or maintenance</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/blog/best-ro-brands-bengaluru-2025</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/blog/best-ro-brands.jpg</image:loc>
+      <image:title>Best RO Water Purifier Brands in Bengaluru 2025</image:title>
+      <image:caption>Top-rated RO water purifier brands available in Bengaluru with detailed reviews and comparisons</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/blog/ro-water-purifier-price-guide-bengaluru</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/blog/ro-price-guide.jpg</image:loc>
+      <image:title>RO Water Purifier Price Guide for Bengaluru 2025</image:title>
+      <image:caption>Complete price guide for RO water purifiers in Bengaluru with installation and maintenance costs</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/blog/water-quality-testing-bengaluru</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/blog/water-quality-testing.jpg</image:loc>
+      <image:title>Water Quality Testing in Bengaluru - Complete Guide</image:title>
+      <image:caption>How to test water quality in Bengaluru and choose the right water purifier based on results</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://hydrogenro.com/blog/ro-purifier-troubleshooting-guide</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://hydrogenro.com/blog/ro-troubleshooting.jpg</image:loc>
+      <image:title>RO Purifier Troubleshooting Guide - Common Problems and Solutions</image:title>
+      <image:caption>Step-by-step troubleshooting guide for common RO water purifier problems and their solutions</image:caption>
+    </image:image>
   </url>
 
 </urlset>

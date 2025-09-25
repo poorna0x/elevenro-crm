@@ -10,17 +10,68 @@ Crawl-delay: 1
 # Allow all search engines to crawl
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Slurp
 Allow: /
+Crawl-delay: 1
 
-# Block access to admin areas (if any)
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 2
+
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 1
+
+# Block access to admin areas and sensitive files
 Disallow: /admin/
 Disallow: /private/
+Disallow: /.env
+Disallow: /.git/
+Disallow: /node_modules/
+Disallow: /src/
+Disallow: /dist/
+Disallow: /build/
+Disallow: /api/
+Disallow: /functions/
+Disallow: /.netlify/
+Disallow: /_next/
+Disallow: /static/
+Disallow: /public/
+Disallow: /*.json$
+Disallow: /*.xml$
+Disallow: /*.txt$
+Disallow: /*.log$
+Disallow: /*.sql$
+Disallow: /*.md$
 
-# Allow access to CSS and JS files
-Allow: /src/
-Allow: /public/
+# Allow access to important files
+Allow: /favicon.ico
+Allow: /robots.txt
+Allow: /sitemap.xml
+Allow: /site.webmanifest
+Allow: /*.css
+Allow: /*.js
+Allow: /*.jpg
+Allow: /*.jpeg
+Allow: /*.png
+Allow: /*.gif
+Allow: /*.svg
+Allow: /*.webp
+Allow: /*.ico
+Allow: /*.woff
+Allow: /*.woff2
+Allow: /*.ttf
+Allow: /*.eot
+
+# Host directive
+Host: https://hydrogenro.com
