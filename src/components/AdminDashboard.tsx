@@ -1099,7 +1099,7 @@ const AdminDashboard = () => {
     if (addFormData.address.trim()) {
       const encodedAddress = encodeURIComponent(addFormData.address);
       const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
-      window.open(googleMapsUrl, '_blank');
+      window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
     } else {
       toast.error('Please enter an address first');
     }

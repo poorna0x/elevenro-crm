@@ -85,7 +85,7 @@ This link will take you directly to our payment gateway where you can pay ₹15,
 Thank you for choosing our services!`;
     
     const whatsappUrl = `https://wa.me/${customerDetails.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   };
 
   const sendSMS = () => {

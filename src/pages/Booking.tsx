@@ -1957,7 +1957,7 @@ const Booking: React.FC = () => {
                         Call: +91-8884944288
                       </Button>
                       <Button 
-                        onClick={() => window.open('https://wa.me/918884944288', '_blank')}
+                        onClick={() => window.open('https://wa.me/918884944288', '_blank', 'noopener,noreferrer')}
                         className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"
                       >
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

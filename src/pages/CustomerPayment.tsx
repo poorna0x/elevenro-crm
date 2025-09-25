@@ -121,7 +121,7 @@ const CustomerPayment: React.FC = () => {
           setPaymentUrl(paymentUrl);
 
           // Open Cashfree payment page in new tab
-          window.open(paymentUrl, '_blank');
+          window.open(paymentUrl, '_blank', 'noopener,noreferrer');
 
           toast.success('Redirecting to payment gateway...');
           setPaymentStatus('success');
@@ -326,7 +326,7 @@ const CustomerPayment: React.FC = () => {
                   </Button>
                 </div>
                 <Button
-                  onClick={() => window.open(paymentUrl, '_blank')}
+                  onClick={() => window.open(paymentUrl, '_blank', 'noopener,noreferrer')}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
@@ -364,7 +364,7 @@ const CustomerPayment: React.FC = () => {
                 )}
                 <div className="mt-4">
                   <Button
-                    onClick={() => window.open(paymentUrl, '_blank')}
+                    onClick={() => window.open(paymentUrl, '_blank', 'noopener,noreferrer')}
                     className="bg-green-600 hover:bg-green-700"
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />

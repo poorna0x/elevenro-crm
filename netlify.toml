@@ -5,6 +5,27 @@
 [functions]
   directory = "netlify/functions"
 
+# Redirect old pages to main site with 301 status
+[[redirects]]
+  from = "/go"
+  to = "https://hydrogenro.com"
+  status = 301
+
+[[redirects]]
+  from = "/go/"
+  to = "https://hydrogenro.com"
+  status = 301
+
+[[redirects]]
+  from = "/go2"
+  to = "https://hydrogenro.com"
+  status = 301
+
+[[redirects]]
+  from = "/go2/"
+  to = "https://hydrogenro.com"
+  status = 301
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"

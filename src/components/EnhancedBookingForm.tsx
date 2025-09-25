@@ -102,7 +102,7 @@ const EnhancedBookingForm = () => {
   };
 
   const handleWhatsApp = () => {
-    window.open('https://wa.me/918884944288', '_blank');
+    window.open('https://wa.me/918884944288', '_blank', 'noopener,noreferrer');
   };
 
   const handleEmail = () => {
