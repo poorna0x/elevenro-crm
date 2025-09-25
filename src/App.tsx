@@ -28,6 +28,14 @@ const CustomerPayment = lazy(() => import("./pages/CustomerPayment"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentWebhook = lazy(() => import("./pages/PaymentWebhook"));
 
+// New SEO pages
+const Services = lazy(() => import("./pages/Services"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const ServiceAreas = lazy(() => import("./pages/ServiceAreas"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogArticle = lazy(() => import("./pages/BlogArticle"));
+
 // Loading component for lazy-loaded routes
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -73,12 +81,48 @@ const App = () => (
                   <Route path="/terms-of-service" element={<TermsOfService />} />
                   <Route path="/refund-policy" element={<RefundPolicy />} />
                   <Route path="/cookie-policy" element={<CookiePolicy />} />
-            <Route path="/payment-test" element={<PaymentTest />} />
-            <Route path="/payment-test-simple" element={<PaymentTestSimple />} />
-            <Route path="/payment-request" element={<PaymentRequest />} />
-            <Route path="/pay" element={<CustomerPayment />} />
-            <Route path="/payment/success" element={<PaymentSuccess />} />
-            <Route path="/payment/webhook" element={<PaymentWebhook />} />
+                  <Route path="/payment-test" element={<PaymentTest />} />
+                  <Route path="/payment-test-simple" element={<PaymentTestSimple />} />
+                  <Route path="/payment-request" element={<PaymentRequest />} />
+                  <Route path="/pay" element={<CustomerPayment />} />
+                  <Route path="/payment/success" element={<PaymentSuccess />} />
+                  <Route path="/payment/webhook" element={<PaymentWebhook />} />
+                  
+                  {/* SEO Pages */}
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/service-areas" element={<ServiceAreas />} />
+                  <Route path="/booking" element={<Booking />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/how-to-maintain-ro-purifier-at-home" element={<BlogArticle />} />
+                  
+                  {/* Service-specific pages */}
+                  <Route path="/ro-installation" element={<Services />} />
+                  <Route path="/ro-repair" element={<Services />} />
+                  <Route path="/water-softener" element={<Services />} />
+                  <Route path="/filter-replacement" element={<Services />} />
+                  <Route path="/ro-maintenance" element={<Services />} />
+                  <Route path="/ro-troubleshooting" element={<Services />} />
+                  <Route path="/ro-spare-parts" element={<Services />} />
+                  <Route path="/ro-brands" element={<Services />} />
+                  <Route path="/ro-price-list" element={<Services />} />
+                  <Route path="/ro-warranty" element={<Services />} />
+                  <Route path="/emergency-ro-repair" element={<Services />} />
+                  <Route path="/same-day-ro-service" element={<Services />} />
+                  
+                  {/* Location-specific pages */}
+                  <Route path="/ro-service-whitefield" element={<ServiceAreas />} />
+                  <Route path="/ro-service-electronic-city" element={<ServiceAreas />} />
+                  <Route path="/ro-service-koramangala" element={<ServiceAreas />} />
+                  <Route path="/ro-service-hsr-layout" element={<ServiceAreas />} />
+                  <Route path="/ro-service-indiranagar" element={<ServiceAreas />} />
+                  <Route path="/ro-service-marathahalli" element={<ServiceAreas />} />
+                  <Route path="/ro-service-btm-layout" element={<ServiceAreas />} />
+                  <Route path="/ro-service-jayanagar" element={<ServiceAreas />} />
+                  <Route path="/ro-service-malleshwaram" element={<ServiceAreas />} />
+                  <Route path="/ro-service-rajajinagar" element={<ServiceAreas />} />
+                  
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
