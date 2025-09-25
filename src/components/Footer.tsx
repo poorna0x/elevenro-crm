@@ -90,21 +90,31 @@ const Footer = () => {
         </div>
         
         <div className="mt-16 pt-8 border-t border-border">
-          {/* Policy Links - Better Mobile Layout */}
-          <div className="flex justify-center md:justify-start mb-8">
-            <div className="grid grid-cols-2 md:flex gap-6 md:gap-8 text-sm">
-              <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors text-center md:text-left">Privacy Policy</Link>
-              <Link to="/terms-of-service" className="text-muted-foreground hover:text-foreground transition-colors text-center md:text-left">Terms of Service</Link>
-              <Link to="/refund-policy" className="text-muted-foreground hover:text-foreground transition-colors text-center md:text-left">Refund Policy</Link>
-              <Link to="/cookie-policy" className="text-muted-foreground hover:text-foreground transition-colors text-center md:text-left">Cookie Policy</Link>
+          {/* Mobile Policy Links - Keep as is */}
+          <div className="flex justify-center md:hidden mb-8">
+            <div className="grid grid-cols-2 gap-6 text-sm">
+              <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors text-center">Privacy Policy</Link>
+              <Link to="/terms-of-service" className="text-muted-foreground hover:text-foreground transition-colors text-center">Terms of Service</Link>
+              <Link to="/refund-policy" className="text-muted-foreground hover:text-foreground transition-colors text-center">Refund Policy</Link>
+              <Link to="/cookie-policy" className="text-muted-foreground hover:text-foreground transition-colors text-center">Cookie Policy</Link>
             </div>
           </div>
           
-          {/* Horizontal Separator */}
-          <div className="w-full h-px bg-border mb-6"></div>
+          {/* Desktop Copyright with Policy Links */}
+          <div className="hidden md:flex items-center justify-between text-muted-foreground text-sm">
+            <div>
+              © {new Date().getFullYear()} Hydrogen RO - Best RO Water Purifier Services in Bengaluru, Karnataka. All rights reserved.
+            </div>
+            <div className="flex items-center gap-6">
+              <Link to="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+              <Link to="/terms-of-service" className="hover:text-foreground transition-colors">Terms of Service</Link>
+              <Link to="/refund-policy" className="hover:text-foreground transition-colors">Refund Policy</Link>
+              <Link to="/cookie-policy" className="hover:text-foreground transition-colors">Cookie Policy</Link>
+            </div>
+          </div>
           
-          {/* Copyright */}
-          <div className="text-center md:text-left text-muted-foreground text-sm">
+          {/* Mobile Copyright */}
+          <div className="text-center md:hidden text-muted-foreground text-sm">
             © {new Date().getFullYear()} Hydrogen RO - Best RO Water Purifier Services in Bengaluru, Karnataka. All rights reserved.
           </div>
           
