@@ -1785,116 +1785,207 @@ const AdminDashboard = () => {
           <div className="space-y-6">
             {displayedCustomers.map(({ customer, allJobs, upcomingJobs, completedJobs, cancelledJobs }) => (
               <Card key={customer.id} className="bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden mb-6 rounded-lg group">
-                {/* Customer Profile Header */}
-                <div className="bg-gray-50 p-6 border-b border-gray-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6">
+                {/* Customer Profile Header - Mobile First Design */}
+                <div className="bg-gray-50 p-4 border-b border-gray-200">
+                  {/* Mobile Customer Info */}
+                  <div className="mb-4 sm:hidden">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-6 h-6 bg-gray-600 rounded-sm flex items-center justify-center">
+                        <div className="w-3 h-3 bg-white rounded-sm"></div>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 truncate flex-1">
+                        {(customer as any).full_name}
+                      </h3>
+                      <div className="bg-gray-800 text-white px-2 py-1 rounded-md font-mono text-xs font-medium">
+                        {(customer as any).customer_id || 'N/A'}
+                      </div>
+                    </div>
+                    {(customer.brand || customer.model) && (
+                      <div className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-md inline-block">
+                        {[customer.brand, customer.model]
+                          .filter(Boolean)
+                          .filter(value => !value.toLowerCase().includes('not specified') && !value.toLowerCase().includes('n/a'))
+                          .join(' ')}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons - Mobile Grid */}
+                  <div className="grid grid-cols-2 gap-2 sm:hidden">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center justify-center gap-2 h-10 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-sm"
+                      onClick={() => handleEditCustomer(customer)}
+                    >
+                      <Edit className="w-4 h-4" />
+                      Edit Profile
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center justify-center gap-2 h-10 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-sm"
+                      onClick={() => handleNewJob(customer)}
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Job
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center justify-center gap-2 h-10 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-sm"
+                      onClick={() => handleViewPhotos(customer)}
+                    >
+                      <Camera className="w-4 h-4" />
+                      Photos
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center justify-center gap-2 h-10 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-sm"
+                      onClick={() => handleViewHistory(customer)}
+                    >
+                      <History className="w-4 h-4" />
+                      History
+                    </Button>
+                    
+                    {/* Mobile 3 Dots Menu - Spans 2 columns */}
+                    <div className="col-span-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full flex items-center justify-center gap-2 h-10 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-sm"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                            More Options
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center" className="w-48">
+                          <DropdownMenuItem onClick={() => toast.info('Billing system coming soon')}>
+                            <Receipt className="mr-2 h-4 w-4" />
+                            Generate Bill
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toast.info('AMC management coming soon')}>
+                            <Star className="mr-2 h-4 w-4" />
+                            AMC
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toast.info('Reports coming soon')}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Reports
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+
+                  {/* Desktop Layout - Customer Info and Action Buttons in Same Row */}
+                  <div className="hidden sm:flex sm:items-center sm:justify-between sm:gap-4">
                     {/* Customer Info */}
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-gray-600 rounded-sm flex items-center justify-center">
-                              <div className="w-2 h-2 bg-white rounded-sm"></div>
-                            </div>
-                            <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 truncate">
-                              {(customer as any).full_name}
-                            </h3>
-                            <div className="bg-gray-800 text-white px-2 py-1 rounded-md font-mono text-xs sm:text-sm font-medium">
-                              {(customer as any).customer_id || 'N/A'}
-                            </div>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 bg-gray-600 rounded-sm flex items-center justify-center">
+                            <div className="w-2 h-2 bg-white rounded-sm"></div>
                           </div>
-                          {(customer.brand || customer.model) && (
-                            <div className="text-xs sm:text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
-                              {[customer.brand, customer.model]
-                                .filter(Boolean)
-                                .filter(value => !value.toLowerCase().includes('not specified') && !value.toLowerCase().includes('n/a'))
-                                .join(' ')}
-                            </div>
-                          )}
+                          <h3 className="text-xl font-semibold text-gray-900 truncate">
+                            {(customer as any).full_name}
+                          </h3>
+                          <div className="bg-gray-800 text-white px-2 py-1 rounded-md font-mono text-sm font-medium">
+                            {(customer as any).customer_id || 'N/A'}
+                          </div>
                         </div>
-                    </div>
-
-                    {/* Action Buttons Row */}
-                    <div className="w-full sm:w-auto">
-                      <div className="grid grid-cols-5 gap-1 sm:flex sm:items-center sm:gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex items-center justify-center gap-1 sm:gap-2 h-10 sm:h-8 px-2 sm:px-3 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-xs"
-                          onClick={() => handleEditCustomer(customer)}
-                        >
-                          <Edit className="w-3 h-3" />
-                          <span className="hidden sm:inline">Edit</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex items-center justify-center gap-1 sm:gap-2 h-10 sm:h-8 px-2 sm:px-3 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-xs"
-                          onClick={() => handleNewJob(customer)}
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span className="hidden sm:inline">Job</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex items-center justify-center gap-1 sm:gap-2 h-10 sm:h-8 px-2 sm:px-3 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-xs"
-                          onClick={() => handleViewPhotos(customer)}
-                        >
-                          <Camera className="w-3 h-3" />
-                          <span className="hidden sm:inline">Photos</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex items-center justify-center gap-1 sm:gap-2 h-10 sm:h-8 px-2 sm:px-3 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-xs"
-                          onClick={() => handleViewHistory(customer)}
-                        >
-                          <History className="w-3 h-3" />
-                          <span className="hidden sm:inline">History</span>
-                        </Button>
-                        
-                        {/* Action Menu - 3 Dots */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="flex items-center justify-center gap-1 sm:gap-2 h-10 sm:h-8 px-2 sm:px-3 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-xs w-full sm:w-auto"
-                            >
-                              <MoreVertical className="w-3 h-3 sm:w-4 sm:h-4" />
-                              <span className="hidden sm:inline">More</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem onClick={() => toast.info('Billing system coming soon')}>
-                              <Receipt className="mr-2 h-4 w-4" />
-                              Generate Bill
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.info('AMC management coming soon')}>
-                              <Star className="mr-2 h-4 w-4" />
-                              AMC
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.info('Reports coming soon')}>
-                              <FileText className="mr-2 h-4 w-4" />
-                              Reports
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {(customer.brand || customer.model) && (
+                          <div className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
+                            {[customer.brand, customer.model]
+                              .filter(Boolean)
+                              .filter(value => !value.toLowerCase().includes('not specified') && !value.toLowerCase().includes('n/a'))
+                              .join(' ')}
+                          </div>
+                        )}
                       </div>
+                    </div>
+                    
+                    {/* Desktop Action Buttons */}
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex items-center gap-2 h-8 px-3 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-xs"
+                        onClick={() => handleEditCustomer(customer)}
+                      >
+                        <Edit className="w-3 h-3" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex items-center gap-2 h-8 px-3 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-xs"
+                        onClick={() => handleNewJob(customer)}
+                      >
+                        <Plus className="w-3 h-3" />
+                        Job
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex items-center gap-2 h-8 px-3 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-xs"
+                        onClick={() => handleViewPhotos(customer)}
+                      >
+                        <Camera className="w-3 h-3" />
+                        Photos
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex items-center gap-2 h-8 px-3 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-xs"
+                        onClick={() => handleViewHistory(customer)}
+                      >
+                        <History className="w-3 h-3" />
+                        History
+                      </Button>
+                      
+                      {/* Desktop 3 Dots Menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex items-center gap-2 h-8 px-3 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all duration-200 rounded-md text-xs"
+                          >
+                            <MoreVertical className="w-3 h-3" />
+                            More
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => toast.info('Billing system coming soon')}>
+                            <Receipt className="mr-2 h-4 w-4" />
+                            Generate Bill
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toast.info('AMC management coming soon')}>
+                            <Star className="mr-2 h-4 w-4" />
+                            AMC
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toast.info('Reports coming soon')}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Reports
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </div>
 
-                {/* Contact & Communication */}
-                <div className="p-6 border-b border-gray-100">
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Contact & Communication - Mobile First */}
+                <div className="p-4 border-b border-gray-100">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     {/* Phone */}
-                    <div className="bg-white rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="bg-white rounded-lg p-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <a href={`tel:${customer.phone}`} className="cursor-pointer">
-                            <Phone className="w-5 h-5 text-gray-600" />
+                            <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                           </a>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1908,11 +1999,11 @@ const AdminDashboard = () => {
                     </div>
                     
                     {/* Email */}
-                    <div className="bg-white rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="bg-white rounded-lg p-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <a href={`mailto:${customer.email}`} className="cursor-pointer">
-                            <Mail className="w-5 h-5 text-gray-600" />
+                            <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                           </a>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1923,14 +2014,14 @@ const AdminDashboard = () => {
                     </div>
                     
                     {/* WhatsApp */}
-                    <div className="bg-white rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="bg-white rounded-lg p-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <button
                             onClick={() => toast.info('WhatsApp integration coming soon')}
                             className="cursor-pointer"
                           >
-                            <WhatsAppIcon className="w-5 h-5 text-gray-600" />
+                            <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                           </button>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1941,9 +2032,9 @@ const AdminDashboard = () => {
                     </div>
                     
                     {/* Location */}
-                    <div className="bg-white rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="bg-white rounded-lg p-3 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <button
                             onClick={() => {
                               if (customer.location?.googleLocation) {
@@ -1959,7 +2050,7 @@ const AdminDashboard = () => {
                             }}
                             className="cursor-pointer"
                           >
-                            <MapPin className="w-5 h-5 text-gray-600" />
+                            <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                           </button>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1982,8 +2073,8 @@ const AdminDashboard = () => {
 
                 {/* Services Section - Only show if there are jobs */}
                 {allJobs.length > 0 && (
-                  <div className="p-6 bg-gray-50">
-                    <div className="mb-6">
+                  <div className="p-4 bg-gray-50">
+                    <div className="mb-4">
                       <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-3">
                         <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
                           <Wrench className="w-4 h-4 text-gray-600" />
@@ -2013,7 +2104,7 @@ const AdminDashboard = () => {
                         
                         return (
                           <div key={job.id} className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 overflow-hidden group">
-                            <div className="p-5">
+                            <div className="p-4">
                               <div className="flex items-start justify-between mb-4">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-3 mb-3">
