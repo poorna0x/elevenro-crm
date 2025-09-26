@@ -1057,7 +1057,7 @@ const Booking: React.FC = () => {
         status: 'PENDING' as const,
         priority: 'MEDIUM' as const,
         description: formData.description,
-        images: imageUrls,
+        before_photos: imageUrls,
         scheduled_date: formData.serviceDate ? new Date(formData.serviceDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         scheduled_time_slot: (formData.preferredTime === 'FIRST_HALF' ? 'MORNING' : 'AFTERNOON') as 'MORNING' | 'AFTERNOON' | 'EVENING',
         estimated_duration: 120,

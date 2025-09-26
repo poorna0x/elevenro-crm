@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { db } from '@/lib/supabase';
 import { Customer, Job, Technician } from '@/types';
+import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { toast } from 'sonner';
 import { openInGoogleMaps, extractCoordinates, formatAddressForDisplay } from '@/lib/maps';
 import { sendNotification, createJobAssignedNotification, createJobCompletedNotification, createJobCancelledNotification } from '@/lib/notifications';
@@ -128,6 +129,7 @@ const AdminDashboard = () => {
   const [isCreatingJob, setIsCreatingJob] = useState(false);
   const [isJobDialogReady, setIsJobDialogReady] = useState(false);
   const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
+  const [customerPhotoGalleryOpen, setCustomerPhotoGalleryOpen] = useState(false);
   const [selectedCustomerForPhotos, setSelectedCustomerForPhotos] = useState<Customer | null>(null);
   const [customerPhotos, setCustomerPhotos] = useState<{[customerId: string]: string[]}>({});
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -152,33 +154,6 @@ const AdminDashboard = () => {
   }, [customerPhotos]);
 
   // Image compression utility
-  const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.8): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = () => {
-        // Calculate new dimensions
-        let { width, height } = img;
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw and compress
-        ctx?.drawImage(img, 0, 0, width, height);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-        resolve(compressedDataUrl);
-      };
-      
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = URL.createObjectURL(file);
-    });
-  };
 
 
   const [addFormData, setAddFormData] = useState({
@@ -854,31 +829,76 @@ const AdminDashboard = () => {
   // Photo management functions
   const handleViewPhotos = (customer: Customer) => {
     setSelectedCustomerForPhotos(customer);
-    setPhotoGalleryOpen(true);
-    // Load customer photos if not already loaded
-    if (!customerPhotos[customer.id]) {
-      loadCustomerPhotos(customer.id);
-    }
+    setCustomerPhotoGalleryOpen(true);
+    // Always reload customer photos to get the latest data
+    const customerId = (customer as any).customer_id || customer.customerId;
+    loadCustomerPhotos(customerId);
   };
 
   const handleClosePhotoGallery = () => {
-    setPhotoGalleryOpen(false);
+    setCustomerPhotoGalleryOpen(false);
     setSelectedCustomerForPhotos(null);
   };
 
   const loadCustomerPhotos = async (customerId: string) => {
     try {
-      // In a real app, this would fetch from your photo storage service
-      // For now, we'll simulate with some unique placeholder photos
-      const mockPhotos = [
-        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&auto=format',
-        'https://images.unsplash.com/photo-1581578731548-c6a0c3f2e5c1?w=400&h=300&fit=crop&auto=format',
-        'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop&auto=format',
-        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&auto=format&q=80'
-      ];
+      // Find the customer by customer_id to get their UUID
+      const { data: customer, error: customerError } = await db.customers.getByCustomerId(customerId);
+      
+      if (customerError || !customer) {
+        throw new Error(`Customer not found: ${customerError?.message || 'Unknown error'}`);
+      }
+      
+      // Fetch actual photos from jobs for this customer using the UUID
+      const { data: jobs, error } = await db.jobs.getByCustomerId(customer.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Extract all photos from jobs (using before_photos as general photos)
+      const allPhotos: string[] = [];
+      
+      if (jobs && jobs.length > 0) {
+        console.log('Jobs found for customer:', jobs.length);
+        jobs.forEach((job, index) => {
+          console.log(`Job ${index}:`, {
+            id: job.id,
+            job_number: (job as any).job_number,
+            before_photos: (job as any).before_photos,
+            images: (job as any).images
+          });
+          
+          // Extract URLs from Cloudinary objects or use as-is if already strings
+          const extractPhotoUrls = (photos: any[]) => {
+            if (!Array.isArray(photos)) return [];
+            return photos.map(photo => {
+              if (typeof photo === 'string') {
+                return photo;
+              } else if (photo && typeof photo === 'object' && photo.secure_url) {
+                return photo.secure_url;
+              }
+              return null;
+            }).filter(url => url !== null);
+          };
+          
+          // Add photos from before_photos field (treating it as general photos)
+          const jobPhotos = Array.isArray((job as any).before_photos) ? (job as any).before_photos : [];
+          const extractedPhotos = extractPhotoUrls(jobPhotos);
+          console.log(`Job ${index} extracted photos from before_photos:`, extractedPhotos);
+          allPhotos.push(...extractedPhotos);
+          
+          // Also check if there are photos in the images field (for backward compatibility)
+          const jobImages = Array.isArray((job as any).images) ? (job as any).images : [];
+          const extractedImages = extractPhotoUrls(jobImages);
+          console.log(`Job ${index} extracted photos from images:`, extractedImages);
+          allPhotos.push(...extractedImages);
+        });
+      }
+      
       setCustomerPhotos(prev => ({
         ...prev,
-        [customerId]: mockPhotos
+        [customerId]: allPhotos
       }));
     } catch (error) {
       console.error('Error loading photos:', error);
@@ -893,6 +913,7 @@ const AdminDashboard = () => {
     setIsCompressingImage(true);
     try {
       const uploadedPhotos: string[] = [];
+      const customerId = (selectedCustomerForPhotos as any).customer_id;
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -910,27 +931,98 @@ const AdminDashboard = () => {
         }
         
         try {
+          console.log(`Processing file: ${file.name}, size: ${file.size}, type: ${file.type}`);
+          
           // Compress image for better performance
-          const compressedDataUrl = await compressImage(file, 800, 0.8);
-          uploadedPhotos.push(compressedDataUrl);
+          const compressedFile = await compressImage(file, 800, 0.8);
+          console.log(`Compressed file: ${compressedFile.name}, size: ${compressedFile.size}`);
+          
+          // Upload to Cloudinary
+          console.log('Uploading to Cloudinary...');
+          const uploadResult = await cloudinaryService.uploadImage(compressedFile, 'ro-service');
+          console.log('Cloudinary upload result:', uploadResult);
+          uploadedPhotos.push(uploadResult.secure_url);
         } catch (error) {
-          console.error('Error compressing image:', error);
-          // Fallback to original file if compression fails
-          const objectUrl = URL.createObjectURL(file);
-          uploadedPhotos.push(objectUrl);
+          console.error(`Error uploading ${file.name} to Cloudinary:`, error);
+          toast.error(`Failed to upload ${file.name}: ${error.message || 'Unknown error'}`);
         }
       }
 
       if (uploadedPhotos.length > 0) {
+        // Update local state
         setCustomerPhotos(prev => ({
           ...prev,
-          [selectedCustomerForPhotos.id]: [
-            ...(prev[selectedCustomerForPhotos.id] || []),
+          [customerId]: [
+            ...(prev[customerId] || []),
             ...uploadedPhotos
           ]
         }));
 
-        toast.success(`${uploadedPhotos.length} photo(s) uploaded and optimized successfully!`);
+        // Save to database - find the customer's latest job and add photos to it
+        try {
+          // Get customer's UUID
+          const { data: customer, error: customerError } = await db.customers.getByCustomerId(customerId);
+          if (customerError || !customer) {
+            throw new Error('Customer not found');
+          }
+
+          // Get customer's latest job
+          const { data: customerJobs, error: jobsError } = await db.jobs.getByCustomerId(customer.id);
+          if (jobsError) {
+            throw new Error('Failed to fetch customer jobs');
+          }
+
+          if (customerJobs && customerJobs.length > 0) {
+            // Update the latest job with new photos
+            const latestJob = customerJobs[0]; // Jobs are ordered by created_at desc
+            const currentPhotos = Array.isArray((latestJob as any).before_photos) ? (latestJob as any).before_photos : [];
+            const updatedPhotos = [...currentPhotos, ...uploadedPhotos];
+
+            const { error: updateError } = await db.jobs.update(latestJob.id, {
+              before_photos: updatedPhotos
+            });
+
+            if (updateError) {
+              console.error('Error updating job with photos:', updateError);
+              toast.warning('Photos uploaded but failed to save to database');
+            } else {
+              toast.success(`${uploadedPhotos.length} photo(s) uploaded and saved successfully!`);
+            }
+          } else {
+            // No jobs found, create a new job for this customer
+            const jobData = {
+              job_number: `RO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+              customer_id: customer.id,
+              service_type: 'RO' as const,
+              service_sub_type: 'Photo Upload',
+              brand: 'N/A',
+              model: 'N/A',
+              scheduled_date: new Date().toISOString().split('T')[0],
+              scheduled_time_slot: 'MORNING' as const,
+              estimated_duration: 0,
+              service_address: customer.address,
+              service_location: customer.location,
+              status: 'PENDING' as const,
+              priority: 'LOW' as const,
+              description: 'Customer photo upload',
+              requirements: [],
+              estimated_cost: 0,
+              payment_status: 'PENDING' as const,
+              before_photos: uploadedPhotos,
+            };
+
+            const { error: createError } = await db.jobs.create(jobData);
+            if (createError) {
+              console.error('Error creating job for photos:', createError);
+              toast.warning('Photos uploaded but failed to save to database');
+            } else {
+              toast.success(`${uploadedPhotos.length} photo(s) uploaded and saved successfully!`);
+            }
+          }
+        } catch (error) {
+          console.error('Error saving photos to database:', error);
+          toast.warning('Photos uploaded but failed to save to database');
+        }
       } else {
         toast.error('No valid photos were uploaded');
       }
@@ -3655,8 +3747,8 @@ const AdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Photo Gallery Dialog */}
-      <Dialog open={photoGalleryOpen} onOpenChange={handleClosePhotoGallery}>
+      {/* Customer Photo Gallery Dialog */}
+      <Dialog open={customerPhotoGalleryOpen} onOpenChange={handleClosePhotoGallery}>
         <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
@@ -3697,12 +3789,19 @@ const AdminDashboard = () => {
                 </DropdownMenu>
               </div>
             </DialogTitle>
+            <DialogDescription>
+              View and manage photos for this customer
+            </DialogDescription>
           </DialogHeader>
           
           {selectedCustomerForPhotos && (
             <div className="space-y-6">
               {/* Upload Area - Only show if no photos or when adding */}
-              {(!customerPhotos[selectedCustomerForPhotos.id] || customerPhotos[selectedCustomerForPhotos.id].length === 0) && (
+              {(() => {
+                const customerId = (selectedCustomerForPhotos as any).customer_id;
+                const photos = customerPhotos[customerId];
+                return !photos || photos.length === 0;
+              })() && (
                 <div
                   className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
                   onDragOver={handleDragOver}
@@ -3730,10 +3829,10 @@ const AdminDashboard = () => {
                     </div>
                     <div className="space-y-2">
                       <div className="text-xl font-medium text-gray-600">
-                        {isUploadingPhoto ? 'Uploading and optimizing...' : 'Drop photos here or click to upload'}
+                        {isUploadingPhoto ? 'Uploading and optimizing...' : 'No photos found - Drop photos here or click to upload'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        Supports JPG, PNG, GIF up to 10MB each • Images will be automatically optimized
+                        Supports JPG, PNG, GIF up to 10MB each • Images will be automatically optimized and saved to database
                       </div>
                     </div>
                   </div>
@@ -3741,11 +3840,11 @@ const AdminDashboard = () => {
               )}
 
               {/* Photo Grid */}
-              {customerPhotos[selectedCustomerForPhotos.id] && customerPhotos[selectedCustomerForPhotos.id].length > 0 && (
+              {customerPhotos[(selectedCustomerForPhotos as any).customer_id] && customerPhotos[(selectedCustomerForPhotos as any).customer_id].length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium">
-                      {customerPhotos[selectedCustomerForPhotos.id].length} Photo{customerPhotos[selectedCustomerForPhotos.id].length !== 1 ? 's' : ''}
+                      {customerPhotos[(selectedCustomerForPhotos as any).customer_id].length} Photo{customerPhotos[(selectedCustomerForPhotos as any).customer_id].length !== 1 ? 's' : ''}
                     </h3>
                     <Button
                       variant="outline"
@@ -3773,7 +3872,7 @@ const AdminDashboard = () => {
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                   >
-                    {customerPhotos[selectedCustomerForPhotos.id].map((photo, index) => (
+                    {customerPhotos[(selectedCustomerForPhotos as any).customer_id].map((photo, index) => (
                       <div key={`${selectedCustomerForPhotos.id}-${index}`} className="relative group">
                         <div className="w-full h-40 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden cursor-pointer">
                           <img
@@ -3791,7 +3890,7 @@ const AdminDashboard = () => {
                             onClick={() => setSelectedPhoto({
                               url: photo,
                               index: index,
-                              total: customerPhotos[selectedCustomerForPhotos.id].length
+                              total: customerPhotos[(selectedCustomerForPhotos as any).customer_id].length
                             })}
                           />
                           <div 
@@ -3817,7 +3916,7 @@ const AdminDashboard = () => {
                               <DropdownMenuItem onClick={() => setSelectedPhoto({
                                 url: photo,
                                 index: index,
-                                total: customerPhotos[selectedCustomerForPhotos.id].length
+                                total: customerPhotos[(selectedCustomerForPhotos as any).customer_id].length
                               })}>
                                 <Eye className="w-4 h-4 mr-2" />
                                 View
@@ -3838,7 +3937,7 @@ const AdminDashboard = () => {
                                   }
                                   setCustomerPhotos(prev => ({
                                     ...prev,
-                                    [selectedCustomerForPhotos.id]: prev[selectedCustomerForPhotos.id].filter((_, i) => i !== index)
+                                    [(selectedCustomerForPhotos as any).customer_id]: prev[(selectedCustomerForPhotos as any).customer_id].filter((_, i) => i !== index)
                                   }));
                                 }}
                                 className="text-red-600"
