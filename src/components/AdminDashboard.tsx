@@ -185,6 +185,20 @@ const AdminDashboard = () => {
   const [selectedJobPhotos, setSelectedJobPhotos] = useState<{jobId: string, photos: string[], type: 'before' | 'after'} | null>(null);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
   const [deleteJobDialogOpen, setDeleteJobDialogOpen] = useState(false);
+  const [jobToReassign, setJobToReassign] = useState<Job | null>(null);
+  const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
+  const [selectedTechnicianForReassign, setSelectedTechnicianForReassign] = useState<string>('');
+  const [jobToEdit, setJobToEdit] = useState<Job | null>(null);
+  const [editJobDialogOpen, setEditJobDialogOpen] = useState(false);
+  const [editJobFormData, setEditJobFormData] = useState({
+    serviceType: '',
+    serviceSubType: '',
+    description: '',
+    scheduledDate: '',
+    scheduledTimeSlot: '',
+    priority: 'MEDIUM',
+    estimatedDuration: 60
+  });
   const [photoToDelete, setPhotoToDelete] = useState<{jobId: string, photoIndex: number, photoUrl: string} | null>(null);
   const [deletePhotoDialogOpen, setDeletePhotoDialogOpen] = useState(false);
   const [isDeletingPhoto, setIsDeletingPhoto] = useState(false);
@@ -1297,6 +1311,100 @@ const AdminDashboard = () => {
   };
 
   // Handle job status update
+  const handleReassignJob = (job: Job) => {
+    setJobToReassign(job);
+    setSelectedTechnicianForReassign((job as any).assigned_technician_id || '');
+    setReassignDialogOpen(true);
+  };
+
+  const handleReassignSubmit = async () => {
+    if (!jobToReassign || !selectedTechnicianForReassign) return;
+
+    try {
+      const { error } = await db.jobs.update(jobToReassign.id, {
+        assigned_technician_id: selectedTechnicianForReassign
+      });
+
+      if (error) {
+        toast.error('Failed to reassign job');
+        return;
+      }
+
+      // Update local state
+      setJobs(prev => prev.map(job => 
+        job.id === jobToReassign.id 
+          ? { ...job, assigned_technician_id: selectedTechnicianForReassign }
+          : job
+      ));
+
+      toast.success('Job reassigned successfully');
+      setReassignDialogOpen(false);
+      setJobToReassign(null);
+      setSelectedTechnicianForReassign('');
+    } catch (error) {
+      console.error('Reassign error:', error);
+      toast.error('Failed to reassign job');
+    }
+  };
+
+  const handleEditJob = (job: Job) => {
+    setJobToEdit(job);
+    setEditJobFormData({
+      serviceType: (job as any).service_type || job.serviceType || '',
+      serviceSubType: (job as any).service_sub_type || job.serviceSubType || '',
+      description: job.description || '',
+      scheduledDate: (job as any).scheduled_date || job.scheduledDate || '',
+      scheduledTimeSlot: (job as any).scheduled_time_slot || job.scheduledTimeSlot || '',
+      priority: (job as any).priority || 'MEDIUM',
+      estimatedDuration: (job as any).estimated_duration || job.estimatedDuration || 60
+    });
+    setEditJobDialogOpen(true);
+  };
+
+  const handleEditJobSubmit = async () => {
+    if (!jobToEdit) return;
+
+    try {
+      const { error } = await db.jobs.update(jobToEdit.id, {
+        service_type: editJobFormData.serviceType,
+        service_sub_type: editJobFormData.serviceSubType,
+        description: editJobFormData.description,
+        scheduled_date: editJobFormData.scheduledDate,
+        scheduled_time_slot: editJobFormData.scheduledTimeSlot,
+        priority: editJobFormData.priority,
+        estimated_duration: editJobFormData.estimatedDuration
+      });
+
+      if (error) {
+        toast.error('Failed to update job');
+        return;
+      }
+
+      // Update local state
+      setJobs(prev => prev.map(job => 
+        job.id === jobToEdit.id 
+          ? { 
+              ...job, 
+              serviceType: editJobFormData.serviceType,
+              serviceSubType: editJobFormData.serviceSubType,
+              description: editJobFormData.description,
+              scheduledDate: editJobFormData.scheduledDate,
+              scheduledTimeSlot: editJobFormData.scheduledTimeSlot,
+              priority: editJobFormData.priority,
+              estimatedDuration: editJobFormData.estimatedDuration
+            }
+          : job
+      ));
+
+      toast.success('Job updated successfully');
+      setEditJobDialogOpen(false);
+      setJobToEdit(null);
+    } catch (error) {
+      console.error('Edit job error:', error);
+      toast.error('Failed to update job');
+    }
+  };
+
   const handleJobStatusUpdate = async (jobId: string, newStatus: string) => {
     try {
       const { error } = await db.jobs.update(jobId, { status: newStatus as 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'RESCHEDULED' });
@@ -2285,6 +2393,21 @@ const AdminDashboard = () => {
                                       </div>
                                     )}
                                     
+                                    {(job as any).assigned_technician_id && (
+                                      <div className="flex items-start gap-2 sm:items-center">
+                                        <User className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+                                        <div className="min-w-0 flex-1">
+                                          <div className="text-xs text-gray-500">Assigned To</div>
+                                          <div className="font-medium text-gray-900 break-words">
+                                            {(() => {
+                                              const technician = technicians.find(t => t.id === (job as any).assigned_technician_id);
+                                              return technician ? technician.full_name : 'Unknown Technician';
+                                            })()}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    
                                     {job.description && (
                                       <div className="sm:col-span-2 lg:col-span-1">
                                         <div className="text-xs text-gray-500">Description</div>
@@ -2347,13 +2470,19 @@ const AdminDashboard = () => {
                                         View Details
                                       </DropdownMenuItem>
                                       <DropdownMenuItem 
-                                        onClick={() => {
-                                          toast.info('Edit job feature coming soon');
-                                        }}
+                                        onClick={() => handleEditJob(job)}
                                       >
                                         <Edit className="mr-2 h-4 w-4" />
                                         Edit Job
                                       </DropdownMenuItem>
+                                      {(job as any).assigned_technician_id && (
+                                        <DropdownMenuItem 
+                                          onClick={() => handleReassignJob(job)}
+                                        >
+                                          <User className="mr-2 h-4 w-4" />
+                                          Reassign Technician
+                                        </DropdownMenuItem>
+                                      )}
                                       <DropdownMenuItem 
                                         onClick={() => {
                                           setJobToDelete(job);
@@ -4176,6 +4305,172 @@ const AdminDashboard = () => {
               className="w-full"
             >
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reassign Job Dialog */}
+      <Dialog open={reassignDialogOpen} onOpenChange={setReassignDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reassign Job</DialogTitle>
+            <DialogDescription>
+              Select a new technician for this job
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="technician-select">Select Technician</Label>
+              <Select 
+                value={selectedTechnicianForReassign} 
+                onValueChange={setSelectedTechnicianForReassign}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a technician" />
+                </SelectTrigger>
+                <SelectContent>
+                  {technicians
+                    .filter(tech => tech.account_status === 'ACTIVE')
+                    .map(tech => (
+                      <SelectItem key={tech.id} value={tech.id}>
+                        {tech.full_name} - {tech.specialization}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReassignDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleReassignSubmit} disabled={!selectedTechnicianForReassign}>
+              Reassign Job
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Job Dialog */}
+      <Dialog open={editJobDialogOpen} onOpenChange={setEditJobDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Job</DialogTitle>
+            <DialogDescription>
+              Update job details and information
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-service-type">Service Type</Label>
+                <Select 
+                  value={editJobFormData.serviceType} 
+                  onValueChange={(value) => setEditJobFormData(prev => ({ ...prev, serviceType: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select service type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="RO">RO</SelectItem>
+                    <SelectItem value="Water Purifier">Water Purifier</SelectItem>
+                    <SelectItem value="Water Softener">Water Softener</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-service-subtype">Service Sub Type</Label>
+                <Input
+                  id="edit-service-subtype"
+                  value={editJobFormData.serviceSubType}
+                  onChange={(e) => setEditJobFormData(prev => ({ ...prev, serviceSubType: e.target.value }))}
+                  placeholder="e.g., Installation, Repair, Maintenance"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-scheduled-date">Scheduled Date</Label>
+                <Input
+                  id="edit-scheduled-date"
+                  type="date"
+                  value={editJobFormData.scheduledDate}
+                  onChange={(e) => setEditJobFormData(prev => ({ ...prev, scheduledDate: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-time-slot">Time Slot</Label>
+                <Select 
+                  value={editJobFormData.scheduledTimeSlot} 
+                  onValueChange={(value) => setEditJobFormData(prev => ({ ...prev, scheduledTimeSlot: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select time slot" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</SelectItem>
+                    <SelectItem value="Afternoon (12 PM - 3 PM)">Afternoon (12 PM - 3 PM)</SelectItem>
+                    <SelectItem value="Evening (3 PM - 6 PM)">Evening (3 PM - 6 PM)</SelectItem>
+                    <SelectItem value="Flexible">Flexible</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-priority">Priority</Label>
+                <Select 
+                  value={editJobFormData.priority} 
+                  onValueChange={(value) => setEditJobFormData(prev => ({ ...prev, priority: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LOW">Low</SelectItem>
+                    <SelectItem value="MEDIUM">Medium</SelectItem>
+                    <SelectItem value="HIGH">High</SelectItem>
+                    <SelectItem value="URGENT">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-duration">Estimated Duration (minutes)</Label>
+                <Input
+                  id="edit-duration"
+                  type="number"
+                  value={editJobFormData.estimatedDuration}
+                  onChange={(e) => setEditJobFormData(prev => ({ ...prev, estimatedDuration: parseInt(e.target.value) || 60 }))}
+                  min="15"
+                  max="480"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={editJobFormData.description}
+                onChange={(e) => setEditJobFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Job description and special instructions..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditJobDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditJobSubmit}>
+              Update Job
             </Button>
           </DialogFooter>
         </DialogContent>
