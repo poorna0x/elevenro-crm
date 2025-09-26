@@ -2265,6 +2265,9 @@ const AdminDashboard = () => {
                                         <div className="font-medium text-gray-900 break-words">
                                           {new Date((job as any).scheduled_date || job.scheduledDate).toLocaleDateString()}
                                         </div>
+                                        <div className="text-xs text-gray-600">
+                                          {(job as any).scheduled_time_slot || job.scheduledTimeSlot || 'Time not specified'}
+                                        </div>
                                       </div>
                                     </div>
                                     
@@ -2340,8 +2343,16 @@ const AdminDashboard = () => {
                                           toast.info('Job details feature coming soon');
                                         }}
                                       >
-                                        <Edit className="mr-2 h-4 w-4" />
+                                        <Eye className="mr-2 h-4 w-4" />
                                         View Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        onClick={() => {
+                                          toast.info('Edit job feature coming soon');
+                                        }}
+                                      >
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Edit Job
                                       </DropdownMenuItem>
                                       <DropdownMenuItem 
                                         onClick={() => {
@@ -4084,7 +4095,7 @@ const AdminDashboard = () => {
                             </div>
                           )}
                           <div className="text-sm text-gray-500 break-words">
-                            Scheduled: {new Date(job.scheduledDate).toLocaleDateString()} at {job.scheduledTimeSlot.toLowerCase()}
+                            Scheduled: {new Date(job.scheduledDate).toLocaleDateString()} at {job.scheduledTimeSlot?.toLowerCase() || 'Time not specified'}
                           </div>
                           {job.description && (
                             <div className="text-sm text-gray-700 mt-2 break-words line-clamp-3">
