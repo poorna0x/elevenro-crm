@@ -1,8 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
-import { authenticateUser, getAuthSession, setAuthSession, clearAuthSession, AuthUser } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
-export interface User extends AuthUser {}
+export interface User {
+  id: string;
+  email: string;
+  role: 'admin' | 'technician';
+  fullName?: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -25,11 +31,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check for existing session on app load
-    const checkSession = () => {
+    const checkSession = async () => {
       try {
-        const sessionUser = getAuthSession();
-        if (sessionUser) {
-          setUser(sessionUser);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const userRole = session.user.user_metadata?.role || session.user.app_metadata?.role || 'admin';
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            role: userRole,
+            fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name
+          });
         }
       } catch (error) {
         console.error('Error checking session:', error);
@@ -39,23 +51,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const userRole = session.user.user_metadata?.role || session.user.app_metadata?.role || 'admin';
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          role: userRole,
+          fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name
+        });
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
       
-      const authenticatedUser = await authenticateUser(email, password);
-      
-      if (authenticatedUser) {
-        setUser(authenticatedUser);
-        setAuthSession(authenticatedUser);
-        toast.success(`Welcome back, ${authenticatedUser.fullName || email}!`);
-        return true;
-      } else {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
         toast.error('Invalid email or password');
         return false;
       }
+
+      if (data.user) {
+        const userRole = data.user.user_metadata?.role || data.user.app_metadata?.role || 'admin';
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          role: userRole,
+          fullName: data.user.user_metadata?.full_name || data.user.user_metadata?.name
+        });
+        toast.success(`Welcome back, ${data.user.user_metadata?.full_name || data.user.email}!`);
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.error('Login error:', error);
       toast.error('Login failed. Please try again.');
@@ -67,7 +109,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      clearAuthSession();
+      await supabase.auth.signOut();
       setUser(null);
       toast.success('Logged out successfully');
     } catch (error) {
