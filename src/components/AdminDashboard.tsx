@@ -2233,71 +2233,86 @@ const AdminDashboard = () => {
                         
                         return (
                           <div key={job.id} className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 overflow-hidden group">
-                            <div className="p-4">
-                              <div className="flex items-start justify-between mb-4">
+                            <div className="p-3 sm:p-4">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-3 mb-3">
-                                    <div className="bg-gray-100 text-gray-800 px-3 py-1 rounded-md font-mono text-sm font-semibold">
-                                      {(job as any).job_number}
-                                    </div>
-                                    {getStatusBadge(job.status)}
-                                    <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">
-                                      {(job as any).service_type || job.serviceType} - {(job as any).service_sub_type || job.serviceSubType}
-                                    </Badge>
-                                    {allPhotos.length > 0 && (
-                                      <div className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
-                                        <Camera className="w-3 h-3" />
-                                        {allPhotos.length} photos
+                                  {/* Mobile: Stack badges vertically, Desktop: Horizontal */}
+                                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <div className="bg-gray-100 text-gray-800 px-2 sm:px-3 py-1 rounded-md font-mono text-xs sm:text-sm font-semibold">
+                                        {(job as any).job_number}
                                       </div>
-                                    )}
+                                      {getStatusBadge(job.status)}
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">
+                                        {(job as any).service_type || job.serviceType} - {(job as any).service_sub_type || job.serviceSubType}
+                                      </Badge>
+                                      {allPhotos.length > 0 && (
+                                        <div className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
+                                          <Camera className="w-3 h-3" />
+                                          {allPhotos.length} photos
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                   
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                                    <div className="flex items-center gap-2">
-                                      <Calendar className="w-4 h-4 text-gray-400" />
-                                      <div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-sm">
+                                    <div className="flex items-start gap-2 sm:items-center">
+                                      <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+                                      <div className="min-w-0 flex-1">
                                         <div className="text-xs text-gray-500">Scheduled</div>
-                                        <div className="font-medium text-gray-900">
+                                        <div className="font-medium text-gray-900 break-words">
                                           {new Date((job as any).scheduled_date || job.scheduledDate).toLocaleDateString()}
                                         </div>
                                       </div>
                                     </div>
                                     
-                                    <div className="flex items-center gap-2">
-                                      <Wrench className="w-4 h-4 text-gray-400" />
-                                      <div>
-                                        <div className="text-xs text-gray-500">Equipment</div>
-                                        <div className="font-medium text-gray-900">{job.brand} - {job.model}</div>
+                                    {(job.brand && job.model && 
+                                      !job.brand.toLowerCase().includes('not specified') && 
+                                      !job.brand.toLowerCase().includes('n/a') &&
+                                      !job.model.toLowerCase().includes('not specified') && 
+                                      !job.model.toLowerCase().includes('n/a')) && (
+                                      <div className="flex items-start gap-2 sm:items-center">
+                                        <Wrench className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+                                        <div className="min-w-0 flex-1">
+                                          <div className="text-xs text-gray-500">Equipment</div>
+                                          <div className="font-medium text-gray-900 break-words">{job.brand} - {job.model}</div>
+                                        </div>
                                       </div>
-                                    </div>
+                                    )}
                                     
                                     {job.description && (
                                       <div className="sm:col-span-2 lg:col-span-1">
                                         <div className="text-xs text-gray-500">Description</div>
-                                        <div className="font-medium text-gray-900 truncate">{job.description}</div>
+                                        <div className="font-medium text-gray-900 break-words line-clamp-2">{job.description}</div>
                                       </div>
                                     )}
                                   </div>
 
-                                  {/* Photos Section */}
+                                  {/* Photos Section - Mobile responsive */}
                                   {allPhotos.length > 0 && (
                                     <div className="mt-4 pt-4 border-t border-gray-100">
                                       <button
                                         onClick={() => openPhotoGallery(job.id, allPhotos, 'photos')}
-                                        className="text-sm text-gray-600 hover:text-gray-800 font-medium flex items-center gap-2 bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-md transition-colors"
+                                        className="w-full sm:w-auto text-sm text-gray-600 hover:text-gray-800 font-medium flex items-center justify-center sm:justify-start gap-2 bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-md transition-colors"
                                       >
-                                        <Camera className="w-4 h-4" />
-                                        View Photos ({allPhotos.length})
+                                        <Camera className="w-4 h-4 flex-shrink-0" />
+                                        <span className="truncate">View Photos ({allPhotos.length})</span>
                                       </button>
                                     </div>
                                   )}
                                 </div>
 
-                                {/* Job Actions */}
-                                <div className="flex items-center ml-4">
+                                {/* Job Actions - Mobile responsive */}
+                                <div className="flex items-center sm:ml-4 mt-2 sm:mt-0">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 flex-shrink-0"
+                                      >
                                         <MoreVertical className="h-4 w-4" />
                                       </Button>
                                     </DropdownMenuTrigger>
@@ -4038,32 +4053,41 @@ const AdminDashboard = () => {
               {customerHistory[selectedCustomerForHistory.id]?.length > 0 ? (
                 <div className="space-y-4">
                   {customerHistory[selectedCustomerForHistory.id].map((job) => (
-                    <Card key={job.id} className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="font-mono">
-                              {job.jobNumber}
-                            </Badge>
-                            <Badge 
-                              variant={
-                                job.status === 'COMPLETED' ? 'default' :
-                                job.status === 'IN_PROGRESS' ? 'secondary' :
-                                job.status === 'CANCELLED' ? 'destructive' : 'outline'
-                              }
-                            >
-                              {job.status.replace('_', ' ')}
-                            </Badge>
+                    <Card key={job.id} className="p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div className="space-y-2 flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="outline" className="font-mono text-xs">
+                                {job.jobNumber}
+                              </Badge>
+                              <Badge 
+                                variant={
+                                  job.status === 'COMPLETED' ? 'default' :
+                                  job.status === 'IN_PROGRESS' ? 'secondary' :
+                                  job.status === 'CANCELLED' ? 'destructive' : 'outline'
+                                }
+                                className="text-xs"
+                              >
+                                {job.status.replace('_', ' ')}
+                              </Badge>
+                            </div>
                           </div>
-                          <div className="text-lg font-medium">{job.serviceType} - {job.serviceSubType}</div>
-                          <div className="text-sm text-gray-600">
-                            {job.brand} {job.model}
-                          </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-base sm:text-lg font-medium break-words">{job.serviceType} - {job.serviceSubType}</div>
+                          {(job.brand && job.model && 
+                            !job.brand.toLowerCase().includes('not specified') && 
+                            !job.brand.toLowerCase().includes('n/a') &&
+                            !job.model.toLowerCase().includes('not specified') && 
+                            !job.model.toLowerCase().includes('n/a')) && (
+                            <div className="text-sm text-gray-600 break-words">
+                              {job.brand} {job.model}
+                            </div>
+                          )}
+                          <div className="text-sm text-gray-500 break-words">
                             Scheduled: {new Date(job.scheduledDate).toLocaleDateString()} at {job.scheduledTimeSlot.toLowerCase()}
                           </div>
                           {job.description && (
-                            <div className="text-sm text-gray-700 mt-2">
+                            <div className="text-sm text-gray-700 mt-2 break-words line-clamp-3">
                               {job.description}
                             </div>
                           )}
