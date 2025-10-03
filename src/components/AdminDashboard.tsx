@@ -614,8 +614,8 @@ const AdminDashboard = () => {
       const customerData = {
         // Don't set customer_id - let the database generate it using the function
         full_name: addFormData.full_name,
-        phone: addFormData.phone,
-        alternate_phone: addFormData.alternate_phone,
+        phone: addFormData.phone ? formatPhoneNumber(addFormData.phone) : '',
+        alternate_phone: addFormData.alternate_phone ? formatPhoneNumber(addFormData.alternate_phone) : '',
         email: addFormData.email,
         address: {
           street: addFormData.address,
@@ -1094,7 +1094,7 @@ const AdminDashboard = () => {
         ...prev,
       [field]: value
     }));
-    
+
     // Clear error when user starts typing
     if (formErrors[field]) {
       setFormErrors(prev => ({
@@ -1104,34 +1104,110 @@ const AdminDashboard = () => {
     }
   };
 
+  const handlePhoneChange = (value: string) => {
+    // Clean the input to only allow digits
+    const cleaned = value.replace(/\D/g, '');
+    
+    // Limit to 12 digits maximum (for 91 prefix)
+    const limited = cleaned.substring(0, 12);
+    
+    setAddFormData(prev => ({
+      ...prev,
+      phone: limited
+    }));
+  };
+
+  const handleAlternatePhoneChange = (value: string) => {
+    // Clean the input to only allow digits
+    const cleaned = value.replace(/\D/g, '');
+    
+    // Limit to 12 digits maximum (for 91 prefix)
+    const limited = cleaned.substring(0, 12);
+    
+    setAddFormData(prev => ({
+      ...prev,
+      alternate_phone: limited
+    }));
+  };
+
+  // Phone number validation and formatting functions
+  const cleanPhoneNumber = (phone: string): string => {
+    // Remove all non-digit characters
+    return phone.replace(/\D/g, '');
+  };
+
+  const formatPhoneNumber = (phone: string): string => {
+    const cleaned = cleanPhoneNumber(phone);
+    
+    // If it starts with 91 and has 12 digits, remove the 91 prefix
+    if (cleaned.startsWith('91') && cleaned.length === 12) {
+      return cleaned.substring(2);
+    }
+    
+    // If it starts with 0 and has 11 digits, remove the 0 prefix
+    if (cleaned.startsWith('0') && cleaned.length === 11) {
+      return cleaned.substring(1);
+    }
+    
+    return cleaned;
+  };
+
+  const validatePhoneNumber = (phone: string): { isValid: boolean; error?: string; formatted?: string } => {
+    const cleaned = cleanPhoneNumber(phone);
+    const formatted = formatPhoneNumber(phone);
+    
+    if (!cleaned) {
+      return { isValid: true }; // Phone is optional
+    }
+    
+    // Check if it's exactly 10 digits after formatting
+    if (formatted.length !== 10) {
+      return { 
+        isValid: false, 
+        error: 'Phone number must be exactly 10 digits (e.g., 6361631253 or 916361631253 or 06361631253)' 
+      };
+    }
+    
+    // Check if it starts with valid digits (6, 7, 8, 9 for Indian mobile numbers)
+    if (!/^[6-9]/.test(formatted)) {
+      return { 
+        isValid: false, 
+        error: 'Phone number must start with 6, 7, 8, or 9' 
+      };
+    }
+    
+    return { isValid: true, formatted };
+  };
+
   const validateStep = (step: number): boolean => {
     const errors: {[key: string]: string} = {};
     
     switch (step) {
       case 1: // Personal Information
-        if (!addFormData.full_name.trim()) errors.full_name = 'Full name is required';
-        if (!addFormData.phone.trim()) errors.phone = 'Phone number is required';
-        if (!addFormData.email.trim()) errors.email = 'Email is required';
-        if (addFormData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addFormData.email)) {
-          errors.email = 'Please enter a valid email address';
+        // All fields are now optional, but validate format if provided
+        
+        // Phone number validation
+        if (addFormData.phone && addFormData.phone.trim()) {
+          const phoneValidation = validatePhoneNumber(addFormData.phone);
+          if (!phoneValidation.isValid) {
+            errors.phone = phoneValidation.error || 'Invalid phone number';
+          }
+        }
+        
+        // Email validation - optional but validate format if provided
+        if (addFormData.email && addFormData.email.trim()) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(addFormData.email)) {
+            errors.email = 'Please enter a valid email address';
+          }
         }
         break;
       case 2: // Address Information
-        if (!addFormData.address.trim()) errors.address = 'Address is required';
+        // Address is now optional
         break;
       case 3: // Service Information
-        if (addFormData.service_types.length === 0) errors.service_types = 'Please select at least one service type';
-        
-        // Validate equipment for each selected service type
-        addFormData.service_types.forEach(serviceType => {
-          const equipment = addFormData.equipment[serviceType];
-          if (!equipment?.brand?.trim()) {
-            errors[`equipment.${serviceType}.brand`] = `Brand is required for ${serviceType}`;
-          }
-          if (!equipment?.model?.trim()) {
-            errors[`equipment.${serviceType}.model`] = `Model is required for ${serviceType}`;
-          }
-        });
+        // Service types are now optional
+        // Equipment details are now optional
         break;
       case 4: // Job Assignment
         // No required fields for job assignment - technician assignment is optional
@@ -2571,7 +2647,7 @@ const AdminDashboard = () => {
             {currentStep === 1 && (
               <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="add_full_name">Full Name *</Label>
+              <Label htmlFor="add_full_name">Full Name</Label>
               <Input
                 id="add_full_name"
                 value={addFormData.full_name}
@@ -2586,13 +2662,13 @@ const AdminDashboard = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-                    <Label htmlFor="add_phone">Primary Phone *</Label>
+                    <Label htmlFor="add_phone">Primary Phone</Label>
               <Input
                 id="add_phone"
                 value={addFormData.phone}
-                onChange={(e) => handleAddFormChange('phone', e.target.value)}
-                      placeholder="Enter primary phone"
-                      className={formErrors.phone ? 'border-red-500' : ''}
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                placeholder="Enter primary phone (e.g., 6361631253 or 916361631253)"
+                className={formErrors.phone ? 'border-red-500' : ''}
               />
                     {formErrors?.phone && (
                       <p className="text-sm text-red-500">{formErrors.phone}</p>
@@ -2604,14 +2680,14 @@ const AdminDashboard = () => {
               <Input
                       id="add_alternate_phone"
                       value={addFormData.alternate_phone}
-                      onChange={(e) => handleAddFormChange('alternate_phone', e.target.value)}
+                      onChange={(e) => handleAlternatePhoneChange(e.target.value)}
                       placeholder="Enter alternate phone (optional)"
               />
             </div>
             </div>
 
             <div className="space-y-2">
-                  <Label htmlFor="add_email">Email Address *</Label>
+                  <Label htmlFor="add_email">Email Address</Label>
               <Input
                 id="add_email"
                 type="email"
@@ -2631,7 +2707,7 @@ const AdminDashboard = () => {
             {currentStep === 2 && (
               <div className="space-y-4">
             <div className="space-y-2">
-                  <Label htmlFor="add_address">Complete Address *</Label>
+                  <Label htmlFor="add_address">Complete Address</Label>
                   <Textarea
                     id="add_address"
                     value={addFormData.address}
@@ -2676,7 +2752,7 @@ const AdminDashboard = () => {
             {currentStep === 3 && (
               <div className="space-y-4">
                 <div className="space-y-3">
-                  <Label>Service Types *</Label>
+                  <Label>Service Types</Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
                       { value: 'RO', label: 'RO (Reverse Osmosis)', icon: '💧' },
@@ -2708,7 +2784,7 @@ const AdminDashboard = () => {
                 {/* Dynamic Equipment Fields for Each Selected Service Type */}
                 {addFormData.service_types.length > 0 && (
                   <div className="space-y-4">
-                    <Label className="text-base font-semibold">Equipment Details *</Label>
+                    <Label className="text-base font-semibold">Equipment Details</Label>
                     {addFormData.service_types.map((serviceType) => {
                       const serviceInfo = [
                         { value: 'RO', label: 'RO (Reverse Osmosis)', icon: '💧' },
@@ -2728,7 +2804,7 @@ const AdminDashboard = () => {
                           
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
-                              <Label htmlFor={`brand_${serviceType}`}>Brand *</Label>
+                              <Label htmlFor={`brand_${serviceType}`}>Brand</Label>
               <Input
                                 id={`brand_${serviceType}`}
                                 value={equipment.brand}
@@ -2742,7 +2818,7 @@ const AdminDashboard = () => {
             </div>
 
             <div className="space-y-2">
-                              <Label htmlFor={`model_${serviceType}`}>Model *</Label>
+                              <Label htmlFor={`model_${serviceType}`}>Model</Label>
               <Input
                                 id={`model_${serviceType}`}
                                 value={equipment.model}
@@ -2773,17 +2849,17 @@ const AdminDashboard = () => {
                   <div>
                     <Label htmlFor="assigned_technician">Assign Technician (Optional)</Label>
                     <Select 
-                      value={addFormData.assigned_technician_id} 
+                      value={addFormData.assigned_technician_id || ''} 
                       onValueChange={(value) => handleAddFormChange('assigned_technician_id', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a technician" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No assignment</SelectItem>
+                        <SelectItem value="no-assignment">No assignment</SelectItem>
                         {technicians.map((technician) => (
-                          <SelectItem key={technician.id} value={technician.id}>
-                            {technician.fullName} - {technician.employeeId} ({technician.status})
+                          <SelectItem value={technician.id || 'unknown'}>
+                            {technician.fullName || 'Unknown'} - {technician.employeeId || 'No ID'} ({technician.status || 'Unknown'})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -2805,7 +2881,7 @@ const AdminDashboard = () => {
                     <div>
                       <Label htmlFor="scheduled_time_slot">Time Slot</Label>
                       <Select 
-                        value={addFormData.scheduled_time_slot} 
+                        value={addFormData.scheduled_time_slot || ''} 
                         onValueChange={(value) => handleAddFormChange('scheduled_time_slot', value)}
                       >
                         <SelectTrigger>
@@ -2936,7 +3012,7 @@ const AdminDashboard = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="add_behavior">Customer Behavior</Label>
-                  <Select value={addFormData.behavior} onValueChange={(value) => handleAddFormChange('behavior', value)}>
+                  <Select value={addFormData.behavior || ''} onValueChange={(value) => handleAddFormChange('behavior', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select customer behavior pattern" />
                     </SelectTrigger>
@@ -2962,7 +3038,7 @@ const AdminDashboard = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="add_native_language">Native Language</Label>
-                  <Select value={addFormData.native_language} onValueChange={(value) => handleAddFormChange('native_language', value)}>
+                  <Select value={addFormData.native_language || ''} onValueChange={(value) => handleAddFormChange('native_language', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select native language" />
                     </SelectTrigger>
@@ -3723,7 +3799,7 @@ const AdminDashboard = () => {
                     technicians
                       .filter(tech => !tech.account_status || tech.account_status === 'ACTIVE')
                       .map((technician) => (
-                        <SelectItem key={technician.id} value={technician.id}>
+                        <SelectItem value={technician.id || 'unknown'}>
                           {technician.fullName || 'Unknown'} ({technician.employeeId || 'No ID'})
                         </SelectItem>
                       ))
@@ -4358,8 +4434,8 @@ const AdminDashboard = () => {
                   {technicians
                     .filter(tech => tech.account_status === 'ACTIVE')
                     .map(tech => (
-                      <SelectItem key={tech.id} value={tech.id}>
-                        {tech.full_name} - {tech.specialization}
+                      <SelectItem value={tech.id || 'unknown'}>
+                        {tech.full_name || 'Unknown'} - {tech.specialization || 'No specialization'}
                       </SelectItem>
                     ))}
                 </SelectContent>
