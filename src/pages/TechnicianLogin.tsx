@@ -26,13 +26,22 @@ const TechnicianLogin = () => {
     setIsLoading(true);
 
     try {
+      console.log('Submitting login form...');
       const success = await login(email, password);
+      console.log('Login result:', success);
+      
       if (success) {
+        console.log('Login successful, requesting notification permission...');
         // Request notification permission for job updates
         await requestNotificationPermission();
+        console.log('Navigating to technician dashboard...');
         navigate('/technician');
+      } else {
+        console.log('Login failed');
+        setError('Login failed. Please try again.');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Login failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -143,6 +152,7 @@ const TechnicianLogin = () => {
                   Contact administrator
                 </span>
               </p>
+              
             </div>
           </CardContent>
         </Card>

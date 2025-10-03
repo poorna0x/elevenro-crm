@@ -103,27 +103,26 @@ export const authenticateUser = async (email: string, password: string): Promise
 // Simple session storage
 export const setAuthSession = (user: AuthUser) => {
   try {
-    localStorage.setItem('auth_user', JSON.stringify(user));
-    console.log('Session saved:', user);
+    const userString = JSON.stringify(user);
+    localStorage.setItem('auth_user', userString);
+    console.log('Session saved successfully');
   } catch (error) {
-    console.error('Error saving session:', error);
+    console.error('💥 Error saving session:', error);
   }
 };
 
 export const getAuthSession = (): AuthUser | null => {
   try {
     const userData = localStorage.getItem('auth_user');
+    
     if (!userData) {
-      console.log('No session found in localStorage');
       return null;
     }
     
     const user = JSON.parse(userData);
-    console.log('Retrieved session from localStorage:', user);
     
     // Validate user object has required fields
     if (!user || !user.id || !user.email || !user.role) {
-      console.log('Invalid session data, clearing...');
       clearAuthSession();
       return null;
     }

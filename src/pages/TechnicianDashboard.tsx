@@ -31,12 +31,12 @@ import { Job } from '@/types';
 import { sendNotification, createJobCompletedNotification } from '@/lib/notifications';
 
 const TechnicianDashboard = () => {
-  const { user, logout, isTechnician } = useAuth();
+  const { user, logout, isTechnician, loading } = useAuth();
   const navigate = useNavigate();
   
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobsLoading, setJobsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -45,10 +45,14 @@ const TechnicianDashboard = () => {
 
   // Redirect if not technician
   useEffect(() => {
-    if (!isTechnician) {
+    console.log('TechnicianDashboard: Checking auth status...', { isTechnician, user, loading });
+    
+    // Only redirect if we're sure the user is not a technician and not loading
+    if (!loading && !isTechnician) {
+      console.log('Not a technician, redirecting to login...');
       navigate('/technician/login');
     }
-  }, [isTechnician, navigate]);
+  }, [isTechnician, navigate, user, loading]);
 
   // Load assigned jobs
   useEffect(() => {
@@ -95,7 +99,7 @@ const TechnicianDashboard = () => {
     if (!user?.technicianId) return;
 
     try {
-      setLoading(true);
+      setJobsLoading(true);
       const { data, error } = await db.jobs.getByTechnicianId(user.technicianId);
       
       if (error) {
@@ -107,7 +111,7 @@ const TechnicianDashboard = () => {
       console.error('Error loading assigned jobs:', error);
       toast.error('Failed to load assigned jobs');
     } finally {
-      setLoading(false);
+      setJobsLoading(false);
     }
   };
 
@@ -217,6 +221,17 @@ const TechnicianDashboard = () => {
   };
 
   if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (jobsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
