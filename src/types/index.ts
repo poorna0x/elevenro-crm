@@ -42,6 +42,10 @@ export interface Customer {
   preferredTimeSlot?: 'MORNING' | 'AFTERNOON' | 'EVENING';
   preferredLanguage?: 'ENGLISH' | 'HINDI' | 'KANNADA' | 'TAMIL' | 'TELUGU';
   
+  // Service Cost Information
+  serviceCost?: number;
+  costAgreed?: boolean;
+  
   // Timestamps
   createdAt: string;
   updatedAt: string;

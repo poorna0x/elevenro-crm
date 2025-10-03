@@ -116,12 +116,14 @@ const PaymentStatus: React.FC<PaymentStatusProps> = ({
       
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm font-medium text-gray-600">Amount</p>
-            <p className="text-lg font-semibold">
-              ₹{job.paymentAmount || job.actualCost || job.estimatedCost}
-            </p>
-          </div>
+          {(job.paymentAmount && job.paymentAmount > 0) || (job.actualCost && job.actualCost > 0) || (job.estimatedCost && job.estimatedCost > 0) ? (
+            <div>
+              <p className="text-sm font-medium text-gray-600">Amount</p>
+              <p className="text-lg font-semibold">
+                ₹{job.paymentAmount || job.actualCost || job.estimatedCost}
+              </p>
+            </div>
+          ) : null}
           <div>
             <p className="text-sm font-medium text-gray-600">Payment Method</p>
             <p className="text-sm">

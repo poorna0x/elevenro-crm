@@ -108,7 +108,9 @@ const AdminDashboard = () => {
       latitude: 0,
       longitude: 0,
       formattedAddress: ''
-    }
+    },
+    service_cost: 0,
+    cost_agreed: false
   });
   const [isUpdating, setIsUpdating] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -136,6 +138,7 @@ const AdminDashboard = () => {
   const [selectedCustomerForPhotos, setSelectedCustomerForPhotos] = useState<Customer | null>(null);
   const [customerPhotos, setCustomerPhotos] = useState<{[customerId: string]: string[]}>({});
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [selectedCustomerForHistory, setSelectedCustomerForHistory] = useState<Customer | null>(null);
   const [customerHistory, setCustomerHistory] = useState<{[customerId: string]: Job[]}>({});
@@ -171,7 +174,9 @@ const AdminDashboard = () => {
     status: 'ACTIVE',
     notes: '',
     address: '', // Simplified to single address field
-    google_location: '' // For Google Maps integration
+    google_location: '', // For Google Maps integration
+    service_cost: 0,
+    cost_agreed: false
   });
   const [currentStep, setCurrentStep] = useState(1);
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
@@ -191,13 +196,14 @@ const AdminDashboard = () => {
   const [jobToEdit, setJobToEdit] = useState<Job | null>(null);
   const [editJobDialogOpen, setEditJobDialogOpen] = useState(false);
   const [editJobFormData, setEditJobFormData] = useState({
-    serviceType: '',
-    serviceSubType: '',
+    serviceType: 'RO' as 'RO' | 'SOFTENER',
+    serviceSubType: 'Installation',
+    serviceSubTypeCustom: '',
     description: '',
     scheduledDate: '',
-    scheduledTimeSlot: '',
-    priority: 'MEDIUM',
-    estimatedDuration: 60
+    scheduledTimeSlot: 'MORNING' as 'MORNING' | 'AFTERNOON' | 'EVENING' | 'CUSTOM',
+    scheduledTimeCustom: '',
+    priority: 'MEDIUM' as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   });
   const [photoToDelete, setPhotoToDelete] = useState<{jobId: string, photoIndex: number, photoUrl: string} | null>(null);
   const [deletePhotoDialogOpen, setDeletePhotoDialogOpen] = useState(false);
@@ -940,6 +946,7 @@ const AdminDashboard = () => {
   };
 
   const loadCustomerPhotos = async (customerId: string) => {
+    setIsLoadingPhotos(true);
     try {
       // Find the customer by customer_id to get their UUID
       const { data: customer, error: customerError } = await db.customers.getByCustomerId(customerId);
@@ -1002,6 +1009,8 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error loading photos:', error);
       toast.error('Failed to load photos');
+    } finally {
+      setIsLoadingPhotos(false);
     }
   };
 
@@ -1559,14 +1568,41 @@ const AdminDashboard = () => {
 
   const handleEditJob = (job: Job) => {
     setJobToEdit(job);
+    
+    // Determine if service sub type is custom
+    const serviceSubType = (job as any).service_sub_type || job.serviceSubType || 'Installation';
+    const isCustomSubType = !['Installation', 'Reinstallation', 'Service', 'Repair', 'Other'].includes(serviceSubType);
+    
+    // Determine if time slot is custom
+    const timeSlot = (job as any).scheduled_time_slot || job.scheduledTimeSlot || 'MORNING';
+    const isCustomTimeSlot = !['MORNING', 'AFTERNOON', 'EVENING'].includes(timeSlot);
+    
+    // Convert custom time to HH:MM format for time picker
+    let customTimeValue = '';
+    if (isCustomTimeSlot && timeSlot) {
+      // Try to parse various time formats and convert to HH:MM
+      const timeStr = timeSlot.toString();
+      if (timeStr.includes(':')) {
+        // Already in HH:MM format
+        customTimeValue = timeStr;
+      } else if (timeStr.includes('AM') || timeStr.includes('PM')) {
+        // Convert 12-hour format to 24-hour format
+        const time = new Date(`2000-01-01 ${timeStr}`);
+        if (!isNaN(time.getTime())) {
+          customTimeValue = time.toTimeString().slice(0, 5);
+        }
+      }
+    }
+    
     setEditJobFormData({
-      serviceType: (job as any).service_type || job.serviceType || '',
-      serviceSubType: (job as any).service_sub_type || job.serviceSubType || '',
+      serviceType: ((job as any).service_type || job.serviceType || 'RO') as 'RO' | 'SOFTENER',
+      serviceSubType: isCustomSubType ? 'Custom' : serviceSubType,
+      serviceSubTypeCustom: isCustomSubType ? serviceSubType : '',
       description: job.description || '',
       scheduledDate: (job as any).scheduled_date || job.scheduledDate || '',
-      scheduledTimeSlot: (job as any).scheduled_time_slot || job.scheduledTimeSlot || '',
-      priority: (job as any).priority || 'MEDIUM',
-      estimatedDuration: (job as any).estimated_duration || job.estimatedDuration || 60
+      scheduledTimeSlot: isCustomTimeSlot ? 'CUSTOM' : (timeSlot as 'MORNING' | 'AFTERNOON' | 'EVENING'),
+      scheduledTimeCustom: customTimeValue,
+      priority: ((job as any).priority || 'MEDIUM') as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
     });
     setEditJobDialogOpen(true);
   };
@@ -1575,14 +1611,24 @@ const AdminDashboard = () => {
     if (!jobToEdit) return;
 
     try {
+      // Convert time picker value to readable format for custom time
+      let timeSlotValue = editJobFormData.scheduledTimeSlot;
+      if (editJobFormData.scheduledTimeSlot === 'CUSTOM' && editJobFormData.scheduledTimeCustom) {
+        // Convert HH:MM to readable format (e.g., "14:30" to "2:30 PM")
+        const [hours, minutes] = editJobFormData.scheduledTimeCustom.split(':');
+        const hour24 = parseInt(hours);
+        const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+        const ampm = hour24 >= 12 ? 'PM' : 'AM';
+        timeSlotValue = `${hour12}:${minutes} ${ampm}`;
+      }
+
       const { error } = await db.jobs.update(jobToEdit.id, {
         service_type: editJobFormData.serviceType,
-        service_sub_type: editJobFormData.serviceSubType,
+        service_sub_type: editJobFormData.serviceSubType === 'Custom' ? editJobFormData.serviceSubTypeCustom : editJobFormData.serviceSubType,
         description: editJobFormData.description,
         scheduled_date: editJobFormData.scheduledDate,
-        scheduled_time_slot: editJobFormData.scheduledTimeSlot,
-        priority: editJobFormData.priority,
-        estimated_duration: editJobFormData.estimatedDuration
+        scheduled_time_slot: timeSlotValue,
+        priority: editJobFormData.priority
       });
 
       if (error) {
@@ -1596,12 +1642,11 @@ const AdminDashboard = () => {
           ? { 
               ...job, 
               serviceType: editJobFormData.serviceType,
-              serviceSubType: editJobFormData.serviceSubType,
+              serviceSubType: editJobFormData.serviceSubType === 'Custom' ? editJobFormData.serviceSubTypeCustom : editJobFormData.serviceSubType,
               description: editJobFormData.description,
               scheduledDate: editJobFormData.scheduledDate,
-              scheduledTimeSlot: editJobFormData.scheduledTimeSlot,
-              priority: editJobFormData.priority,
-              estimatedDuration: editJobFormData.estimatedDuration
+              scheduledTimeSlot: timeSlotValue,
+              priority: editJobFormData.priority
             }
           : job
       ));
@@ -2604,6 +2649,28 @@ const AdminDashboard = () => {
                                       </div>
                                     )}
                                     
+                                    {/* Agreed Price - Only show if it exists and is greater than 0 */}
+                                    {((job as any).estimated_cost && (job as any).estimated_cost > 0) && (
+                                      <div className="flex items-start gap-2 sm:items-center">
+                                        <div className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5 sm:mt-0 font-bold text-lg">₹</div>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="text-xs text-gray-500">Agreed Price</div>
+                                          <div className="font-medium text-gray-900 break-words">
+                                            ₹{(job as any).estimated_cost}
+                                            {(job as any).actual_cost && (job as any).actual_cost !== (job as any).estimated_cost && (
+                                              <span className="text-xs text-gray-500 ml-1">
+                                                (Est: ₹{(job as any).estimated_cost})
+                                              </span>
+                                            )}
+                                          </div>
+                                          {(job as any).actual_cost && (job as any).actual_cost > 0 && (
+                                            <div className="text-xs text-green-600">
+                                              Final: ₹{(job as any).actual_cost}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
                                     
                                     {((job as any).assigned_technician_id || job.assignedTechnician) && (
                                       <div className="flex items-start gap-2 sm:items-center">
@@ -4329,8 +4396,18 @@ const AdminDashboard = () => {
                 </div>
               )}
 
+              {/* Loading State */}
+              {isLoadingPhotos && (
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p className="text-sm text-gray-600">Loading photos...</p>
+                  </div>
+                </div>
+              )}
+
               {/* Photo Grid */}
-              {customerPhotos[(selectedCustomerForPhotos as any).customer_id] && customerPhotos[(selectedCustomerForPhotos as any).customer_id].length > 0 && (
+              {!isLoadingPhotos && customerPhotos[(selectedCustomerForPhotos as any).customer_id] && customerPhotos[(selectedCustomerForPhotos as any).customer_id].length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium">
@@ -4691,21 +4768,37 @@ const AdminDashboard = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="RO">RO</SelectItem>
-                    <SelectItem value="Water Purifier">Water Purifier</SelectItem>
-                    <SelectItem value="Water Softener">Water Softener</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="SOFTENER">Softener</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <Label htmlFor="edit-service-subtype">Service Sub Type</Label>
-                <Input
-                  id="edit-service-subtype"
-                  value={editJobFormData.serviceSubType}
-                  onChange={(e) => setEditJobFormData(prev => ({ ...prev, serviceSubType: e.target.value }))}
-                  placeholder="e.g., Installation, Repair, Maintenance"
-                />
+                <Select 
+                  value={editJobFormData.serviceSubType} 
+                  onValueChange={(value) => setEditJobFormData(prev => ({ ...prev, serviceSubType: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select service sub type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Installation">Installation</SelectItem>
+                    <SelectItem value="Reinstallation">Reinstallation</SelectItem>
+                    <SelectItem value="Service">Service</SelectItem>
+                    <SelectItem value="Repair">Repair</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+                {editJobFormData.serviceSubType === 'Custom' && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Enter custom service sub type"
+                    value={editJobFormData.serviceSubTypeCustom}
+                    onChange={(e) => setEditJobFormData(prev => ({ ...prev, serviceSubTypeCustom: e.target.value }))}
+                  />
+                )}
               </div>
 
               <div>
@@ -4728,12 +4821,20 @@ const AdminDashboard = () => {
                     <SelectValue placeholder="Select time slot" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</SelectItem>
-                    <SelectItem value="Afternoon (12 PM - 3 PM)">Afternoon (12 PM - 3 PM)</SelectItem>
-                    <SelectItem value="Evening (3 PM - 6 PM)">Evening (3 PM - 6 PM)</SelectItem>
-                    <SelectItem value="Flexible">Flexible</SelectItem>
+                    <SelectItem value="MORNING">Morning (9:00 AM - 12:00 PM)</SelectItem>
+                    <SelectItem value="AFTERNOON">Afternoon (12:00 PM - 5:00 PM)</SelectItem>
+                    <SelectItem value="EVENING">Evening (5:00 PM - 8:00 PM)</SelectItem>
+                    <SelectItem value="CUSTOM">Custom Time</SelectItem>
                   </SelectContent>
                 </Select>
+                {editJobFormData.scheduledTimeSlot === 'CUSTOM' && (
+                  <Input
+                    className="mt-2"
+                    type="time"
+                    value={editJobFormData.scheduledTimeCustom}
+                    onChange={(e) => setEditJobFormData(prev => ({ ...prev, scheduledTimeCustom: e.target.value }))}
+                  />
+                )}
               </div>
 
               <div>
@@ -4754,17 +4855,6 @@ const AdminDashboard = () => {
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="edit-duration">Estimated Duration (minutes)</Label>
-                <Input
-                  id="edit-duration"
-                  type="number"
-                  value={editJobFormData.estimatedDuration}
-                  onChange={(e) => setEditJobFormData(prev => ({ ...prev, estimatedDuration: parseInt(e.target.value) || 60 }))}
-                  min="15"
-                  max="480"
-                />
-              </div>
             </div>
 
             <div>

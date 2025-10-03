@@ -36,6 +36,10 @@ CREATE TABLE customers (
     preferred_time_slot VARCHAR(20) CHECK (preferred_time_slot IN ('MORNING', 'AFTERNOON', 'EVENING')),
     preferred_language VARCHAR(20) DEFAULT 'ENGLISH' CHECK (preferred_language IN ('ENGLISH', 'HINDI', 'KANNADA', 'TAMIL', 'TELUGU')),
     
+    -- Service cost information
+    service_cost DECIMAL(10,2) DEFAULT 0,
+    cost_agreed BOOLEAN DEFAULT false,
+    
     -- Timestamps
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
