@@ -3837,7 +3837,7 @@ const AdminDashboard = () => {
                     technicians
                       .filter(tech => !tech.account_status || tech.account_status === 'ACTIVE')
                       .map((technician) => (
-                        <SelectItem value={technician.id || 'unknown'}>
+                        <SelectItem key={technician.id} value={technician.id || 'unknown'}>
                           {technician.fullName || 'Unknown'} ({technician.employeeId || 'No ID'})
                         </SelectItem>
                       ))
