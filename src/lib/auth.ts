@@ -18,12 +18,15 @@ const ADMIN_CREDENTIALS = [
 
 export const authenticateUser = async (email: string, password: string): Promise<AuthUser | null> => {
   try {
+    console.log('Authenticating user:', email);
+    
     // Check if it's an admin
     const adminCred = ADMIN_CREDENTIALS.find(cred => 
       cred.email.toLowerCase() === email.toLowerCase() && cred.password === password
     );
     
     if (adminCred) {
+      console.log('Admin authentication successful');
       return {
         id: 'admin-' + Date.now(),
         email: adminCred.email,
@@ -32,21 +35,62 @@ export const authenticateUser = async (email: string, password: string): Promise
     }
 
     // Check if it's a technician
+    console.log('Checking technician auth for:', email);
+    
+    // First, let's check if the technicians table has the required columns
     const { data: technician, error } = await supabase
       .from('technicians')
       .select('id, full_name, email, password, account_status')
       .eq('email', email.toLowerCase())
-      .eq('account_status', 'ACTIVE')
       .single();
 
-    if (technician && !error && technician.password === password) {
-      return {
-        id: technician.id,
-        email: technician.email,
-        role: 'technician',
-        technicianId: technician.id,
-        fullName: technician.full_name
-      };
+    console.log('Technician query result:', { technician, error });
+    
+    if (error) {
+      console.error('Database error:', error);
+      // If the error is about missing columns, let's try without them
+      if (error.message.includes('password') || error.message.includes('account_status')) {
+        console.log('Trying without password/account_status columns...');
+        const { data: techWithoutAuth, error: techError } = await supabase
+          .from('technicians')
+          .select('id, full_name, email')
+          .eq('email', email.toLowerCase())
+          .single();
+        
+        if (techWithoutAuth && !techError) {
+          console.log('Found technician but missing auth columns. Please run the SQL scripts to add password and account_status fields.');
+          return null;
+        }
+      }
+      return null;
+    }
+    
+    if (technician) {
+      // Check if password and account_status exist
+      if (!technician.password) {
+        console.log('Technician found but no password set');
+        return null;
+      }
+      
+      if (technician.account_status !== 'ACTIVE') {
+        console.log('Technician account is not active:', technician.account_status);
+        return null;
+      }
+      
+      if (technician.password === password) {
+        console.log('Technician authentication successful');
+        return {
+          id: technician.id,
+          email: technician.email,
+          role: 'technician',
+          technicianId: technician.id,
+          fullName: technician.full_name
+        };
+      } else {
+        console.log('Password mismatch');
+      }
+    } else {
+      console.log('No technician found with email:', email);
     }
 
     return null;
@@ -58,18 +102,28 @@ export const authenticateUser = async (email: string, password: string): Promise
 
 // Simple session storage
 export const setAuthSession = (user: AuthUser) => {
-  localStorage.setItem('auth_user', JSON.stringify(user));
+  try {
+    localStorage.setItem('auth_user', JSON.stringify(user));
+    console.log('Session saved:', user);
+  } catch (error) {
+    console.error('Error saving session:', error);
+  }
 };
 
 export const getAuthSession = (): AuthUser | null => {
   try {
     const userData = localStorage.getItem('auth_user');
-    if (!userData) return null;
+    if (!userData) {
+      console.log('No session found in localStorage');
+      return null;
+    }
     
     const user = JSON.parse(userData);
+    console.log('Retrieved session from localStorage:', user);
     
     // Validate user object has required fields
     if (!user || !user.id || !user.email || !user.role) {
+      console.log('Invalid session data, clearing...');
       clearAuthSession();
       return null;
     }
@@ -83,5 +137,10 @@ export const getAuthSession = (): AuthUser | null => {
 };
 
 export const clearAuthSession = () => {
-  localStorage.removeItem('auth_user');
+  try {
+    localStorage.removeItem('auth_user');
+    console.log('Session cleared');
+  } catch (error) {
+    console.error('Error clearing session:', error);
+  }
 };

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { authenticateUser, setAuthSession, getAuthSession, clearAuthSession } from '@/lib/auth';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export interface User {
@@ -8,6 +9,7 @@ export interface User {
   email: string;
   role: 'admin' | 'technician';
   fullName?: string;
+  technicianId?: string;
 }
 
 interface AuthContextType {
@@ -33,8 +35,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check for existing session on app load
     const checkSession = async () => {
       try {
+        // First check custom auth session (for technicians)
+        const customSession = getAuthSession();
+        if (customSession) {
+          console.log('Found custom session:', customSession);
+          setUser(customSession);
+          setLoading(false);
+          return;
+        }
+
+        // Then check Supabase auth session (for admins)
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
+          console.log('Found Supabase session:', session.user);
           const userRole = session.user.user_metadata?.role || session.user.app_metadata?.role || 'admin';
           setUser({
             id: session.user.id,
@@ -52,7 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     checkSession();
 
-    // Listen for auth changes
+    // Listen for Supabase auth changes (for admins)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         const userRole = session.user.user_metadata?.role || session.user.app_metadata?.role || 'admin';
@@ -75,6 +88,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       
+      // First try custom authentication (for technicians)
+      const customUser = await authenticateUser(email, password);
+      if (customUser) {
+        setUser(customUser);
+        setAuthSession(customUser);
+        toast.success(`Welcome back, ${customUser.fullName || customUser.email}!`);
+        return true;
+      }
+
+      // If custom auth fails, try Supabase auth (for admins)
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
@@ -87,13 +110,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (data.user) {
         const userRole = data.user.user_metadata?.role || data.user.app_metadata?.role || 'admin';
-        setUser({
+        const user = {
           id: data.user.id,
           email: data.user.email || '',
           role: userRole,
           fullName: data.user.user_metadata?.full_name || data.user.user_metadata?.name
-        });
-        toast.success(`Welcome back, ${data.user.user_metadata?.full_name || data.user.email}!`);
+        };
+        setUser(user);
+        toast.success(`Welcome back, ${user.fullName || user.email}!`);
         return true;
       }
       
@@ -109,7 +133,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
+      // Clear custom auth session (for technicians)
+      clearAuthSession();
+      
+      // Sign out from Supabase auth (for admins)
       await supabase.auth.signOut();
+      
       setUser(null);
       toast.success('Logged out successfully');
     } catch (error) {
