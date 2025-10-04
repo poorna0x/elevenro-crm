@@ -190,6 +190,30 @@ export interface Technician {
   updatedAt: string;
 }
 
+// Job Assignment Request Types
+export interface JobAssignmentRequest {
+  id: string;
+  jobId: string;
+  job?: Job; // Populated when fetching with joins
+  technicianId: string;
+  technician?: Technician; // Populated when fetching with joins
+  
+  // Request Status
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
+  
+  // Assignment Details
+  assignedBy?: string; // Admin ID who sent the request
+  assignedAt: string;
+  
+  // Response Details
+  respondedAt?: string;
+  responseNotes?: string; // Optional notes from technician
+  
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Booking Form Types
 export interface BookingFormData {
   // Customer Info
@@ -257,6 +281,11 @@ export interface Database {
         Row: Technician;
         Insert: Omit<Technician, 'id' | 'createdAt' | 'updatedAt'>;
         Update: Partial<Omit<Technician, 'id' | 'createdAt'>>;
+      };
+      job_assignment_requests: {
+        Row: JobAssignmentRequest;
+        Insert: Omit<JobAssignmentRequest, 'id' | 'createdAt' | 'updatedAt'>;
+        Update: Partial<Omit<JobAssignmentRequest, 'id' | 'createdAt'>>;
       };
     };
   };

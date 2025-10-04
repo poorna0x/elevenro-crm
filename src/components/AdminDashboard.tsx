@@ -51,7 +51,7 @@ import { Customer, Job, Technician } from '@/types';
 import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { toast } from 'sonner';
 import { openInGoogleMaps, extractCoordinates, formatAddressForDisplay } from '@/lib/maps';
-import { sendNotification, createJobAssignedNotification, createJobCompletedNotification, createJobCancelledNotification } from '@/lib/notifications';
+import { sendNotification, createJobAssignedNotification, createJobCompletedNotification, createJobCancelledNotification, createJobAssignmentRequestNotification } from '@/lib/notifications';
 import CustomerServicesManager from './CustomerServicesManager';
 
 // Generate job number utility
@@ -214,6 +214,9 @@ const AdminDashboard = () => {
   const [assignJobDialogOpen, setAssignJobDialogOpen] = useState(false);
   const [jobToAssign, setJobToAssign] = useState<Job | null>(null);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState('');
+  const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>([]);
+  const [isCreatingAssignmentRequests, setIsCreatingAssignmentRequests] = useState(false);
+  const [assignmentType, setAssignmentType] = useState<'direct' | 'bulk'>('direct');
 
   // Generate employee ID
   const generateEmployeeId = (): string => {
@@ -247,6 +250,15 @@ const AdminDashboard = () => {
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  // Reset assignment type when dialog closes
+  useEffect(() => {
+    if (!assignJobDialogOpen) {
+      setAssignmentType('direct');
+      setSelectedTechnicianId('');
+      setSelectedTechnicianIds([]);
+    }
+  }, [assignJobDialogOpen]);
 
   const loadDashboardData = async () => {
     try {
@@ -1464,6 +1476,8 @@ const AdminDashboard = () => {
   const handleAssignJob = (job: Job) => {
     setJobToAssign(job);
     setSelectedTechnicianId('');
+    setSelectedTechnicianIds([]);
+    setAssignmentType('direct');
     setAssignJobDialogOpen(true);
   };
 
@@ -1488,6 +1502,66 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error assigning job:', error);
       toast.error('Failed to assign job');
+    }
+  };
+
+  // New bulk assignment functions
+  const handleBulkAssignJob = (job: Job) => {
+    setJobToAssign(job);
+    setSelectedTechnicianIds([]);
+    setAssignmentType('bulk');
+    setAssignJobDialogOpen(true);
+  };
+
+  const handleSaveBulkJobAssignment = async () => {
+    if (!jobToAssign || selectedTechnicianIds.length === 0) return;
+
+    try {
+      setIsCreatingAssignmentRequests(true);
+
+      // Create assignment requests for all selected technicians
+      const requests = selectedTechnicianIds.map(technicianId => ({
+        job_id: jobToAssign.id,
+        technician_id: technicianId,
+        assigned_by: user?.id,
+        status: 'PENDING' as const
+      }));
+
+      const { data, error } = await db.jobAssignmentRequests.createMultiple(requests);
+
+      if (error) throw error;
+
+      // Send notifications to all technicians
+      const job = jobToAssign as any;
+      const customer = job.customer as any;
+      
+      for (const technicianId of selectedTechnicianIds) {
+        const technician = technicians.find(t => t.id === technicianId);
+        if (technician) {
+          const notification = createJobAssignmentRequestNotification(
+            job.job_number,
+            customer?.full_name || 'Customer',
+            technician.fullName,
+            job.id,
+            technician.id,
+            data?.find(r => r.technician_id === technicianId)?.id || ''
+          );
+          await sendNotification(notification);
+        }
+      }
+
+      toast.success(`Job assignment requests sent to ${selectedTechnicianIds.length} technician${selectedTechnicianIds.length > 1 ? 's' : ''}`);
+      setAssignJobDialogOpen(false);
+      setJobToAssign(null);
+      setSelectedTechnicianIds([]);
+
+      // Refresh jobs data
+      await loadDashboardData();
+    } catch (error) {
+      console.error('Error creating assignment requests:', error);
+      toast.error('Failed to send assignment requests');
+    } finally {
+      setIsCreatingAssignmentRequests(false);
     }
   };
 
@@ -3898,47 +3972,134 @@ const AdminDashboard = () => {
 
       {/* Job Assignment Dialog */}
       <Dialog open={assignJobDialogOpen} onOpenChange={setAssignJobDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Assign Job to Technician</DialogTitle>
+            <DialogTitle>Assign Job to Technician(s)</DialogTitle>
             <DialogDescription>
-              Select a technician to assign this job to
+              Choose how to assign this job - directly to one technician or send requests to multiple technicians
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <Label htmlFor="job-info">Job Details</Label>
-              <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                <p className="font-medium">{(jobToAssign as any)?.job_number}</p>
+              <div className="mt-1 p-4 bg-gray-50 rounded-md">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-mono font-bold text-lg">{(jobToAssign as any)?.job_number}</span>
+                  <Badge className="bg-blue-100 text-blue-800">
+                    {(jobToAssign as any)?.service_type} - {(jobToAssign as any)?.service_sub_type}
+                  </Badge>
+                </div>
                 <p className="text-sm text-gray-600">
-                  {(jobToAssign as any)?.service_type} - {(jobToAssign as any)?.service_sub_type}
+                  <strong>Customer:</strong> {(jobToAssign as any)?.customer?.full_name || 'N/A'}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Scheduled:</strong> {(jobToAssign as any)?.scheduled_date} - {(jobToAssign as any)?.scheduled_time_slot}
                 </p>
               </div>
             </div>
-            
-            <div>
-              <Label htmlFor="technician-select">Select Technician</Label>
-              <Select value={selectedTechnicianId} onValueChange={setSelectedTechnicianId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a technician" />
-                </SelectTrigger>
-                <SelectContent>
+
+            {/* Assignment Type Selection */}
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold">Assignment Method</Label>
+                <div className="mt-2 space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      id="direct-assignment"
+                      name="assignment-type"
+                      value="direct"
+                      checked={assignmentType === 'direct'}
+                      onChange={(e) => setAssignmentType(e.target.value as 'direct' | 'bulk')}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                    <label htmlFor="direct-assignment" className="text-sm font-medium text-gray-700">
+                      Direct Assignment - Assign directly to one technician
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      id="bulk-assignment"
+                      name="assignment-type"
+                      value="bulk"
+                      checked={assignmentType === 'bulk'}
+                      onChange={(e) => setAssignmentType(e.target.value as 'direct' | 'bulk')}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                    <label htmlFor="bulk-assignment" className="text-sm font-medium text-gray-700">
+                      Bulk Assignment - Send requests to multiple technicians (first to accept gets the job)
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Direct Assignment */}
+              {assignmentType === 'direct' && (
+                <div>
+                  <Label htmlFor="technician-select">Select Technician</Label>
+                  <Select value={selectedTechnicianId} onValueChange={setSelectedTechnicianId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a technician" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {technicians.length === 0 ? (
+                        <SelectItem value="no-technicians" disabled>
+                          No technicians available
+                        </SelectItem>
+                      ) : (
+                        technicians
+                          .filter(tech => !tech.account_status || tech.account_status === 'ACTIVE')
+                          .map((technician) => (
+                            <SelectItem key={technician.id} value={technician.id || 'unknown'}>
+                              {technician.fullName || 'Unknown'} ({technician.employeeId || 'No ID'})
+                            </SelectItem>
+                          ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Bulk Assignment */}
+              {assignmentType === 'bulk' && (
+                <div>
+                <Label htmlFor="technicians-select">Select Multiple Technicians</Label>
+                <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
                   {technicians.length === 0 ? (
-                    <SelectItem value="no-technicians" disabled>
-                      No technicians available
-                    </SelectItem>
+                    <p className="text-sm text-gray-500">No technicians available</p>
                   ) : (
                     technicians
                       .filter(tech => !tech.account_status || tech.account_status === 'ACTIVE')
                       .map((technician) => (
-                        <SelectItem key={technician.id} value={technician.id || 'unknown'}>
-                          {technician.fullName || 'Unknown'} ({technician.employeeId || 'No ID'})
-                        </SelectItem>
+                        <div key={technician.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`tech-${technician.id}`}
+                            value={technician.id}
+                            checked={selectedTechnicianIds.includes(technician.id || '')}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTechnicianIds(prev => [...prev, technician.id || '']);
+                              } else {
+                                setSelectedTechnicianIds(prev => prev.filter(id => id !== technician.id));
+                              }
+                            }}
+                            className="h-4 w-4 text-blue-600 rounded"
+                          />
+                          <label htmlFor={`tech-${technician.id}`} className="text-sm text-gray-700">
+                            {technician.fullName || 'Unknown'} ({technician.employeeId || 'No ID'})
+                          </label>
+                        </div>
                       ))
                   )}
-                </SelectContent>
-              </Select>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Selected: {selectedTechnicianIds.length} technician{selectedTechnicianIds.length !== 1 ? 's' : ''}
+                </p>
+                </div>
+              )}
             </div>
           </div>
           
@@ -3949,16 +4110,36 @@ const AdminDashboard = () => {
                 setAssignJobDialogOpen(false);
                 setJobToAssign(null);
                 setSelectedTechnicianId('');
+                setSelectedTechnicianIds([]);
               }}
             >
               Cancel
             </Button>
             <Button
-              onClick={handleSaveJobAssignment}
-              disabled={!selectedTechnicianId}
+              onClick={() => {
+                if (assignmentType === 'bulk') {
+                  handleSaveBulkJobAssignment();
+                } else {
+                  handleSaveJobAssignment();
+                }
+              }}
+              disabled={
+                isCreatingAssignmentRequests || 
+                (assignmentType === 'direct' && !selectedTechnicianId) ||
+                (assignmentType === 'bulk' && selectedTechnicianIds.length === 0)
+              }
               className="bg-blue-600 hover:bg-blue-700"
             >
-              Assign Job
+              {isCreatingAssignmentRequests ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Sending Requests...
+                </>
+              ) : (
+                <>
+                  {assignmentType === 'bulk' ? 'Send Assignment Requests' : 'Assign Job'}
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

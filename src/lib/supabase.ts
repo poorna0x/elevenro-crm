@@ -315,6 +315,246 @@ export const db = {
       
       return { data: null, error };
     }
+  },
+
+  // Job Assignment Request operations
+  jobAssignmentRequests: {
+    async create(request: Database['public']['Tables']['job_assignment_requests']['Insert']) {
+      const { data, error } = await supabase
+        .from('job_assignment_requests')
+        .insert(request)
+        .select()
+        .single();
+      
+      return { data, error };
+    },
+
+    async createMultiple(requests: Database['public']['Tables']['job_assignment_requests']['Insert'][]) {
+      const { data, error } = await supabase
+        .from('job_assignment_requests')
+        .insert(requests)
+        .select();
+      
+      return { data, error };
+    },
+
+    async getById(id: string) {
+      const { data, error } = await supabase
+        .from('job_assignment_requests')
+        .select(`
+          *,
+          job:jobs(
+            id,
+            job_number,
+            service_type,
+            service_sub_type,
+            brand,
+            model,
+            scheduled_date,
+            scheduled_time_slot,
+            description,
+            estimated_cost,
+            priority,
+            status,
+            customer:customers(
+              id,
+              customer_id,
+              full_name,
+              phone,
+              email,
+              address,
+              location
+            )
+          ),
+          technician:technicians(
+            id,
+            full_name,
+            phone,
+            email,
+            employee_id,
+            status
+          )
+        `)
+        .eq('id', id)
+        .single();
+      
+      return { data, error };
+    },
+
+    async getByJobId(jobId: string) {
+      const { data, error } = await supabase
+        .from('job_assignment_requests')
+        .select(`
+          *,
+          technician:technicians(
+            id,
+            full_name,
+            phone,
+            email,
+            employee_id,
+            status
+          )
+        `)
+        .eq('job_id', jobId)
+        .order('created_at', { ascending: false });
+      
+      return { data, error };
+    },
+
+    async getByTechnicianId(technicianId: string) {
+      const { data, error } = await supabase
+        .from('job_assignment_requests')
+        .select(`
+          *,
+          job:jobs(
+            id,
+            job_number,
+            service_type,
+            service_sub_type,
+            brand,
+            model,
+            scheduled_date,
+            scheduled_time_slot,
+            description,
+            estimated_cost,
+            priority,
+            status,
+            customer:customers(
+              id,
+              customer_id,
+              full_name,
+              phone,
+              email,
+              address,
+              location
+            )
+          )
+        `)
+        .eq('technician_id', technicianId)
+        .order('created_at', { ascending: false });
+      
+      return { data, error };
+    },
+
+    async getPendingByTechnicianId(technicianId: string) {
+      const { data, error } = await supabase
+        .from('job_assignment_requests')
+        .select(`
+          *,
+          job:jobs(
+            id,
+            job_number,
+            service_type,
+            service_sub_type,
+            brand,
+            model,
+            scheduled_date,
+            scheduled_time_slot,
+            description,
+            estimated_cost,
+            priority,
+            status,
+            customer:customers(
+              id,
+              customer_id,
+              full_name,
+              phone,
+              email,
+              address,
+              location
+            )
+          )
+        `)
+        .eq('technician_id', technicianId)
+        .eq('status', 'PENDING')
+        .order('created_at', { ascending: false });
+      
+      return { data, error };
+    },
+
+    async update(id: string, updates: Database['public']['Tables']['job_assignment_requests']['Update']) {
+      const { data, error } = await supabase
+        .from('job_assignment_requests')
+        .update(updates)
+        .eq('id', id)
+        .select();
+      
+      if (error) {
+        return { data: null, error };
+      }
+      
+      // Return the first (and should be only) updated row
+      return { data: data?.[0] || null, error: null };
+    },
+
+    async respondToRequest(requestId: string, status: 'ACCEPTED' | 'REJECTED', responseNotes?: string) {
+      // First check if the request is still pending
+      const { data: currentRequest, error: fetchError } = await supabase
+        .from('job_assignment_requests')
+        .select('status, job_id')
+        .eq('id', requestId)
+        .single();
+
+      if (fetchError) {
+        return { data: null, error: fetchError };
+      }
+
+      if (currentRequest.status !== 'PENDING') {
+        return { 
+          data: null, 
+          error: { 
+            message: 'This assignment request is no longer available. It may have been accepted by another technician.',
+            code: 'ALREADY_PROCESSED'
+          } 
+        };
+      }
+
+      const { data, error } = await supabase
+        .from('job_assignment_requests')
+        .update({
+          status,
+          responded_at: new Date().toISOString(),
+          response_notes: responseNotes
+        })
+        .eq('id', requestId)
+        .eq('status', 'PENDING') // Only update if still pending
+        .select();
+      
+      if (error) {
+        return { data: null, error };
+      }
+
+      // If no rows were updated, it means the request was already processed
+      if (!data || data.length === 0) {
+        return { 
+          data: null, 
+          error: { 
+            message: 'This assignment request is no longer available. It may have been accepted by another technician.',
+            code: 'ALREADY_PROCESSED'
+          } 
+        };
+      }
+      
+      return { data: data[0], error: null };
+    },
+
+    async delete(id: string) {
+      const { error } = await supabase
+        .from('job_assignment_requests')
+        .delete()
+        .eq('id', id);
+      
+      return { data: null, error };
+    },
+
+    async deleteByJobId(jobId: string) {
+      const { error } = await supabase
+        .from('job_assignment_requests')
+        .delete()
+        .eq('job_id', jobId);
+      
+      return { data: null, error };
+    }
   }
 };
 

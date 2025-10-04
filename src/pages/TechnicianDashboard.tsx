@@ -27,8 +27,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db } from '@/lib/supabase';
-import { Job } from '@/types';
-import { sendNotification, createJobCompletedNotification } from '@/lib/notifications';
+import { Job, JobAssignmentRequest } from '@/types';
+import { sendNotification, createJobCompletedNotification, createJobAssignmentRequestNotification, createJobAssignmentAcceptedNotification, createJobAssignmentRejectedNotification } from '@/lib/notifications';
 
 const TechnicianDashboard = () => {
   const { user, logout, isTechnician, loading } = useAuth();
@@ -43,6 +43,13 @@ const TechnicianDashboard = () => {
   const [jobNotes, setJobNotes] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Job Assignment Requests state
+  const [assignmentRequests, setAssignmentRequests] = useState<JobAssignmentRequest[]>([]);
+  const [assignmentRequestsLoading, setAssignmentRequestsLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<JobAssignmentRequest | null>(null);
+  const [responseNotes, setResponseNotes] = useState('');
+  const [isResponding, setIsResponding] = useState(false);
+
   // Redirect if not technician
   useEffect(() => {
     console.log('TechnicianDashboard: Checking auth status...', { isTechnician, user, loading });
@@ -54,12 +61,27 @@ const TechnicianDashboard = () => {
     }
   }, [isTechnician, navigate, user, loading]);
 
-  // Load assigned jobs
+  // Load assigned jobs and assignment requests
   useEffect(() => {
     if (user?.technicianId) {
       loadAssignedJobs();
+      loadAssignmentRequests();
     }
   }, [user?.technicianId]);
+
+  // Periodic refresh to catch changes from other technicians
+  useEffect(() => {
+    if (!user?.technicianId) return;
+
+    const interval = setInterval(() => {
+      // Only refresh if there are pending assignment requests
+      if (assignmentRequests.length > 0) {
+        loadAssignmentRequests();
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.technicianId, assignmentRequests.length]);
 
   // Filter jobs based on search and status
   useEffect(() => {
@@ -112,6 +134,101 @@ const TechnicianDashboard = () => {
       toast.error('Failed to load assigned jobs');
     } finally {
       setJobsLoading(false);
+    }
+  };
+
+  const loadAssignmentRequests = async () => {
+    if (!user?.technicianId) return;
+
+    try {
+      setAssignmentRequestsLoading(true);
+      const { data, error } = await db.jobAssignmentRequests.getPendingByTechnicianId(user.technicianId);
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setAssignmentRequests(data || []);
+    } catch (error) {
+      console.error('Error loading assignment requests:', error);
+      toast.error('Failed to load assignment requests');
+    } finally {
+      setAssignmentRequestsLoading(false);
+    }
+  };
+
+  const handleAssignmentResponse = async (requestId: string, status: 'ACCEPTED' | 'REJECTED') => {
+    if (!user?.technicianId) return;
+
+    try {
+      setIsResponding(true);
+      
+      // First, check if this request is still valid (not already accepted by someone else)
+      const currentRequest = assignmentRequests.find(req => req.id === requestId);
+      if (!currentRequest) {
+        toast.error('This assignment request is no longer available');
+        return;
+      }
+
+      const { error } = await db.jobAssignmentRequests.respondToRequest(
+        requestId, 
+        status, 
+        responseNotes || undefined
+      );
+
+      if (error) {
+        // Handle specific case where request was already processed
+        if (error.code === 'ALREADY_PROCESSED') {
+          toast.error('This job has already been accepted by another technician');
+          // Refresh the assignment requests to remove this one
+          await loadAssignmentRequests();
+          return;
+        }
+        throw new Error(error.message);
+      }
+
+      // If accepted, reload both assignment requests and assigned jobs
+      if (status === 'ACCEPTED') {
+        // Reload assignment requests to remove any cancelled ones
+        await loadAssignmentRequests();
+        // Reload assigned jobs to show the newly assigned job
+        await loadAssignedJobs();
+      } else {
+        // If rejected, just remove this request
+        setAssignmentRequests(prev => prev.filter(req => req.id !== requestId));
+      }
+
+      // Send notification to admin
+      const request = assignmentRequests.find(req => req.id === requestId);
+      if (request?.job) {
+        const job = request.job as any;
+        const customer = job.customer as any;
+        
+        const notification = status === 'ACCEPTED' 
+          ? createJobAssignmentAcceptedNotification(
+              job.job_number,
+              customer?.full_name || 'Customer',
+              user?.fullName || 'Technician',
+              job.id
+            )
+          : createJobAssignmentRejectedNotification(
+              job.job_number,
+              customer?.full_name || 'Customer',
+              user?.fullName || 'Technician',
+              job.id
+            );
+        
+        await sendNotification(notification);
+      }
+
+      toast.success(`Job assignment ${status.toLowerCase()} successfully`);
+      setSelectedRequest(null);
+      setResponseNotes('');
+    } catch (error) {
+      console.error('Error responding to assignment request:', error);
+      toast.error('Failed to respond to assignment request');
+    } finally {
+      setIsResponding(false);
     }
   };
 
@@ -336,6 +453,102 @@ const TechnicianDashboard = () => {
           </Card>
         </div>
 
+        {/* Job Assignment Requests Section */}
+        {assignmentRequests.length > 0 && (
+          <Card className="mb-6 border-orange-200 bg-orange-50">
+            <CardHeader>
+              <CardTitle className="flex items-center text-orange-800">
+                <AlertCircle className="w-5 h-5 mr-2" />
+                Pending Job Assignment Requests
+                {assignmentRequestsLoading && (
+                  <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin ml-2" />
+                )}
+              </CardTitle>
+              <CardDescription className="text-orange-700">
+                You have {assignmentRequests.length} pending job assignment request{assignmentRequests.length > 1 ? 's' : ''}. 
+                First technician to accept gets the job.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {assignmentRequests.map((request) => {
+                  const job = request.job as any;
+                  const customer = job?.customer as any;
+                  
+                  return (
+                    <Card key={request.id} className="border-orange-200">
+                      <CardContent className="p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-mono font-bold text-lg text-gray-900">
+                                {job?.job_number}
+                              </span>
+                              <Badge className="bg-orange-100 text-orange-800 border-0">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Pending Response
+                              </Badge>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
+                              <div>
+                                <p><strong>Customer:</strong> {customer?.full_name || 'N/A'}</p>
+                                <p><strong>Service:</strong> {job?.service_type} - {job?.service_sub_type}</p>
+                                <p><strong>Brand/Model:</strong> {job?.brand} {job?.model}</p>
+                              </div>
+                              <div>
+                                <p><strong>Date:</strong> {job?.scheduled_date}</p>
+                                <p><strong>Time:</strong> {job?.scheduled_time_slot}</p>
+                                <p><strong>Priority:</strong> {job?.priority}</p>
+                              </div>
+                            </div>
+                            
+                            {job?.description && (
+                              <p className="mt-2 text-sm text-gray-700">
+                                <strong>Description:</strong> {job.description}
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => setSelectedRequest(request)}
+                              className="bg-orange-600 hover:bg-orange-700"
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              View Details
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleAssignmentResponse(request.id, 'ACCEPTED')}
+                              disabled={isResponding}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAssignmentResponse(request.id, 'REJECTED')}
+                              disabled={isResponding}
+                              className="border-red-300 text-red-700 hover:bg-red-50"
+                            >
+                              <AlertCircle className="w-4 h-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="p-6">
@@ -505,6 +718,132 @@ const TechnicianDashboard = () => {
             ))
           )}
         </div>
+
+        {/* Assignment Request Details Dialog */}
+        <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Job Assignment Request Details</DialogTitle>
+              <DialogDescription>
+                Review the job details before accepting or rejecting this assignment
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedRequest && (
+              <div className="space-y-6">
+                {(() => {
+                  const job = selectedRequest.job as any;
+                  const customer = job?.customer as any;
+                  
+                  return (
+                    <>
+                      {/* Job Info */}
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="font-mono font-bold text-xl text-gray-900">
+                            {job?.job_number}
+                          </span>
+                          <Badge className="bg-orange-100 text-orange-800 border-0">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending Response
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p><strong>Service Type:</strong> {job?.service_type} - {job?.service_sub_type}</p>
+                            <p><strong>Brand/Model:</strong> {job?.brand} {job?.model}</p>
+                            <p><strong>Priority:</strong> {job?.priority}</p>
+                            <p><strong>Estimated Cost:</strong> ₹{job?.estimated_cost}</p>
+                          </div>
+                          <div>
+                            <p><strong>Scheduled Date:</strong> {job?.scheduled_date}</p>
+                            <p><strong>Time Slot:</strong> {job?.scheduled_time_slot}</p>
+                            <p><strong>Duration:</strong> {job?.estimated_duration} minutes</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Customer Info */}
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-blue-900 mb-3">Customer Information</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p><strong>Name:</strong> {customer?.full_name || 'N/A'}</p>
+                            <p><strong>Phone:</strong> {customer?.phone || 'N/A'}</p>
+                            <p><strong>Email:</strong> {customer?.email || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p><strong>Address:</strong></p>
+                            <p className="text-gray-700">
+                              {(customer?.address as any)?.street || ''}<br/>
+                              {(customer?.address as any)?.area || ''}<br/>
+                              {(customer?.address as any)?.city || ''} - {(customer?.address as any)?.pincode || ''}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Job Description */}
+                      {job?.description && (
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-2">Job Description</h4>
+                          <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                            {job.description}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Response Notes */}
+                      <div>
+                        <label htmlFor="response-notes" className="block text-sm font-medium text-gray-700 mb-2">
+                          Response Notes (Optional)
+                        </label>
+                        <Textarea
+                          id="response-notes"
+                          placeholder="Add any notes about your response..."
+                          value={responseNotes}
+                          onChange={(e) => setResponseNotes(e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex justify-end gap-3 pt-4 border-t">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedRequest(null);
+                            setResponseNotes('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleAssignmentResponse(selectedRequest.id, 'REJECTED')}
+                          disabled={isResponding}
+                          className="border-red-300 text-red-700 hover:bg-red-50"
+                        >
+                          <AlertCircle className="w-4 h-4 mr-2" />
+                          Reject Assignment
+                        </Button>
+                        <Button
+                          onClick={() => handleAssignmentResponse(selectedRequest.id, 'ACCEPTED')}
+                          disabled={isResponding}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Accept Assignment
+                        </Button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

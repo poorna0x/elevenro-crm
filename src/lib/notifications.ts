@@ -1,7 +1,7 @@
 import { toast } from 'sonner';
 
 // Notification types
-export type NotificationType = 'job_assigned' | 'job_completed' | 'job_cancelled' | 'technician_offline';
+export type NotificationType = 'job_assigned' | 'job_completed' | 'job_cancelled' | 'technician_offline' | 'job_assignment_request' | 'job_assignment_accepted' | 'job_assignment_rejected';
 
 export interface NotificationData {
   type: NotificationType;
@@ -11,6 +11,7 @@ export interface NotificationData {
   technicianId?: string;
   customerName?: string;
   jobNumber?: string;
+  requestId?: string; // For assignment requests
   timestamp: Date;
 }
 
@@ -56,7 +57,7 @@ export const showBrowserNotification = (data: NotificationData): void => {
       notification.close();
       
       // Navigate to relevant page
-      if (data.type === 'job_assigned' && data.technicianId) {
+      if ((data.type === 'job_assigned' || data.type === 'job_assignment_request') && data.technicianId) {
         window.location.href = '/technician';
       } else if (data.jobId) {
         window.location.href = '/admin';
@@ -91,6 +92,24 @@ export const showToastNotification = (data: NotificationData): void => {
         return {
           type: 'warning' as const,
           title: 'Technician Offline',
+          description: data.message
+        };
+      case 'job_assignment_request':
+        return {
+          type: 'info' as const,
+          title: 'New Job Assignment Request',
+          description: data.message
+        };
+      case 'job_assignment_accepted':
+        return {
+          type: 'success' as const,
+          title: 'Job Assignment Accepted',
+          description: data.message
+        };
+      case 'job_assignment_rejected':
+        return {
+          type: 'warning' as const,
+          title: 'Job Assignment Rejected',
           description: data.message
         };
       default:
@@ -182,6 +201,56 @@ export const createTechnicianOfflineNotification = (
   title: 'Technician Offline',
   message: `${technicianName} has gone offline`,
   technicianId,
+  timestamp: new Date()
+});
+
+// Job Assignment Request Notifications
+export const createJobAssignmentRequestNotification = (
+  jobNumber: string,
+  customerName: string,
+  technicianName: string,
+  jobId: string,
+  technicianId: string,
+  requestId: string
+): NotificationData => ({
+  type: 'job_assignment_request',
+  title: 'New Job Assignment Request',
+  message: `Job #${jobNumber} assignment request for ${customerName}`,
+  jobId,
+  technicianId,
+  customerName,
+  jobNumber,
+  requestId,
+  timestamp: new Date()
+});
+
+export const createJobAssignmentAcceptedNotification = (
+  jobNumber: string,
+  customerName: string,
+  technicianName: string,
+  jobId: string
+): NotificationData => ({
+  type: 'job_assignment_accepted',
+  title: 'Job Assignment Accepted',
+  message: `${technicianName} accepted Job #${jobNumber} for ${customerName}`,
+  jobId,
+  customerName,
+  jobNumber,
+  timestamp: new Date()
+});
+
+export const createJobAssignmentRejectedNotification = (
+  jobNumber: string,
+  customerName: string,
+  technicianName: string,
+  jobId: string
+): NotificationData => ({
+  type: 'job_assignment_rejected',
+  title: 'Job Assignment Rejected',
+  message: `${technicianName} rejected Job #${jobNumber} for ${customerName}`,
+  jobId,
+  customerName,
+  jobNumber,
   timestamp: new Date()
 });
 
