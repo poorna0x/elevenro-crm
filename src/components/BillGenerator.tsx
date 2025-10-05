@@ -1,369 +1,392 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Download, FileText, Droplets, Plus, Trash2, Eye } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Plus, Trash2, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import { pdf } from '@react-pdf/renderer';
-import PDFBillTemplate from './PDFBillTemplate';
-
-interface BillItem {
-  id: string;
-  description: string;
-  quantity: number;
-  rate: number;
-  amount: number;
-}
-
-interface BillData {
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  serviceType: string;
-  jobNumber: string;
-  amount: number;
-  status: string;
-  orderId?: string;
-  paymentId?: string;
-  date?: string;
-}
+import { Bill, BillItem, CompanyInfo, Customer } from '@/types';
 
 interface BillGeneratorProps {
-  billData: BillData;
-  onGenerate?: () => void;
+  customer?: Customer;
+  onPrint?: (bill: Bill) => void;
 }
 
-const BillGenerator: React.FC<BillGeneratorProps> = ({ billData, onGenerate }) => {
-  const billRef = useRef<HTMLDivElement>(null);
-  const [billItems, setBillItems] = useState<BillItem[]>([
-    {
-      id: '1',
-      description: 'RO Service Installation',
-      quantity: 1,
-      rate: 15000,
-      amount: 15000
-    }
-  ]);
-  const [taxRate, setTaxRate] = useState(18); // 18% GST
-  const [showPreview, setShowPreview] = useState(false);
+const defaultCompanyInfo: CompanyInfo = {
+  name: "Hydrogenro Water Solutions",
+  address: "123 Main Street, Tech Park",
+  city: "Bangalore",
+  state: "Karnataka",
+  pincode: "560001",
+  phone: "+91 98765 43210",
+  email: "info@hydrogenro.com",
+  gstNumber: "29ABCDE1234F1Z5",
+  panNumber: "ABCDE1234F",
+  website: "www.hydrogenro.com"
+};
+
+const defaultBillItems: BillItem[] = [
+  {
+    id: '1',
+    description: 'RO Water Purifier Installation',
+    quantity: 1,
+    unitPrice: 15000,
+    total: 15000,
+    taxRate: 18,
+    taxAmount: 2700
+  }
+];
+
+export default function BillGenerator({ customer, onPrint }: BillGeneratorProps) {
+  const [billNumber, setBillNumber] = useState('');
+  const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dueDate, setDueDate] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+  const [company, setCompany] = useState<CompanyInfo>(defaultCompanyInfo);
+  const [items, setItems] = useState<BillItem[]>(defaultBillItems);
+  const [notes, setNotes] = useState('');
+  const [terms, setTerms] = useState('Payment due within 30 days of invoice date.');
+  const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'PAID' | 'OVERDUE'>('PENDING');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE'>('CASH');
 
   // Calculate totals
-  const subtotal = billItems.reduce((sum, item) => sum + item.amount, 0);
-  const total = subtotal;
+  const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+  const totalTax = items.reduce((sum, item) => sum + item.taxAmount, 0);
+  const totalAmount = subtotal + totalTax;
 
+  // Generate bill number
+  useEffect(() => {
+    const year = new Date().getFullYear();
+    const month = String(new Date().getMonth() + 1).padStart(2, '0');
+    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    setBillNumber(`BILL-${year}-${month}-${randomNum}`);
+  }, []);
 
-  // Item management functions
   const addItem = () => {
     const newItem: BillItem = {
       id: Date.now().toString(),
       description: '',
       quantity: 1,
-      rate: 0,
-      amount: 0
+      unitPrice: 0,
+      total: 0,
+      taxRate: 18,
+      taxAmount: 0
     };
-    setBillItems([...billItems, newItem]);
+    setItems([...items, newItem]);
   };
 
   const removeItem = (id: string) => {
-    if (billItems.length > 1) {
-      setBillItems(billItems.filter(item => item.id !== id));
+    if (items.length > 1) {
+      setItems(items.filter(item => item.id !== id));
     }
   };
 
   const updateItem = (id: string, field: keyof BillItem, value: string | number) => {
-    setBillItems(billItems.map(item => {
+    setItems(items.map(item => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
-        if (field === 'quantity' || field === 'rate') {
-          updatedItem.amount = updatedItem.quantity * updatedItem.rate;
+        
+        // Recalculate totals when quantity, unitPrice, or taxRate changes
+        if (field === 'quantity' || field === 'unitPrice') {
+          updatedItem.total = updatedItem.quantity * updatedItem.unitPrice;
+          updatedItem.taxAmount = (updatedItem.total * updatedItem.taxRate) / 100;
+        } else if (field === 'taxRate') {
+          updatedItem.taxAmount = (updatedItem.total * updatedItem.taxRate) / 100;
         }
+        
         return updatedItem;
       }
       return item;
     }));
   };
 
-  const generatePreview = () => {
-    setShowPreview(true);
-  };
 
-  const generatePDF = async () => {
-    try {
-      toast.loading('Generating PDF bill...', { id: 'pdf-generation' });
-
-      // Create PDF using React-PDF
-      const blob = await pdf(
-        <PDFBillTemplate 
-          billData={billData} 
-          billItems={billItems} 
-          taxRate={taxRate} 
-        />
-      ).toBlob();
-
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `HydrogenRO_Bill_${billData.jobNumber}_${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast.success('PDF bill generated successfully!', { id: 'pdf-generation' });
-      
-      if (onGenerate) {
-        onGenerate();
-      }
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error(`Failed to generate PDF bill: ${error instanceof Error ? error.message : 'Unknown error'}`, { id: 'pdf-generation' });
+  const handlePrint = () => {
+    if (!customer) {
+      toast.error('Please select a customer first');
+      return;
     }
+
+    const bill: Bill = {
+      id: Date.now().toString(),
+      billNumber,
+      billDate,
+      dueDate,
+      company,
+      customer: {
+        id: customer.id,
+        name: customer.fullName,
+        address: `${customer.address.street}, ${customer.address.area}`,
+        city: customer.address.city,
+        state: customer.address.state,
+        pincode: customer.address.pincode,
+        phone: customer.phone,
+        email: customer.email,
+        gstNumber: customer.gstNumber
+      },
+      items,
+      subtotal,
+      totalTax,
+      totalAmount,
+      paymentStatus,
+      paymentMethod,
+      notes,
+      terms,
+      serviceType: customer.serviceType,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    onPrint?.(bill);
   };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return new Date().toLocaleDateString('en-IN');
-    return new Date(dateString).toLocaleDateString('en-IN');
-  };
-
-  const formatCurrency = (amount: number) => {
-    // Use "Rs." instead of "₹" to avoid encoding issues
-    return `Rs. ${amount.toLocaleString('en-IN')}`;
-  };
-
-  // HTML Preview Component that matches PDF layout
-  const HTMLPreview = () => (
-    <div className="bg-white text-black p-8 max-w-4xl mx-auto" style={{ fontFamily: 'Arial, sans-serif' }}>
-      {/* Header */}
-      <div className="flex flex-col items-center mb-8 pb-4 border-b-2 border-black">
-        <div className="flex items-center mb-4">
-          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center mr-3">
-            <Droplets className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-black">Hydrogen RO</h1>
-          </div>
-        </div>
-        <div className="text-center">
-          <p className="text-xs text-gray-600 leading-relaxed">
-            Bengaluru, Karnataka, India<br />
-            Phone: +91-9876543210<br />
-            Email: info@hydrogenro.com<br />
-            Website: www.hydrogenro.com
-          </p>
-        </div>
-      </div>
-
-      {/* Invoice Title */}
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">INVOICE</h1>
-      </div>
-
-      {/* Bill Information */}
-      <div className="flex justify-between mb-8">
-        <div className="flex-1">
-          <div className="mb-2">
-            <span className="text-sm font-bold text-gray-700">Invoice #:</span>
-            <span className="text-sm text-gray-600 ml-2">{billData.jobNumber}</span>
-          </div>
-          <div className="mb-2">
-            <span className="text-sm font-bold text-gray-700">Date:</span>
-            <span className="text-sm text-gray-600 ml-2">{formatDate(billData.date)}</span>
-          </div>
-          <div className="mb-2">
-            <span className="text-sm font-bold text-gray-700">Service:</span>
-            <span className="text-sm text-gray-600 ml-2">{billData.serviceType}</span>
-          </div>
-        </div>
-
-        <div className="flex-1 ml-8">
-          <h3 className="text-sm font-bold text-gray-800 mb-2">Bill To:</h3>
-          <div className="text-sm text-gray-600">
-            <p>{billData.customerName}</p>
-            <p>{billData.customerEmail}</p>
-            <p>{billData.customerPhone}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Items Table */}
-      <div className="mb-8">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="border border-gray-300 px-3 py-2 text-left text-xs font-bold text-gray-700 w-2/5">Description</th>
-              <th className="border border-gray-300 px-3 py-2 text-center text-xs font-bold text-gray-700 w-1/6">Qty</th>
-              <th className="border border-gray-300 px-3 py-2 text-right text-xs font-bold text-gray-700 w-1/5">Rate (Rs.)</th>
-              <th className="border border-gray-300 px-3 py-2 text-right text-xs font-bold text-gray-700 w-1/5">Amount (Rs.)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {billItems.map((item, index) => (
-              <tr key={item.id} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                <td className="border border-gray-300 px-3 py-2 text-xs text-gray-800">{item.description}</td>
-                <td className="border border-gray-300 px-3 py-2 text-center text-xs text-gray-600">{item.quantity}</td>
-                <td className="border border-gray-300 px-3 py-2 text-right text-xs text-gray-600">{formatCurrency(item.rate)}</td>
-                <td className="border border-gray-300 px-3 py-2 text-right text-xs font-bold text-gray-800">{formatCurrency(item.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Totals */}
-      <div className="flex justify-end mb-8">
-        <div className="w-64">
-          <div className="border-t-2 border-black pt-2 flex justify-between">
-            <span className="text-sm font-bold text-gray-800">Total:</span>
-            <span className="text-sm font-bold text-black">{formatCurrency(total)}</span>
-          </div>
-        </div>
-      </div>
-
-
-      {/* Footer */}
-      <div className="text-center text-xs text-gray-500 border-t pt-4">
-        <p className="font-bold mb-2">Thank you for choosing Hydrogen RO!</p>
-        <p className="mb-1">
-          For any queries regarding this invoice, please contact us at info@hydrogenro.com
-        </p>
-        <p>or call us at +91-9876543210. We appreciate your business!</p>
-      </div>
-    </div>
-  );
-
 
   return (
-    <div className="space-y-4">
-      <Card className="border-blue-200 bg-blue-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-900">
-            <FileText className="w-5 h-5" />
-            Generate Bill
-          </CardTitle>
-          <p className="text-blue-700 text-sm">
-            Add items and generate a professional PDF bill
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Item Management */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-gray-800">Bill Items</h4>
-              <Button
-                onClick={addItem}
-                size="sm"
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add Item
-              </Button>
-            </div>
-            
-            <div className="space-y-3">
-              {billItems.map((item, index) => (
-                <div key={item.id} className="grid grid-cols-12 gap-2 items-center p-3 bg-white rounded-lg border">
-                  <div className="col-span-5">
-                    <Input
-                      value={item.description}
-                      onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                      placeholder="Item description"
-                      className="text-sm"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
-                      placeholder="Qty"
-                      className="text-sm text-center"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      value={item.rate}
-                      onChange={(e) => updateItem(item.id, 'rate', parseInt(e.target.value) || 0)}
-                      placeholder="Rate"
-                      className="text-sm text-right"
-                    />
-                  </div>
-                  <div className="col-span-2 text-right font-medium text-gray-700">
-                    {formatCurrency(item.amount)}
-                  </div>
-                  <div className="col-span-1">
-                    {billItems.length > 1 && (
-                      <Button
-                        onClick={() => removeItem(item.id)}
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Generate Bill</h1>
+        <div className="flex gap-2">
+          <Button onClick={handlePrint} className="bg-green-600 hover:bg-green-700">
+            <Download className="w-4 h-4 mr-2" />
+            Print/Download Bill
+          </Button>
+        </div>
+      </div>
 
-
-          {/* Totals Summary */}
-          <div className="bg-white p-4 rounded-lg border">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-lg font-bold text-black border-t pt-2">
-                <span>Total:</span>
-                <span>{formatCurrency(total)}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Bill Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Bill Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="billNumber">Bill Number</Label>
+                <Input
+                  id="billNumber"
+                  value={billNumber}
+                  onChange={(e) => setBillNumber(e.target.value)}
+                  placeholder="BILL-2024-001"
+                />
+              </div>
+              <div>
+                <Label htmlFor="billDate">Bill Date</Label>
+                <Input
+                  id="billDate"
+                  type="date"
+                  value={billDate}
+                  onChange={(e) => setBillDate(e.target.value)}
+                />
               </div>
             </div>
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="dueDate">Due Date</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="paymentStatus">Payment Status</Label>
+                <Select value={paymentStatus} onValueChange={(value: any) => setPaymentStatus(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="PAID">Paid</SelectItem>
+                    <SelectItem value="OVERDUE">Overdue</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="paymentMethod">Payment Method</Label>
+              <Select value={paymentMethod} onValueChange={(value: any) => setPaymentMethod(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CASH">Cash</SelectItem>
+                  <SelectItem value="CARD">Card</SelectItem>
+                  <SelectItem value="UPI">UPI</SelectItem>
+                  <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
+                  <SelectItem value="CHEQUE">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
-          <div className="flex gap-3">
-            <Button
-              onClick={showPreview ? () => setShowPreview(false) : generatePreview}
-              variant="outline"
-              className="flex-1"
-              size="lg"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              {showPreview ? 'Hide Preview' : 'Preview Bill'}
+        {/* Customer Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {customer ? (
+              <div className="space-y-2">
+                <div className="font-semibold text-lg">{customer.fullName}</div>
+                <div className="text-sm text-gray-600">
+                  <div>{customer.address.street}, {customer.address.area}</div>
+                  <div>{customer.address.city}, {customer.address.state} - {customer.address.pincode}</div>
+                  <div>Phone: {customer.phone}</div>
+                  <div>Email: {customer.email}</div>
+                  {customer.gstNumber && <div>GST: {customer.gstNumber}</div>}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-gray-500 py-4">
+                No customer selected
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bill Items */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Bill Items</CardTitle>
+            <Button onClick={addItem} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Item
             </Button>
-            <Button
-              onClick={generatePDF}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-              size="lg"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
-            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {items.map((item, index) => (
+              <div key={item.id} className="grid grid-cols-12 gap-4 items-end p-4 border rounded-lg">
+                <div className="col-span-5">
+                  <Label>Description</Label>
+                  <Input
+                    value={item.description}
+                    onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                    placeholder="Item description"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Quantity</Label>
+                  <Input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
+                    min="1"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Unit Price</Label>
+                  <Input
+                    type="number"
+                    value={item.unitPrice}
+                    onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Tax Rate (%)</Label>
+                  <Input
+                    type="number"
+                    value={item.taxRate}
+                    onChange={(e) => updateItem(item.id, 'taxRate', parseFloat(e.target.value) || 0)}
+                    min="0"
+                    max="100"
+                    step="0.01"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => removeItem(item.id)}
+                    disabled={items.length === 1}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="col-span-12 grid grid-cols-3 gap-4 mt-2">
+                  <div className="text-sm">
+                    <span className="text-gray-500">Subtotal: </span>
+                    <span className="font-semibold">₹{item.total.toLocaleString()}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="text-gray-500">Tax: </span>
+                    <span className="font-semibold">₹{item.taxAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="text-gray-500">Total: </span>
+                    <span className="font-semibold">₹{(item.total + item.taxAmount).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Bill Preview */}
-      {showPreview && (
-        <Card className="border-green-200 bg-green-50">
+      {/* Bill Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bill Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex justify-between text-lg">
+              <span>Subtotal:</span>
+              <span>₹{subtotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-lg">
+              <span>Total Tax:</span>
+              <span>₹{totalTax.toLocaleString()}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between text-xl font-bold">
+              <span>Total Amount:</span>
+              <span>₹{totalAmount.toLocaleString()}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Additional Information */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-900">
-              <Eye className="w-5 h-5" />
-              Bill Preview
-            </CardTitle>
-            <p className="text-green-700 text-sm">
-              This is exactly how your PDF will look
-            </p>
+            <CardTitle>Notes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="bg-gray-100 border rounded-lg overflow-auto max-h-96">
-              <HTMLPreview />
-            </div>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Additional notes for the customer..."
+              rows={4}
+            />
           </CardContent>
         </Card>
-      )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Terms & Conditions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={terms}
+              onChange={(e) => setTerms(e.target.value)}
+              placeholder="Terms and conditions..."
+              rows={4}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
-};
-
-export default BillGenerator;
+}

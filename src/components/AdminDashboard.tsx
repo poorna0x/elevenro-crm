@@ -2421,7 +2421,7 @@ const AdminDashboard = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="center" className="w-48">
-                          <DropdownMenuItem onClick={() => toast.info('Billing system coming soon')}>
+                          <DropdownMenuItem onClick={() => window.open('/bills', '_blank')}>
                             <Receipt className="mr-2 h-4 w-4" />
                             Generate Bill
                           </DropdownMenuItem>
@@ -2517,7 +2517,7 @@ const AdminDashboard = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={() => toast.info('Billing system coming soon')}>
+                          <DropdownMenuItem onClick={() => window.open('/bills', '_blank')}>
                             <Receipt className="mr-2 h-4 w-4" />
                             Generate Bill
                           </DropdownMenuItem>

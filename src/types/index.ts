@@ -263,6 +263,78 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
+// Bill Generation Types
+export interface BillItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+  taxRate: number; // GST rate in percentage
+  taxAmount: number;
+}
+
+export interface CompanyInfo {
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  phone: string;
+  email: string;
+  gstNumber: string;
+  panNumber: string;
+  website?: string;
+}
+
+export interface Bill {
+  id: string;
+  billNumber: string; // Format: BILL-2024-001
+  billDate: string;
+  dueDate: string;
+  
+  // Company Information
+  company: CompanyInfo;
+  
+  // Customer Information
+  customer: {
+    id: string;
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    phone: string;
+    email: string;
+    gstNumber?: string;
+  };
+  
+  // Bill Items
+  items: BillItem[];
+  
+  // Financial Summary
+  subtotal: number;
+  totalTax: number;
+  totalAmount: number;
+  
+  // Payment Information
+  paymentStatus: 'PENDING' | 'PAID' | 'OVERDUE';
+  paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE';
+  paymentDate?: string;
+  
+  // Additional Information
+  notes?: string;
+  terms?: string;
+  
+  // Related Job/Service
+  jobId?: string;
+  serviceType?: 'RO' | 'SOFTENER';
+  
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Database Table Types (for Supabase)
 export interface Database {
   public: {
@@ -286,6 +358,11 @@ export interface Database {
         Row: JobAssignmentRequest;
         Insert: Omit<JobAssignmentRequest, 'id' | 'createdAt' | 'updatedAt'>;
         Update: Partial<Omit<JobAssignmentRequest, 'id' | 'createdAt'>>;
+      };
+      bills: {
+        Row: Bill;
+        Insert: Omit<Bill, 'id' | 'billNumber' | 'createdAt' | 'updatedAt'>;
+        Update: Partial<Omit<Bill, 'id' | 'billNumber' | 'createdAt'>>;
       };
     };
   };
