@@ -47,25 +47,17 @@ export interface PDFBillData {
 
 export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' = 'print'): void {
   try {
-    // Create a hidden print container instead of replacing the entire body
-    const printContainer = document.createElement('div');
-    printContainer.id = 'print-container';
-    printContainer.style.cssText = `
-      position: fixed;
-      top: -9999px;
-      left: -9999px;
-      width: 210mm;
-      min-height: 297mm;
-      background: white;
-      z-index: -1;
-      visibility: hidden;
-      opacity: 0;
-    `;
+    // Store original body content
+    const originalBody = document.body.innerHTML;
+    const originalTitle = document.title;
     
     // Create the bill content
     const billContent = createBillContent(billData);
     console.log('Bill content generated:', billContent.substring(0, 200) + '...');
-    printContainer.innerHTML = billContent;
+    
+    // Replace body content temporarily
+    document.body.innerHTML = billContent;
+    document.title = `Bill - ${billData.billNumber}`;
     
     // Add print styles
     const printStyles = document.createElement('style');
@@ -73,24 +65,23 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
     printStyles.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
       
-      #print-container * {
+      * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
       
-      #print-container {
+      body {
         font-family: 'Poppins', sans-serif;
         line-height: 1.4;
         color: #333;
         background: white;
         margin: 0;
         padding: 15mm;
-        box-sizing: border-box;
         font-size: 11px;
       }
       
-      #print-container .bill-container {
+      .bill-container {
         width: 100%;
         max-width: 100%;
         margin: 0;
@@ -100,33 +91,33 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         box-sizing: border-box;
       }
       
-      #print-container .header {
+      .header {
         text-align: center;
         margin-bottom: 15px;
         border-bottom: 2px solid #000000;
         padding: 10px 0 8px 0;
       }
       
-      #print-container .logo-container {
+      .logo-container {
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: 15px;
       }
       
-      #print-container .full-logo {
+      .full-logo {
         max-width: 200px;
         height: auto;
         max-height: 60px;
       }
       
-      #print-container .company-details {
+      .company-details {
         font-size: 14px;
         color: #666;
         line-height: 1.4;
       }
       
-      #print-container .bill-info {
+      .bill-info {
         display: flex;
         justify-content: space-between;
         margin-bottom: 15px;
@@ -134,11 +125,11 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         padding: 0 15px;
       }
       
-      #print-container .bill-to, #print-container .bill-details {
+      .bill-to, .bill-details {
         flex: 1;
       }
       
-      #print-container .section-title {
+      .section-title {
         font-size: 18px;
         font-weight: bold;
         color: #000000;
@@ -147,12 +138,12 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         padding-bottom: 5px;
       }
       
-      #print-container .customer-info, #print-container .bill-meta {
+      .customer-info, .bill-meta {
         font-size: 14px;
         line-height: 1.5;
       }
       
-      #print-container .items-table {
+      .items-table {
         width: calc(100% - 30px);
         border-collapse: collapse;
         margin: 0 15px 15px 15px;
@@ -160,7 +151,7 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         table-layout: fixed;
       }
       
-      #print-container .items-table th {
+      .items-table th {
         background-color: #f8fafc;
         color: #374151;
         font-weight: bold;
@@ -169,12 +160,12 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         border: 1px solid #d1d5db;
       }
       
-      #print-container .items-table th:nth-child(1) { width: 50%; }
-      #print-container .items-table th:nth-child(2) { width: 15%; }
-      #print-container .items-table th:nth-child(3) { width: 20%; }
-      #print-container .items-table th:nth-child(4) { width: 15%; }
+      .items-table th:nth-child(1) { width: 50%; }
+      .items-table th:nth-child(2) { width: 15%; }
+      .items-table th:nth-child(3) { width: 20%; }
+      .items-table th:nth-child(4) { width: 15%; }
       
-      #print-container .items-table td {
+      .items-table td {
         padding: 8px 4px;
         border: 1px solid #d1d5db;
         vertical-align: middle;
@@ -183,33 +174,33 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         overflow: hidden;
       }
       
-      #print-container .items-table tr:nth-child(even) {
+      .items-table tr:nth-child(even) {
         background-color: #f9fafb;
       }
       
-      #print-container .text-right {
+      .text-right {
         text-align: right;
       }
       
-      #print-container .text-center {
+      .text-center {
         text-align: center;
       }
       
-      #print-container .summary {
+      .summary {
         margin: 15px 15px 0 15px;
         text-align: right;
         width: calc(100% - 30px);
         box-sizing: border-box;
       }
       
-      #print-container .summary-row {
+      .summary-row {
         display: flex;
         justify-content: space-between;
         padding: 8px 0;
         border-bottom: 1px solid #e5e7eb;
       }
       
-      #print-container .summary-row.total {
+      .summary-row.total {
         font-size: 18px;
         font-weight: bold;
         color: #000000;
@@ -219,43 +210,43 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         padding: 15px 0;
       }
       
-      #print-container .notes-section {
+      .notes-section {
         margin: 15px 15px 0 15px;
         padding-top: 10px;
         border-top: 1px solid #e5e7eb;
       }
       
-      #print-container .notes-title {
+      .notes-title {
         font-size: 16px;
         font-weight: bold;
         color: #374151;
         margin-bottom: 10px;
       }
       
-      #print-container .notes-content {
+      .notes-content {
         font-size: 14px;
         line-height: 1.5;
         color: #6b7280;
       }
       
-      #print-container .terms-list {
+      .terms-list {
         margin: 0;
         padding-left: 20px;
       }
       
-      #print-container .terms-list li {
+      .terms-list li {
         margin-bottom: 8px;
         list-style-type: disc;
       }
       
-      #print-container .footer {
+      .footer {
         margin: 15px 15px 0 15px;
         padding: 10px 0;
         border-top: 1px solid #e5e7eb;
         text-align: center;
         font-size: 10px;
         color: #6b7280;
-        }
+      }
       
       @media print {
         * {
@@ -265,37 +256,12 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         
         body {
           margin: 0 !important;
-          padding: 0 !important;
-        }
-        
-        body * {
-          visibility: hidden !important;
-        }
-        
-        #print-container {
-          visibility: visible !important;
-          opacity: 1 !important;
-          position: absolute !important;
-          left: 0 !important;
-          top: 0 !important;
-          width: 210mm !important;
-          min-height: 297mm !important;
-          max-width: 210mm !important;
           padding: 15mm !important;
-          margin: 0 !important;
           font-size: 12pt !important;
           line-height: 1.4 !important;
-          background: white !important;
-          z-index: 9999 !important;
-          box-sizing: border-box !important;
         }
         
-        #print-container * {
-          visibility: visible !important;
-          opacity: 1 !important;
-        }
-        
-        #print-container .bill-container {
+        .bill-container {
           width: 100% !important;
           max-width: 100% !important;
           margin: 0 !important;
@@ -310,24 +276,11 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
           size: A4 !important;
           margin: 0 !important;
         }
-        
-        #print-container .header {
-          page-break-after: auto !important;
-        }
-        
-        #print-container .items-table {
-          page-break-inside: auto !important;
-        }
-        
-        #print-container .summary {
-          page-break-before: auto !important;
-        }
       }
     `;
     
-    // Add elements to document
+    // Add styles to document
     document.head.appendChild(printStyles);
-    document.body.appendChild(printContainer);
     
     // Wait a moment for styles to apply, then print
     setTimeout(() => {
@@ -341,17 +294,19 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
       
       // Clean up after printing
       setTimeout(() => {
+        document.body.innerHTML = originalBody;
+        document.title = originalTitle;
         if (document.head.contains(printStyles)) {
-      document.head.removeChild(printStyles);
+          document.head.removeChild(printStyles);
         }
-        if (document.body.contains(printContainer)) {
-          document.body.removeChild(printContainer);
-        }
-    }, 1000);
+      }, 1000);
     }, 100);
     
   } catch (error) {
     console.error('Error generating bill PDF:', error);
+    // Restore original content in case of error
+    document.body.innerHTML = originalBody;
+    document.title = originalTitle;
     alert('Error generating bill. Please try again.');
   }
 }
