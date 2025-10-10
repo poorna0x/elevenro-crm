@@ -118,13 +118,29 @@ export function generateBillPDF(billData: PDFBillData): void {
         }
         
         .bill-container {
-          width: 100% !important;
-          max-width: 100% !important;
+          width: calc(100% - 4px) !important;
+          max-width: calc(100% - 4px) !important;
           margin: 0 !important;
           padding: 0 !important;
           border: 2px solid #000 !important;
           box-shadow: none !important;
           page-break-inside: avoid !important;
+          overflow: hidden !important;
+          box-sizing: border-box !important;
+        }
+        
+        .items-table {
+          width: calc(100% - 30px) !important;
+          table-layout: fixed !important;
+        }
+        
+        .items-table th:nth-child(1) { width: 50% !important; }
+        .items-table th:nth-child(2) { width: 15% !important; }
+        .items-table th:nth-child(3) { width: 20% !important; }
+        .items-table th:nth-child(4) { width: 15% !important; }
+        
+        .summary {
+          width: calc(100% - 30px) !important;
         }
         
         @page {
@@ -180,14 +196,15 @@ function generateBillHTML(data: PDFBillData): string {
         }
         
         .bill-container {
-          width: 100%;
-          max-width: 100%;
+          width: calc(100% - 4px); /* Account for border width */
+          max-width: calc(100% - 4px);
           margin: 0;
           background: white;
           padding: 0;
-          overflow: visible;
+          overflow: hidden;
           border: 2px solid #000;
-          min-height: calc(297mm - 40mm); /* A4 height minus margins */
+          min-height: calc(297mm - 30mm); /* A4 height minus margins */
+          box-sizing: border-box;
         }
         
         .header {
@@ -243,26 +260,34 @@ function generateBillHTML(data: PDFBillData): string {
         }
         
         .items-table {
-          width: 100%;
+          width: calc(100% - 30px); /* Account for left and right margins */
           border-collapse: collapse;
           margin: 0 15px 15px 15px;
           font-size: 10px;
+          table-layout: fixed; /* Fixed table layout for better control */
         }
         
         .items-table th {
           background-color: #f8fafc;
           color: #374151;
           font-weight: bold;
-          padding: 12px 8px;
+          padding: 8px 4px;
           text-align: center;
           border: 1px solid #d1d5db;
         }
         
+        .items-table th:nth-child(1) { width: 50%; } /* Description */
+        .items-table th:nth-child(2) { width: 15%; } /* Qty */
+        .items-table th:nth-child(3) { width: 20%; } /* Unit Price */
+        .items-table th:nth-child(4) { width: 15%; } /* Total */
+        
         .items-table td {
-          padding: 12px 8px;
+          padding: 8px 4px;
           border: 1px solid #d1d5db;
           vertical-align: middle;
           text-align: center;
+          word-wrap: break-word;
+          overflow: hidden;
         }
         
         .items-table tr:nth-child(even) {
@@ -280,6 +305,8 @@ function generateBillHTML(data: PDFBillData): string {
         .summary {
           margin: 15px 15px 0 15px;
           text-align: right;
+          width: calc(100% - 30px);
+          box-sizing: border-box;
         }
         
         .summary-row {
