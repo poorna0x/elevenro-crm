@@ -47,6 +47,15 @@ export interface PDFBillData {
 
 export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' = 'print'): void {
   try {
+    // Check if it's a mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // For mobile devices, use a different approach
+      handleMobilePrint(billData, action);
+      return;
+    }
+    
     // Create a new window for printing to avoid destroying React components
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) {
@@ -303,12 +312,276 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         // Close the print window after printing
     setTimeout(() => {
           printWindow.close();
-        }, 1000);
+    }, 1000);
       }, 100);
     };
     
   } catch (error) {
     console.error('Error generating bill PDF:', error);
+    alert('Error generating bill. Please try again.');
+  }
+}
+
+function handleMobilePrint(billData: PDFBillData, action: 'print' | 'pdf'): void {
+  try {
+    // Store original content
+    const originalBody = document.body.innerHTML;
+    const originalTitle = document.title;
+    
+    // Create the bill content
+    const billContent = createBillContent(billData);
+    console.log('Mobile bill content generated:', billContent.substring(0, 200) + '...');
+    
+    // Replace body content temporarily
+    document.body.innerHTML = billContent;
+    document.title = `Bill - ${billData.billNumber}`;
+    
+    // Add mobile-optimized print styles
+    const printStyles = document.createElement('style');
+    printStyles.id = 'mobile-print-styles';
+    printStyles.textContent = `
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+      
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Poppins', sans-serif;
+        line-height: 1.4;
+        color: #333;
+        background: white;
+        margin: 0;
+        padding: 10mm;
+        font-size: 10px;
+        -webkit-text-size-adjust: 100%;
+      }
+      
+      .bill-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        background: white;
+        padding: 0;
+        border: 2px solid #000;
+        box-sizing: border-box;
+      }
+      
+      .header {
+        text-align: center;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #000000;
+        padding: 8px 0 6px 0;
+      }
+      
+      .logo-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+      }
+      
+      .full-logo {
+        max-width: 150px;
+        height: auto;
+        max-height: 50px;
+      }
+      
+      .company-details {
+        font-size: 12px;
+        color: #666;
+        line-height: 1.3;
+      }
+      
+      .bill-info {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 10px;
+        gap: 10px;
+        padding: 0 10px;
+      }
+      
+      .bill-to, .bill-details {
+        flex: 1;
+      }
+      
+      .section-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #000000;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 3px;
+      }
+      
+      .customer-info, .bill-meta {
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      
+      .items-table {
+        width: calc(100% - 20px);
+        border-collapse: collapse;
+        margin: 0 10px 10px 10px;
+        font-size: 9px;
+        table-layout: fixed;
+      }
+      
+      .items-table th {
+        background-color: #f8fafc;
+        color: #374151;
+        font-weight: bold;
+        padding: 6px 3px;
+        text-align: center;
+        border: 1px solid #d1d5db;
+      }
+      
+      .items-table th:nth-child(1) { width: 50%; }
+      .items-table th:nth-child(2) { width: 15%; }
+      .items-table th:nth-child(3) { width: 20%; }
+      .items-table th:nth-child(4) { width: 15%; }
+      
+      .items-table td {
+        padding: 6px 3px;
+        border: 1px solid #d1d5db;
+        vertical-align: middle;
+        text-align: center;
+        word-wrap: break-word;
+        overflow: hidden;
+      }
+      
+      .items-table tr:nth-child(even) {
+        background-color: #f9fafb;
+      }
+      
+      .text-right {
+        text-align: right;
+      }
+      
+      .text-center {
+        text-align: center;
+      }
+      
+      .summary {
+        margin: 10px 10px 0 10px;
+        text-align: right;
+        width: calc(100% - 20px);
+        box-sizing: border-box;
+      }
+      
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      
+      .summary-row.total {
+        font-size: 16px;
+        font-weight: bold;
+        color: #000000;
+        border-top: 2px solid #000000;
+        border-bottom: 2px solid #000000;
+        margin-top: 8px;
+        padding: 12px 0;
+      }
+      
+      .notes-section {
+        margin: 10px 10px 0 10px;
+        padding-top: 8px;
+        border-top: 1px solid #e5e7eb;
+      }
+      
+      .notes-title {
+        font-size: 14px;
+        font-weight: bold;
+        color: #374151;
+        margin-bottom: 8px;
+      }
+      
+      .notes-content {
+        font-size: 12px;
+        line-height: 1.4;
+        color: #6b7280;
+      }
+      
+      .terms-list {
+        margin: 0;
+        padding-left: 15px;
+      }
+      
+      .terms-list li {
+        margin-bottom: 6px;
+        list-style-type: disc;
+      }
+      
+      .footer {
+        margin: 10px 10px 0 10px;
+        padding: 8px 0;
+        border-top: 1px solid #e5e7eb;
+        text-align: center;
+        font-size: 9px;
+        color: #6b7280;
+      }
+      
+      @media print {
+        * {
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        
+        body {
+          margin: 0 !important;
+          padding: 10mm !important;
+          font-size: 11pt !important;
+          line-height: 1.4 !important;
+        }
+        
+        .bill-container {
+          width: 100% !important;
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          border: 2px solid #000 !important;
+          box-shadow: none !important;
+          background: white !important;
+          box-sizing: border-box !important;
+        }
+        
+        @page {
+          size: A4 !important;
+          margin: 0 !important;
+        }
+      }
+    `;
+    
+    // Add styles to document
+    document.head.appendChild(printStyles);
+    
+    // Wait a moment for styles to apply, then print
+    setTimeout(() => {
+      if (action === 'print') {
+        // Direct print without preview
+        window.print();
+      } else {
+        // Save as PDF (browser will show save dialog)
+        window.print();
+      }
+      
+      // Clean up after printing - restore original content immediately
+      setTimeout(() => {
+        document.body.innerHTML = originalBody;
+        document.title = originalTitle;
+        if (document.head.contains(printStyles)) {
+          document.head.removeChild(printStyles);
+        }
+      }, 1000); // Longer timeout for mobile
+    }, 200); // Longer delay for mobile
+    
+  } catch (error) {
+    console.error('Error generating mobile bill PDF:', error);
     alert('Error generating bill. Please try again.');
   }
 }
