@@ -41,6 +41,7 @@ const defaultBillItems: BillItem[] = [
 export default function BillGenerator({ customer, onPrint }: BillGeneratorProps) {
   const [billNumber, setBillNumber] = useState('');
   const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dueDate, setDueDate] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // 30 days from now
   const [company, setCompany] = useState<CompanyInfo>(defaultCompanyInfo);
   const [items, setItems] = useState<BillItem[]>(defaultBillItems);
   const [notes, setNotes] = useState('');
@@ -148,7 +149,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
       id: Date.now().toString(),
       billNumber,
       billDate,
-      dueDate: billDate, // Use bill date as due date
+      dueDate,
       company,
       customer: {
         id: customer.id,
@@ -197,7 +198,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
             <CardTitle>Bill Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="billNumber">Bill Number</Label>
                 <Input
@@ -214,6 +215,15 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                   type="date"
                   value={billDate}
                   onChange={(e) => setBillDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="dueDate">Due Date</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
                 />
               </div>
             </div>

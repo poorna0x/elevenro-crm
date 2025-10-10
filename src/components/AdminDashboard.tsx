@@ -53,6 +53,7 @@ import { toast } from 'sonner';
 import { openInGoogleMaps, extractCoordinates, formatAddressForDisplay } from '@/lib/maps';
 import { sendNotification, createJobAssignedNotification, createJobCompletedNotification, createJobCancelledNotification, createJobAssignmentRequestNotification } from '@/lib/notifications';
 import CustomerServicesManager from './CustomerServicesManager';
+import BillModal from './BillModal';
 
 // Generate job number utility
 const generateJobNumber = (serviceType: 'RO' | 'SOFTENER'): string => {
@@ -85,6 +86,8 @@ const AdminDashboard = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [phonePopupOpen, setPhonePopupOpen] = useState(false);
   const [selectedCustomerPhone, setSelectedCustomerPhone] = useState<Customer | null>(null);
+  const [billModalOpen, setBillModalOpen] = useState(false);
+  const [selectedCustomerForBill, setSelectedCustomerForBill] = useState<Customer | null>(null);
   const [editFormData, setEditFormData] = useState({
     full_name: '',
     phone: '',
@@ -1471,6 +1474,16 @@ const AdminDashboard = () => {
     setPhonePopupOpen(true);
   };
 
+  const handleGenerateBill = (customer: Customer) => {
+    setSelectedCustomerForBill(customer);
+    setBillModalOpen(true);
+  };
+
+  const handleBillModalClose = () => {
+    setBillModalOpen(false);
+    setSelectedCustomerForBill(null);
+  };
+
 
   // Job assignment functions
   const handleAssignJob = (job: Job) => {
@@ -2421,7 +2434,7 @@ const AdminDashboard = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="center" className="w-48">
-                          <DropdownMenuItem onClick={() => window.open('/bills', '_blank')}>
+                          <DropdownMenuItem onClick={() => handleGenerateBill(customer)}>
                             <Receipt className="mr-2 h-4 w-4" />
                             Generate Bill
                           </DropdownMenuItem>
@@ -2517,7 +2530,7 @@ const AdminDashboard = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={() => window.open('/bills', '_blank')}>
+                          <DropdownMenuItem onClick={() => handleGenerateBill(customer)}>
                             <Receipt className="mr-2 h-4 w-4" />
                             Generate Bill
                           </DropdownMenuItem>
@@ -5060,6 +5073,13 @@ const AdminDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bill Generation Modal */}
+      <BillModal
+        isOpen={billModalOpen}
+        onClose={handleBillModalClose}
+        customer={selectedCustomerForBill}
+      />
     </div>
   );
 };

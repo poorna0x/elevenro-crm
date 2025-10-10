@@ -46,91 +46,31 @@ export interface PDFBillData {
 }
 
 export function generateBillPDF(billData: PDFBillData): void {
-  // Create a temporary div with the bill content
-  const billDiv = document.createElement('div');
-  billDiv.innerHTML = generateBillHTML(billData);
-  billDiv.style.position = 'fixed';
-  billDiv.style.top = '0';
-  billDiv.style.left = '0';
-  billDiv.style.width = '100vw';
-  billDiv.style.height = '100vh';
-  billDiv.style.backgroundColor = 'white';
-  billDiv.style.zIndex = '9999';
-  billDiv.style.overflow = 'auto';
-  billDiv.style.padding = '0';
-  billDiv.style.margin = '0';
-  billDiv.style.boxSizing = 'border-box';
+  // Create a new window for printing
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
   
-  // Add to current page
-  document.body.appendChild(billDiv);
+  if (!printWindow) {
+    alert('Please allow popups to print the bill');
+    return;
+  }
+
+  // Generate the HTML content
+  const htmlContent = generateBillHTML(billData);
   
-  // Print after a short delay to ensure content is loaded
-  setTimeout(() => {
-    // Hide everything except the bill content for printing
-    const originalBody = document.body.innerHTML;
-    document.body.innerHTML = billDiv.innerHTML;
-    
-    // Add print styles with fixed A4 dimensions
-    const printStyles = document.createElement('style');
-    printStyles.textContent = `
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      
-        body {
-          width: 210mm !important;
-          min-height: 297mm !important;
-          max-width: 210mm !important;
-          padding: 0 !important;
-          margin: 0 !important;
-          font-family: Arial, sans-serif !important;
-          line-height: 1.6 !important;
-          color: #333 !important;
-          background: white !important;
-          overflow: visible !important;
-        }
-      
-      .bill-container {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      
-        @page {
-          size: A4 !important;
-          margin: 20mm 15mm 20mm 15mm !important;
-        }
-      
-      @media print {
-        body {
-          width: 210mm !important;
-          min-height: 297mm !important;
-          max-width: 210mm !important;
-          padding: 20mm 15mm 30mm 15mm !important;
-          margin: 0 !important;
-        }
-        
-        .bill-container {
-          width: 100% !important;
-          max-width: 100% !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-      }
-    `;
-    document.head.appendChild(printStyles);
-    
-    window.print();
-    
-    // Restore original content
+  // Write the content to the new window
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+  
+  // Wait for content to load, then print
+  printWindow.onload = () => {
     setTimeout(() => {
-      document.head.removeChild(printStyles);
-      document.body.innerHTML = originalBody;
-    }, 1000);
-  }, 500);
+      printWindow.print();
+      // Close the window after printing
+      setTimeout(() => {
+        printWindow.close();
+      }, 1000);
+    }, 500);
+  };
 }
 
 function generateBillHTML(data: PDFBillData): string {
@@ -160,7 +100,7 @@ function generateBillHTML(data: PDFBillData): string {
           width: 210mm; /* A4 width */
           min-height: 297mm; /* A4 height */
           max-width: 210mm; /* Fixed A4 width */
-          padding: 15mm 10mm 25mm 10mm; /* Top, Right, Bottom, Left - A4 padding with more space for border */
+          padding: 20mm 15mm 20mm 15mm; /* Top, Right, Bottom, Left - A4 margins */
           box-sizing: border-box;
           overflow: visible;
         }
@@ -170,17 +110,17 @@ function generateBillHTML(data: PDFBillData): string {
           max-width: 100%;
           margin: 0;
           background: white;
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 8px 15px rgba(0, 0, 0, 0.4);
-          padding: 40px;
+          padding: 0;
           overflow: visible;
-          border-radius: 12px;
+          border: 2px solid #000;
+          min-height: calc(297mm - 40mm); /* A4 height minus margins */
         }
         
         .header {
           text-align: center;
-          margin-bottom: 30px;
-          border-bottom: 3px solid #000000;
-          padding-bottom: 15px;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #000000;
+          padding: 20px 0 15px 0;
         }
         
         .logo-container {
@@ -205,8 +145,9 @@ function generateBillHTML(data: PDFBillData): string {
         .bill-info {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 30px;
-          gap: 30px;
+          margin-bottom: 20px;
+          gap: 20px;
+          padding: 0 20px;
         }
         
         .bill-to, .bill-details {
@@ -230,8 +171,8 @@ function generateBillHTML(data: PDFBillData): string {
         .items-table {
           width: 100%;
           border-collapse: collapse;
-          margin-bottom: 25px;
-          font-size: 13px;
+          margin: 0 20px 20px 20px;
+          font-size: 12px;
         }
         
         .items-table th {
@@ -263,7 +204,7 @@ function generateBillHTML(data: PDFBillData): string {
         }
         
         .summary {
-          margin-top: 25px;
+          margin: 20px 20px 0 20px;
           text-align: right;
         }
         
@@ -285,7 +226,7 @@ function generateBillHTML(data: PDFBillData): string {
         }
         
         .notes-section {
-          margin-top: 30px;
+          margin: 20px 20px 0 20px;
           padding-top: 15px;
           border-top: 1px solid #e5e7eb;
         }
@@ -315,11 +256,11 @@ function generateBillHTML(data: PDFBillData): string {
         
         
         .footer {
-          margin-top: 40px;
-          padding-top: 20px;
+          margin: 20px 20px 0 20px;
+          padding: 15px 0;
           border-top: 1px solid #e5e7eb;
           text-align: center;
-          font-size: 12px;
+          font-size: 11px;
           color: #6b7280;
         }
         
@@ -348,40 +289,46 @@ function generateBillHTML(data: PDFBillData): string {
         }
         
         @media print {
+          * {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
           
           body {
-            width: 210mm;
-            min-height: 297mm;
-            padding: 0;
-            margin: 0;
-            box-shadow: none;
+            width: 210mm !important;
+            min-height: 297mm !important;
+            max-width: 210mm !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            font-size: 12pt !important;
+            line-height: 1.4 !important;
           }
           
           .bill-container {
-            box-shadow: none;
-            padding: 40px;
-            width: 100%;
-            max-width: 100%;
-            margin: 0;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 2px solid #000 !important;
+            box-shadow: none !important;
+            page-break-inside: avoid !important;
           }
           
           @page {
-            size: A4;
-            margin: 20mm 15mm 20mm 15mm;
+            size: A4 !important;
+            margin: 15mm !important;
           }
           
-          @page :first {
-            margin-top: 20mm;
+          .header {
+            page-break-after: avoid !important;
           }
           
-          @page :left {
-            margin-left: 15mm;
-            margin-right: 10mm;
+          .items-table {
+            page-break-inside: avoid !important;
           }
           
-          @page :right {
-            margin-left: 10mm;
-            margin-right: 15mm;
+          .summary {
+            page-break-before: avoid !important;
           }
         }
       </style>
@@ -420,6 +367,7 @@ function generateBillHTML(data: PDFBillData): string {
             <div class="bill-meta">
               <div><strong>Bill Number:</strong> ${data.billNumber}</div>
               <div><strong>Bill Date:</strong> ${new Date(data.billDate).toLocaleDateString()}</div>
+              <div><strong>Due Date:</strong> ${new Date(data.dueDate).toLocaleDateString()}</div>
             </div>
           </div>
         </div>
