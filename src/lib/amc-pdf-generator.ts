@@ -529,7 +529,31 @@ export function generateAMCPDF(bill: Bill, action: 'print' | 'pdf' = 'print'): v
     if (!printWindow) {
       // If popup is blocked, fall back to mobile print method
       console.warn('Popup blocked, falling back to mobile print method');
-      alert('Popup blocked by browser. Using alternative printing method...');
+      // Show a brief toast-style notification instead of alert
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #f59e0b;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      `;
+      notification.textContent = 'Using alternative printing method...';
+      document.body.appendChild(notification);
+      
+      // Remove notification after 3 seconds
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 3000);
+      
       handleMobilePrint(bill, action);
       return;
     }
@@ -578,6 +602,24 @@ export function generateAMCPDF(bill: Bill, action: 'print' | 'pdf' = 'print'): v
 
 function handleMobilePrint(bill: Bill, action: 'print' | 'pdf'): void {
   try {
+    // Show a brief loading message
+    const loadingMessage = document.createElement('div');
+    loadingMessage.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      z-index: 10000;
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+    `;
+    loadingMessage.textContent = 'Preparing AMC Agreement for printing...';
+    document.body.appendChild(loadingMessage);
+    
     // Store original content
     const originalBody = document.body.innerHTML;
     const originalTitle = document.title;
@@ -600,7 +642,7 @@ function handleMobilePrint(bill: Bill, action: 'print' | 'pdf'): void {
     document.body.innerHTML = generateAMCHTML(data);
     document.title = `AMC Agreement - ${bill.billNumber}`;
     
-    // Add mobile-optimized print styles
+    // Add optimized print styles for better A4 formatting
     const printStyles = document.createElement('style');
     printStyles.id = 'mobile-print-styles';
     printStyles.textContent = `
@@ -618,8 +660,8 @@ function handleMobilePrint(bill: Bill, action: 'print' | 'pdf'): void {
         color: #333;
         background: white;
         margin: 0;
-        padding: 10mm;
-        font-size: 10px;
+        padding: 15mm;
+        font-size: 12px;
         -webkit-text-size-adjust: 100%;
       }
       
@@ -641,8 +683,8 @@ function handleMobilePrint(bill: Bill, action: 'print' | 'pdf'): void {
         
         body {
           margin: 0 !important;
-          padding: 10mm !important;
-          font-size: 11pt !important;
+          padding: 15mm !important;
+          font-size: 12pt !important;
           line-height: 1.6 !important;
         }
         
@@ -652,17 +694,23 @@ function handleMobilePrint(bill: Bill, action: 'print' | 'pdf'): void {
           margin: 0 !important;
           padding: 0 !important;
           box-shadow: none !important;
+          border-radius: 0 !important;
         }
         
         @page {
           size: A4 !important;
-          margin: 0 !important;
+          margin: 15mm !important;
         }
       }
     `;
     
     // Add styles to document
     document.head.appendChild(printStyles);
+    
+    // Remove loading message
+    if (document.body.contains(loadingMessage)) {
+      document.body.removeChild(loadingMessage);
+    }
     
     // Wait a moment for styles to apply, then print
     setTimeout(() => {
@@ -674,18 +722,27 @@ function handleMobilePrint(bill: Bill, action: 'print' | 'pdf'): void {
         window.print();
       }
       
-      // Clean up after printing - restore original content immediately
+      // Clean up after printing - restore original content
       setTimeout(() => {
         document.body.innerHTML = originalBody;
         document.title = originalTitle;
         if (document.head.contains(printStyles)) {
           document.head.removeChild(printStyles);
         }
-      }, 1000); // Longer timeout for mobile
-    }, 200); // Longer delay for mobile
+        // Force a small re-render to ensure React components are restored
+        window.dispatchEvent(new Event('resize'));
+      }, 1500); // Slightly longer timeout to ensure printing completes
+    }, 300); // Slightly longer delay for better rendering
     
   } catch (error) {
     console.error('Error generating mobile AMC PDF:', error);
     alert('Error generating AMC Agreement. Please try again.');
+    // Ensure we restore the original content even if there's an error
+    try {
+      document.body.innerHTML = originalBody;
+      document.title = originalTitle;
+    } catch (restoreError) {
+      console.error('Error restoring original content:', restoreError);
+    }
   }
 }
