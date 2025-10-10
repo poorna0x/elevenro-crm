@@ -4,13 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2, Download, Edit, X } from 'lucide-react';
+import { Plus, Trash2, Download, Edit, X, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { Bill, BillItem, CompanyInfo, Customer } from '@/types';
 
 interface BillGeneratorProps {
   customer?: Customer;
-  onPrint?: (bill: Bill) => void;
+  onPrint?: (bill: Bill, action?: 'print' | 'pdf') => void;
 }
 
 const defaultCompanyInfo: CompanyInfo = {
@@ -39,9 +39,18 @@ const defaultBillItems: BillItem[] = [
 ];
 
 export default function BillGenerator({ customer, onPrint }: BillGeneratorProps) {
+  // Safe customer data extraction
+  const customerName = customer?.fullName || (customer as any)?.full_name || 'Customer Name';
+  const customerPhone = customer?.phone || 'Not provided';
+  const customerEmail = customer?.email || 'Not provided';
+  const customerAddress = customer?.address || {};
+  const customerGst = customer?.gstNumber || '';
+  const customerServiceType = customer?.serviceType || 'RO';
+
+  // State management
   const [billNumber, setBillNumber] = useState('');
   const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dueDate, setDueDate] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // 30 days from now
+  const [dueDate, setDueDate] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   const [company, setCompany] = useState<CompanyInfo>(defaultCompanyInfo);
   const [items, setItems] = useState<BillItem[]>(defaultBillItems);
   const [notes, setNotes] = useState('');
@@ -139,7 +148,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
   const termsList = terms.split('\n').filter(line => line.trim());
   const notesList = notes.split('\n').filter(line => line.trim());
 
-  const handlePrint = () => {
+  const handlePrint = (action: 'print' | 'pdf' = 'print') => {
     if (!customer) {
       toast.error('Please select a customer first');
       return;
@@ -152,15 +161,15 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
       dueDate,
       company,
       customer: {
-        id: customer.id,
-        name: customer.fullName || customer.full_name || 'Customer Name',
-        address: `${customer.address?.street || ''}, ${customer.address?.area || ''}`.trim() || 'Address not provided',
-        city: customer.address?.city || 'City',
-        state: customer.address?.state || 'State',
-        pincode: customer.address?.pincode || '000000',
-        phone: customer.phone || 'Phone not provided',
-        email: customer.email || 'Email not provided',
-        gstNumber: customer.gstNumber
+        id: customer.id || '',
+        name: customerName,
+        address: `${customerAddress.street || ''}, ${customerAddress.area || ''}`.trim() || 'Address not provided',
+        city: customerAddress.city || 'City',
+        state: customerAddress.state || 'State',
+        pincode: customerAddress.pincode || '000000',
+        phone: customerPhone,
+        email: customerEmail,
+        gstNumber: customerGst
       },
       items,
       subtotal,
@@ -171,12 +180,12 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
       paymentMethod: 'CASH',
       notes,
       terms,
-      serviceType: customer.serviceType,
+      serviceType: customerServiceType,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    onPrint?.(bill);
+    onPrint?.(bill, action);
   };
 
   return (
@@ -184,9 +193,13 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Generate Bill</h1>
         <div className="flex gap-2">
-          <Button onClick={handlePrint} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
+          <Button onClick={() => handlePrint('print')} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
             <Download className="w-4 h-4 mr-2" />
             Print Bill
+          </Button>
+          <Button onClick={() => handlePrint('pdf')} variant="outline" className="w-full sm:w-auto">
+            <FileText className="w-4 h-4 mr-2" />
+            Save as PDF
           </Button>
         </div>
       </div>
@@ -236,22 +249,16 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
             <CardTitle>Customer Information</CardTitle>
           </CardHeader>
           <CardContent>
-            {customer ? (
-              <div className="space-y-2">
-                <div className="font-semibold text-lg">{customer.fullName}</div>
-                <div className="text-sm text-gray-600">
-                  <div>{customer.address.street}, {customer.address.area}</div>
-                  <div>{customer.address.city}, {customer.address.state} - {customer.address.pincode}</div>
-                  <div>Phone: {customer.phone}</div>
-                  <div>Email: {customer.email}</div>
-                  {customer.gstNumber && <div>GST: {customer.gstNumber}</div>}
-                </div>
+            <div className="space-y-2">
+              <div className="font-semibold text-lg">{customerName}</div>
+              <div className="text-sm text-gray-600">
+                <div>{customerAddress.street || ''}, {customerAddress.area || ''}</div>
+                <div>{customerAddress.city || ''}, {customerAddress.state || ''} - {customerAddress.pincode || ''}</div>
+                <div>Phone: {customerPhone}</div>
+                <div>Email: {customerEmail}</div>
+                {customerGst && <div>GST: {customerGst}</div>}
               </div>
-            ) : (
-              <div className="text-center text-gray-500 py-4">
-                No customer selected
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -424,7 +431,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                   </div>
                   <div className="space-y-2">
                     {notesList.map((note, index) => (
-                      <div key={index} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                      <div key={`note-${index}-${note.slice(0, 10)}`} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
                         <span className="text-blue-400 mt-1">•</span>
                         <span className="flex-1 text-sm">{note}</span>
                         {isEditingNotes && (
@@ -496,7 +503,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                   </div>
                   <div className="space-y-2">
                     {termsList.map((term, index) => (
-                      <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div key={`term-${index}-${term.slice(0, 10)}`} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                         <span className="text-gray-400 mt-1">•</span>
                         <span className="flex-1 text-sm">{term}</span>
                         {isEditingTerms && (

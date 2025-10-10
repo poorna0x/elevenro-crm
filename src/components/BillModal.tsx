@@ -16,7 +16,7 @@ interface BillModalProps {
 export default function BillModal({ isOpen, onClose, customer }: BillModalProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handlePrintBill = (bill: Bill) => {
+  const handlePrintBill = (bill: Bill, action: 'print' | 'pdf' = 'print') => {
     setIsGenerating(true);
     
     const pdfData = {
@@ -37,8 +37,9 @@ export default function BillModal({ isOpen, onClose, customer }: BillModalProps)
     };
     
     try {
-      generateBillPDF(pdfData);
-      toast.success('Bill generated successfully!');
+      generateBillPDF(pdfData, action);
+      const message = action === 'print' ? 'Bill sent to printer!' : 'Bill saved as PDF!';
+      toast.success(message);
     } catch (error) {
       toast.error('Failed to generate bill. Please try again.');
     } finally {

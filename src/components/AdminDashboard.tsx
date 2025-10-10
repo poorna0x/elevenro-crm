@@ -3811,7 +3811,7 @@ const AdminDashboard = () => {
                   const isValidUrl = photo && typeof photo === 'string' && (photo.startsWith('http') || photo.startsWith('data:') || photo.startsWith('/'));
                   
                   return (
-                    <div key={index} className="relative group">
+                    <div key={`photo-${index}-${photo?.slice(-10) || 'unknown'}`} className="relative group">
                       {isValidUrl ? (
                         <img
                           src={photo}
@@ -4919,7 +4919,7 @@ const AdminDashboard = () => {
                   {technicians
                     .filter(tech => tech.account_status === 'ACTIVE')
                     .map(tech => (
-                      <SelectItem value={tech.id || 'unknown'}>
+                      <SelectItem key={tech.id || 'unknown'} value={tech.id || 'unknown'}>
                         {tech.full_name || 'Unknown'} - {tech.specialization || 'No specialization'}
                       </SelectItem>
                     ))}

@@ -45,121 +45,417 @@ export interface PDFBillData {
   terms?: string;
 }
 
-export function generateBillPDF(billData: PDFBillData): void {
-  // Create a temporary div with the bill content
-  const billDiv = document.createElement('div');
-  billDiv.innerHTML = generateBillHTML(billData);
-  billDiv.style.position = 'fixed';
-  billDiv.style.top = '0';
-  billDiv.style.left = '0';
-  billDiv.style.width = '100vw';
-  billDiv.style.height = '100vh';
-  billDiv.style.backgroundColor = 'white';
-  billDiv.style.zIndex = '9999';
-  billDiv.style.overflow = 'auto';
-  billDiv.style.padding = '0';
-  billDiv.style.margin = '0';
-  billDiv.style.boxSizing = 'border-box';
-  
-  // Add to current page
-  document.body.appendChild(billDiv);
-  
-  // Print after a short delay to ensure content is loaded
-  setTimeout(() => {
-    // Hide everything except the bill content for printing
-    const originalBody = document.body.innerHTML;
-    document.body.innerHTML = billDiv.innerHTML;
+export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' = 'print'): void {
+  try {
+    // Create a hidden print container instead of replacing the entire body
+    const printContainer = document.createElement('div');
+    printContainer.id = 'print-container';
+    printContainer.style.cssText = `
+      position: fixed;
+      top: -9999px;
+      left: -9999px;
+      width: 210mm;
+      min-height: 297mm;
+      background: white;
+      z-index: -1;
+      visibility: hidden;
+    `;
     
-    // Add print styles with fixed A4 dimensions
+    // Create the bill content
+    const billContent = createBillContent(billData);
+    printContainer.innerHTML = billContent;
+    
+    // Add print styles
     const printStyles = document.createElement('style');
+    printStyles.id = 'print-styles';
     printStyles.textContent = `
-      * {
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+      
+      #print-container * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
       
-      body {
-        width: 210mm !important;
-        min-height: 297mm !important;
-        max-width: 210mm !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        font-family: 'Poppins', sans-serif !important;
-        line-height: 1.4 !important;
-        color: #333 !important;
-        background: white !important;
-        overflow: visible !important;
-        font-size: 11px !important;
+      #print-container {
+        font-family: 'Poppins', sans-serif;
+        line-height: 1.4;
+        color: #333;
+        background: white;
+        margin: 0;
+        padding: 15mm 12mm 15mm 12mm;
+        box-sizing: border-box;
+        overflow: visible;
+        font-size: 11px;
       }
       
-      .bill-container {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border: 2px solid #000 !important;
-        min-height: calc(297mm - 30mm) !important;
+      #print-container .bill-container {
+        width: calc(100% - 4px);
+        max-width: calc(100% - 4px);
+        margin: 0;
+        background: white;
+        padding: 0;
+        overflow: hidden;
+        border: 2px solid #000;
+        min-height: calc(297mm - 30mm);
+        box-sizing: border-box;
       }
       
-      @page {
-        size: A4 !important;
-        margin: 12mm !important;
+      #print-container .header {
+        text-align: center;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #000000;
+        padding: 10px 0 8px 0;
+      }
+      
+      #print-container .logo-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+      }
+      
+      #print-container .full-logo {
+        max-width: 200px;
+        height: auto;
+        max-height: 60px;
+      }
+      
+      #print-container .company-details {
+        font-size: 14px;
+        color: #666;
+        line-height: 1.4;
+      }
+      
+      #print-container .bill-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        gap: 15px;
+        padding: 0 15px;
+      }
+      
+      #print-container .bill-to, #print-container .bill-details {
+        flex: 1;
+      }
+      
+      #print-container .section-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #000000;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 5px;
+      }
+      
+      #print-container .customer-info, #print-container .bill-meta {
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      
+      #print-container .items-table {
+        width: calc(100% - 30px);
+        border-collapse: collapse;
+        margin: 0 15px 15px 15px;
+        font-size: 10px;
+        table-layout: fixed;
+      }
+      
+      #print-container .items-table th {
+        background-color: #f8fafc;
+        color: #374151;
+        font-weight: bold;
+        padding: 8px 4px;
+        text-align: center;
+        border: 1px solid #d1d5db;
+      }
+      
+      #print-container .items-table th:nth-child(1) { width: 50%; }
+      #print-container .items-table th:nth-child(2) { width: 15%; }
+      #print-container .items-table th:nth-child(3) { width: 20%; }
+      #print-container .items-table th:nth-child(4) { width: 15%; }
+      
+      #print-container .items-table td {
+        padding: 8px 4px;
+        border: 1px solid #d1d5db;
+        vertical-align: middle;
+        text-align: center;
+        word-wrap: break-word;
+        overflow: hidden;
+      }
+      
+      #print-container .items-table tr:nth-child(even) {
+        background-color: #f9fafb;
+      }
+      
+      #print-container .text-right {
+        text-align: right;
+      }
+      
+      #print-container .text-center {
+        text-align: center;
+      }
+      
+      #print-container .summary {
+        margin: 15px 15px 0 15px;
+        text-align: right;
+        width: calc(100% - 30px);
+        box-sizing: border-box;
+      }
+      
+      #print-container .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      
+      #print-container .summary-row.total {
+        font-size: 18px;
+        font-weight: bold;
+        color: #000000;
+        border-top: 2px solid #000000;
+        border-bottom: 2px solid #000000;
+        margin-top: 10px;
+        padding: 15px 0;
+      }
+      
+      #print-container .notes-section {
+        margin: 15px 15px 0 15px;
+        padding-top: 10px;
+        border-top: 1px solid #e5e7eb;
+      }
+      
+      #print-container .notes-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #374151;
+        margin-bottom: 10px;
+      }
+      
+      #print-container .notes-content {
+        font-size: 14px;
+        line-height: 1.5;
+        color: #6b7280;
+      }
+      
+      #print-container .terms-list {
+        margin: 0;
+        padding-left: 20px;
+      }
+      
+      #print-container .terms-list li {
+        margin-bottom: 8px;
+        list-style-type: disc;
+      }
+      
+      #print-container .footer {
+        margin: 15px 15px 0 15px;
+        padding: 10px 0;
+        border-top: 1px solid #e5e7eb;
+        text-align: center;
+        font-size: 10px;
+        color: #6b7280;
       }
       
       @media print {
-        body {
+        * {
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        
+        body * {
+          visibility: hidden;
+        }
+        
+        #print-container, #print-container * {
+          visibility: visible;
+        }
+        
+        #print-container {
+          position: absolute;
+          left: 0;
+          top: 0;
           width: 210mm !important;
           min-height: 297mm !important;
           max-width: 210mm !important;
           padding: 0 !important;
           margin: 0 !important;
-          font-size: 11px !important;
+          font-size: 12pt !important;
+          line-height: 1.4 !important;
         }
         
-        .bill-container {
-          width: calc(100% - 4px) !important;
-          max-width: calc(100% - 4px) !important;
-          margin: 0 !important;
-          padding: 0 !important;
+        #print-container .bill-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
           border: 2px solid #000 !important;
           box-shadow: none !important;
           page-break-inside: avoid !important;
-          overflow: hidden !important;
-          box-sizing: border-box !important;
-        }
-        
-        .items-table {
-          width: calc(100% - 30px) !important;
-          table-layout: fixed !important;
-        }
-        
-        .items-table th:nth-child(1) { width: 50% !important; }
-        .items-table th:nth-child(2) { width: 15% !important; }
-        .items-table th:nth-child(3) { width: 20% !important; }
-        .items-table th:nth-child(4) { width: 15% !important; }
-        
-        .summary {
-          width: calc(100% - 30px) !important;
-        }
-        
+      }
+      
         @page {
           size: A4 !important;
-          margin: 12mm !important;
+          margin: 15mm !important;
+        }
+        
+        #print-container .header {
+          page-break-after: avoid !important;
+        }
+        
+        #print-container .items-table {
+          page-break-inside: avoid !important;
+        }
+        
+        #print-container .summary {
+          page-break-before: avoid !important;
         }
       }
     `;
+    
+    // Add elements to document
     document.head.appendChild(printStyles);
+    document.body.appendChild(printContainer);
     
-    // Direct print without preview
-    window.print();
-    
-    // Restore original content
+    // Wait a moment for styles to apply, then print
     setTimeout(() => {
+      if (action === 'print') {
+        // Direct print without preview
+        window.print();
+      } else {
+        // Save as PDF (browser will show save dialog)
+        window.print();
+      }
+      
+      // Clean up after printing
+      setTimeout(() => {
+        if (document.head.contains(printStyles)) {
       document.head.removeChild(printStyles);
-      document.body.innerHTML = originalBody;
+        }
+        if (document.body.contains(printContainer)) {
+          document.body.removeChild(printContainer);
+        }
     }, 1000);
-  }, 500);
+    }, 100);
+    
+  } catch (error) {
+    console.error('Error generating bill PDF:', error);
+    alert('Error generating bill. Please try again.');
+  }
+}
+
+function createBillContent(data: PDFBillData): string {
+  return `
+    <div class="bill-container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-container">
+          <img src="/fulllogo.webp" alt="Hydrogenro Logo" class="full-logo" />
+        </div>
+        <div class="company-details">
+          <div>${data.company.address}, ${data.company.city} - ${data.company.pincode}</div>
+          <div>Phone: ${data.company.phone} | Email: ${data.company.email}</div>
+          <div>GST: ${data.company.gstNumber}</div>
+          ${data.company.website ? `<div>Website: ${data.company.website}</div>` : ''}
+        </div>
+      </div>
+      
+      <!-- Bill Information -->
+      <div class="bill-info">
+        <div class="bill-to">
+          <div class="section-title">Bill To:</div>
+          <div class="customer-info">
+            <div><strong>${data.customer.name}</strong></div>
+            <div>${data.customer.address}</div>
+            <div>${data.customer.city}, ${data.customer.state} - ${data.customer.pincode}</div>
+            <div>Phone: ${data.customer.phone}</div>
+            <div>Email: ${data.customer.email}</div>
+            ${data.customer.gstNumber ? `<div>GST: ${data.customer.gstNumber}</div>` : ''}
+          </div>
+        </div>
+        
+        <div class="bill-details">
+          <div class="section-title">Bill Details:</div>
+          <div class="bill-meta">
+            <div><strong>Bill Number:</strong> ${data.billNumber}</div>
+            <div><strong>Bill Date:</strong> ${new Date(data.billDate).toLocaleDateString()}</div>
+            <div><strong>Due Date:</strong> ${new Date(data.dueDate).toLocaleDateString()}</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Items Table -->
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.items.map(item => `
+            <tr>
+              <td>${item.description}</td>
+              <td>${item.quantity}</td>
+              <td>₹${item.unitPrice.toLocaleString()}</td>
+              <td>₹${item.total.toLocaleString()}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <!-- Summary -->
+      <div class="summary">
+        <div class="summary-row">
+          <span>Subtotal:</span>
+          <span>₹${data.subtotal.toLocaleString()}</span>
+        </div>
+        ${data.serviceCharge && data.serviceCharge > 0 ? `
+          <div class="summary-row">
+            <span>Service Charge:</span>
+            <span>₹${data.serviceCharge.toLocaleString()}</span>
+          </div>
+        ` : ''}
+        <div class="summary-row total">
+          <span>Total Amount:</span>
+          <span>₹${data.totalAmount.toLocaleString()}</span>
+        </div>
+      </div>
+      
+      <!-- Notes and Terms -->
+      ${data.notes || data.terms ? `
+        <div class="notes-section">
+          ${data.notes ? `
+            <div class="notes-title">Notes:</div>
+            <div class="notes-content">${data.notes}</div>
+          ` : ''}
+          ${data.terms ? `
+            <div class="notes-title" style="margin-top: 20px;">Terms & Conditions:</div>
+            <div class="notes-content">
+              <ul class="terms-list">
+                <li>Goods once sold will not be taken back and refund or exchange.</li>
+                <li>There is 60 Days warranty for RO & PUMP. No Warranty for other spare parts.</li>
+                <li>Without the bill there will not be any warranty / free service given.</li>
+                <li>There is no warranty on the water purifier used for more than 750 PPM water TDS level.</li>
+                <li>Once the order placed cannot be cancelled and advance amount will not be returned.</li>
+                <li>Charges of Rs. 500/- extra to be paid on collection of the cash against cheque return.</li>
+                <li>Company is not responsible for any transactions done personally with the technicians.</li>
+              </ul>
+            </div>
+          ` : ''}
+        </div>
+      ` : ''}
+      
+      <!-- Footer -->
+      <div class="footer">
+        <p>Thank you for choosing Hydrogenro!</p>
+        <p>For any queries, contact us at ${data.company.phone} or ${data.company.email}</p>
+      </div>
+    </div>
+  `;
 }
 
 function generateBillHTML(data: PDFBillData): string {
