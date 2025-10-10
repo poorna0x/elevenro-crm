@@ -513,7 +513,18 @@ function generateAMCHTML(data: AMCPDFData): string {
   `;
 }
 
+// Global flag to prevent multiple print operations
+let isPrinting = false;
+
 export function generateAMCPDF(bill: Bill, action: 'print' | 'pdf' = 'print'): void {
+  // Prevent multiple print operations
+  if (isPrinting) {
+    console.warn('Print operation already in progress');
+    return;
+  }
+  
+  isPrinting = true;
+  
   try {
     // Check if it's a mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -524,9 +535,11 @@ export function generateAMCPDF(bill: Bill, action: 'print' | 'pdf' = 'print'): v
       return;
     }
     
-    // Create a new window for printing to avoid destroying React components
+    // Try to create a new window for printing
     const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-    if (!printWindow) {
+    
+    // Check if popup was blocked or failed to open
+    if (!printWindow || printWindow.closed || typeof printWindow.closed === 'undefined') {
       // If popup is blocked, fall back to mobile print method
       console.warn('Popup blocked, falling back to mobile print method');
       // Show a brief toast-style notification instead of alert
@@ -558,6 +571,7 @@ export function generateAMCPDF(bill: Bill, action: 'print' | 'pdf' = 'print'): v
       return;
     }
     
+    // Popup window opened successfully, proceed with new window method
     const data: AMCPDFData = {
       billNumber: bill.billNumber,
       billDate: bill.billDate,
@@ -589,7 +603,10 @@ export function generateAMCPDF(bill: Bill, action: 'print' | 'pdf' = 'print'): v
         
         // Close the print window after printing
         setTimeout(() => {
-          printWindow.close();
+          if (printWindow && !printWindow.closed) {
+            printWindow.close();
+          }
+          isPrinting = false; // Reset flag after successful printing
         }, 1000);
       }, 100);
     };
@@ -597,6 +614,7 @@ export function generateAMCPDF(bill: Bill, action: 'print' | 'pdf' = 'print'): v
   } catch (error) {
     console.error('Error generating AMC PDF:', error);
     alert('Error generating AMC Agreement. Please try again.');
+    isPrinting = false; // Reset flag on error
   }
 }
 
@@ -724,13 +742,24 @@ function handleMobilePrint(bill: Bill, action: 'print' | 'pdf'): void {
       
       // Clean up after printing - restore original content
       setTimeout(() => {
-        document.body.innerHTML = originalBody;
-        document.title = originalTitle;
-        if (document.head.contains(printStyles)) {
-          document.head.removeChild(printStyles);
+        try {
+          document.body.innerHTML = originalBody;
+          document.title = originalTitle;
+          if (document.head.contains(printStyles)) {
+            document.head.removeChild(printStyles);
+          }
+          // Force a small re-render to ensure React components are restored
+          window.dispatchEvent(new Event('resize'));
+          // Also trigger a focus event to help restore React state
+          window.dispatchEvent(new Event('focus'));
+        } catch (restoreError) {
+          console.error('Error during cleanup:', restoreError);
+          // If restoration fails, try to reload the page as last resort
+          if (confirm('There was an issue restoring the page. Would you like to reload?')) {
+            window.location.reload();
+          }
         }
-        // Force a small re-render to ensure React components are restored
-        window.dispatchEvent(new Event('resize'));
+        isPrinting = false; // Reset flag after cleanup
       }, 1500); // Slightly longer timeout to ensure printing completes
     }, 300); // Slightly longer delay for better rendering
     
@@ -744,5 +773,6 @@ function handleMobilePrint(bill: Bill, action: 'print' | 'pdf'): void {
     } catch (restoreError) {
       console.error('Error restoring original content:', restoreError);
     }
+    isPrinting = false; // Reset flag on error
   }
 }
