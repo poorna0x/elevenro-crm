@@ -59,10 +59,12 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
       background: white;
       z-index: -1;
       visibility: hidden;
+      opacity: 0;
     `;
     
     // Create the bill content
     const billContent = createBillContent(billData);
+    console.log('Bill content generated:', billContent.substring(0, 200) + '...');
     printContainer.innerHTML = billContent;
     
     // Add print styles
@@ -256,7 +258,7 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         text-align: center;
         font-size: 10px;
         color: #6b7280;
-      }
+        }
       
       @media print {
         * {
@@ -264,40 +266,51 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
           color-adjust: exact !important;
         }
         
-        body * {
-          visibility: hidden;
+        body {
+          margin: 0 !important;
+          padding: 0 !important;
         }
         
-        #print-container, #print-container * {
-          visibility: visible;
+        body * {
+          visibility: hidden !important;
         }
         
         #print-container {
-          position: absolute;
-          left: 0;
-          top: 0;
+          visibility: visible !important;
+          opacity: 1 !important;
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
           width: 210mm !important;
           min-height: 297mm !important;
           max-width: 210mm !important;
-          padding: 0 !important;
+          padding: 15mm !important;
           margin: 0 !important;
           font-size: 12pt !important;
           line-height: 1.4 !important;
+          background: white !important;
+          z-index: 9999 !important;
+        }
+        
+        #print-container * {
+          visibility: visible !important;
+          opacity: 1 !important;
         }
         
         #print-container .bill-container {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
           border: 2px solid #000 !important;
           box-shadow: none !important;
           page-break-inside: avoid !important;
-      }
-      
+          background: white !important;
+        }
+        
         @page {
           size: A4 !important;
-          margin: 15mm !important;
+          margin: 0 !important;
         }
         
         #print-container .header {
