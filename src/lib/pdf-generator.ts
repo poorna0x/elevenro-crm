@@ -46,31 +46,104 @@ export interface PDFBillData {
 }
 
 export function generateBillPDF(billData: PDFBillData): void {
-  // Create a new window for printing
-  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  // Create a temporary div with the bill content
+  const billDiv = document.createElement('div');
+  billDiv.innerHTML = generateBillHTML(billData);
+  billDiv.style.position = 'fixed';
+  billDiv.style.top = '0';
+  billDiv.style.left = '0';
+  billDiv.style.width = '100vw';
+  billDiv.style.height = '100vh';
+  billDiv.style.backgroundColor = 'white';
+  billDiv.style.zIndex = '9999';
+  billDiv.style.overflow = 'auto';
+  billDiv.style.padding = '0';
+  billDiv.style.margin = '0';
+  billDiv.style.boxSizing = 'border-box';
   
-  if (!printWindow) {
-    alert('Please allow popups to print the bill');
-    return;
-  }
-
-  // Generate the HTML content
-  const htmlContent = generateBillHTML(billData);
+  // Add to current page
+  document.body.appendChild(billDiv);
   
-  // Write the content to the new window
-  printWindow.document.write(htmlContent);
-  printWindow.document.close();
-  
-  // Wait for content to load, then print
-  printWindow.onload = () => {
+  // Print after a short delay to ensure content is loaded
+  setTimeout(() => {
+    // Hide everything except the bill content for printing
+    const originalBody = document.body.innerHTML;
+    document.body.innerHTML = billDiv.innerHTML;
+    
+    // Add print styles with fixed A4 dimensions
+    const printStyles = document.createElement('style');
+    printStyles.textContent = `
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        width: 210mm !important;
+        min-height: 297mm !important;
+        max-width: 210mm !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-family: 'Poppins', sans-serif !important;
+        line-height: 1.4 !important;
+        color: #333 !important;
+        background: white !important;
+        overflow: visible !important;
+        font-size: 11px !important;
+      }
+      
+      .bill-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 2px solid #000 !important;
+        min-height: calc(297mm - 30mm) !important;
+      }
+      
+      @page {
+        size: A4 !important;
+        margin: 12mm !important;
+      }
+      
+      @media print {
+        body {
+          width: 210mm !important;
+          min-height: 297mm !important;
+          max-width: 210mm !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          font-size: 11px !important;
+        }
+        
+        .bill-container {
+          width: 100% !important;
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          border: 2px solid #000 !important;
+          box-shadow: none !important;
+          page-break-inside: avoid !important;
+        }
+        
+        @page {
+          size: A4 !important;
+          margin: 12mm !important;
+        }
+      }
+    `;
+    document.head.appendChild(printStyles);
+    
+    // Direct print without preview
+    window.print();
+    
+    // Restore original content
     setTimeout(() => {
-      printWindow.print();
-      // Close the window after printing
-      setTimeout(() => {
-        printWindow.close();
-      }, 1000);
-    }, 500);
-  };
+      document.head.removeChild(printStyles);
+      document.body.innerHTML = originalBody;
+    }, 1000);
+  }, 500);
 }
 
 function generateBillHTML(data: PDFBillData): string {
@@ -92,7 +165,7 @@ function generateBillHTML(data: PDFBillData): string {
         
         body {
           font-family: 'Poppins', sans-serif;
-          line-height: 1.6;
+          line-height: 1.4;
           color: #333;
           background: white;
           margin: 0;
@@ -100,9 +173,10 @@ function generateBillHTML(data: PDFBillData): string {
           width: 210mm; /* A4 width */
           min-height: 297mm; /* A4 height */
           max-width: 210mm; /* Fixed A4 width */
-          padding: 20mm 15mm 20mm 15mm; /* Top, Right, Bottom, Left - A4 margins */
+          padding: 15mm 12mm 15mm 12mm; /* Reduced margins for more content space */
           box-sizing: border-box;
           overflow: visible;
+          font-size: 11px; /* Smaller font for better fit */
         }
         
         .bill-container {
@@ -118,9 +192,9 @@ function generateBillHTML(data: PDFBillData): string {
         
         .header {
           text-align: center;
-          margin-bottom: 20px;
+          margin-bottom: 15px;
           border-bottom: 2px solid #000000;
-          padding: 20px 0 15px 0;
+          padding: 10px 0 8px 0;
         }
         
         .logo-container {
@@ -145,9 +219,9 @@ function generateBillHTML(data: PDFBillData): string {
         .bill-info {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 20px;
-          gap: 20px;
-          padding: 0 20px;
+          margin-bottom: 15px;
+          gap: 15px;
+          padding: 0 15px;
         }
         
         .bill-to, .bill-details {
@@ -171,8 +245,8 @@ function generateBillHTML(data: PDFBillData): string {
         .items-table {
           width: 100%;
           border-collapse: collapse;
-          margin: 0 20px 20px 20px;
-          font-size: 12px;
+          margin: 0 15px 15px 15px;
+          font-size: 10px;
         }
         
         .items-table th {
@@ -204,7 +278,7 @@ function generateBillHTML(data: PDFBillData): string {
         }
         
         .summary {
-          margin: 20px 20px 0 20px;
+          margin: 15px 15px 0 15px;
           text-align: right;
         }
         
@@ -226,8 +300,8 @@ function generateBillHTML(data: PDFBillData): string {
         }
         
         .notes-section {
-          margin: 20px 20px 0 20px;
-          padding-top: 15px;
+          margin: 15px 15px 0 15px;
+          padding-top: 10px;
           border-top: 1px solid #e5e7eb;
         }
         
@@ -256,11 +330,11 @@ function generateBillHTML(data: PDFBillData): string {
         
         
         .footer {
-          margin: 20px 20px 0 20px;
-          padding: 15px 0;
+          margin: 15px 15px 0 15px;
+          padding: 10px 0;
           border-top: 1px solid #e5e7eb;
           text-align: center;
-          font-size: 11px;
+          font-size: 10px;
           color: #6b7280;
         }
         
