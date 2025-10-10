@@ -85,21 +85,18 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         color: #333;
         background: white;
         margin: 0;
-        padding: 15mm 12mm 15mm 12mm;
+        padding: 15mm;
         box-sizing: border-box;
-        overflow: visible;
         font-size: 11px;
       }
       
       #print-container .bill-container {
-        width: calc(100% - 4px);
-        max-width: calc(100% - 4px);
+        width: 100%;
+        max-width: 100%;
         margin: 0;
         background: white;
         padding: 0;
-        overflow: hidden;
         border: 2px solid #000;
-        min-height: calc(297mm - 30mm);
         box-sizing: border-box;
       }
       
@@ -290,6 +287,7 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
           line-height: 1.4 !important;
           background: white !important;
           z-index: 9999 !important;
+          box-sizing: border-box !important;
         }
         
         #print-container * {
@@ -304,8 +302,8 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
           padding: 0 !important;
           border: 2px solid #000 !important;
           box-shadow: none !important;
-          page-break-inside: avoid !important;
           background: white !important;
+          box-sizing: border-box !important;
         }
         
         @page {
@@ -314,15 +312,15 @@ export function generateBillPDF(billData: PDFBillData, action: 'print' | 'pdf' =
         }
         
         #print-container .header {
-          page-break-after: avoid !important;
+          page-break-after: auto !important;
         }
         
         #print-container .items-table {
-          page-break-inside: avoid !important;
+          page-break-inside: auto !important;
         }
         
         #print-container .summary {
-          page-break-before: avoid !important;
+          page-break-before: auto !important;
         }
       }
     `;
