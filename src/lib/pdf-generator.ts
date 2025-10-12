@@ -582,7 +582,7 @@ function handleMobilePrint(billData: PDFBillData, action: 'print' | 'pdf'): void
           max-width: 100% !important;
           margin: 0 !important;
           padding: 0 !important;
-          border: 2px solid #000 !important;
+          border: none !important;
           box-shadow: none !important;
           background: white !important;
           box-sizing: border-box !important;
