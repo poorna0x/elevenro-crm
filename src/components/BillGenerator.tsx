@@ -66,6 +66,22 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [newNote, setNewNote] = useState('');
 
+  // Editable customer information state
+  const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+  const [editableCustomer, setEditableCustomer] = useState({
+    name: customerName || '',
+    phone: customerPhone || '',
+    email: customerEmail || '',
+    gst: customerGst || '',
+    address: {
+      street: customerAddress.street || '',
+      area: customerAddress.area || '',
+      city: customerAddress.city || '',
+      state: customerAddress.state || '',
+      pincode: customerAddress.pincode || ''
+    }
+  });
+
   // Calculate totals
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
   const totalAmount = subtotal + serviceCharge;
@@ -166,14 +182,14 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
       company,
       customer: {
         id: customer.id || '',
-        name: customerName,
-        address: `${customerAddress.street || ''}, ${customerAddress.area || ''}`.trim() || '',
-        city: customerAddress.city || '',
-        state: customerAddress.state || '',
-        pincode: customerAddress.pincode || '',
-        phone: customerPhone,
-        email: customerEmail,
-        gstNumber: customerGst
+        name: editableCustomer.name,
+        address: `${editableCustomer.address.street || ''}, ${editableCustomer.address.area || ''}`.trim() || '',
+        city: editableCustomer.address.city || '',
+        state: editableCustomer.address.state || '',
+        pincode: editableCustomer.address.pincode || '',
+        phone: editableCustomer.phone,
+        email: editableCustomer.email,
+        gstNumber: editableCustomer.gst
       },
       items,
       subtotal,
@@ -199,11 +215,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
         <div className="flex gap-2">
           <Button onClick={() => handlePrint('print')} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
             <Download className="w-4 h-4 mr-2" />
-            Print Bill
-          </Button>
-          <Button onClick={() => handlePrint('pdf')} variant="outline" className="w-full sm:w-auto">
-            <FileText className="w-4 h-4 mr-2" />
-            Save as PDF
+            Download Bill
           </Button>
         </div>
       </div>
@@ -241,23 +253,143 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
         {/* Customer Information */}
         <Card>
           <CardHeader>
-            <CardTitle>Customer Information</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <CardTitle>Customer Information</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditingCustomer(!isEditingCustomer)}
+                className="w-full sm:w-auto"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                {isEditingCustomer ? 'View' : 'Edit'}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="font-semibold text-lg">{customerName}</div>
-              <div className="text-sm text-gray-600">
-                {(customerAddress.street || customerAddress.area) && (
-                  <div>{customerAddress.street || ''}, {customerAddress.area || ''}</div>
-                )}
-                {(customerAddress.city || customerAddress.state || customerAddress.pincode) && (
-                  <div>{customerAddress.city || ''}, {customerAddress.state || ''} - {customerAddress.pincode || ''}</div>
-                )}
-                {customerPhone && <div>Phone: {customerPhone}</div>}
-                {customerEmail && <div>Email: {customerEmail}</div>}
-                {customerGst && <div>GST: {customerGst}</div>}
+            {isEditingCustomer ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="customer-name">Customer Name</Label>
+                    <Input
+                      id="customer-name"
+                      value={editableCustomer.name}
+                      onChange={(e) => setEditableCustomer(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter customer name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customer-phone">Phone</Label>
+                    <Input
+                      id="customer-phone"
+                      value={editableCustomer.phone}
+                      onChange={(e) => setEditableCustomer(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customer-email">Email (Optional)</Label>
+                    <Input
+                      id="customer-email"
+                      type="email"
+                      value={editableCustomer.email}
+                      onChange={(e) => setEditableCustomer(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customer-gst">GST Number (Optional)</Label>
+                    <Input
+                      id="customer-gst"
+                      value={editableCustomer.gst}
+                      onChange={(e) => setEditableCustomer(prev => ({ ...prev, gst: e.target.value }))}
+                      placeholder="Enter GST number"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Address</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="address-street">Street</Label>
+                      <Input
+                        id="address-street"
+                        value={editableCustomer.address.street}
+                        onChange={(e) => setEditableCustomer(prev => ({ 
+                          ...prev, 
+                          address: { ...prev.address, street: e.target.value }
+                        }))}
+                        placeholder="Enter street address"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="address-area">Area</Label>
+                      <Input
+                        id="address-area"
+                        value={editableCustomer.address.area}
+                        onChange={(e) => setEditableCustomer(prev => ({ 
+                          ...prev, 
+                          address: { ...prev.address, area: e.target.value }
+                        }))}
+                        placeholder="Enter area"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="address-city">City</Label>
+                      <Input
+                        id="address-city"
+                        value={editableCustomer.address.city}
+                        onChange={(e) => setEditableCustomer(prev => ({ 
+                          ...prev, 
+                          address: { ...prev.address, city: e.target.value }
+                        }))}
+                        placeholder="Enter city"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="address-state">State</Label>
+                      <Input
+                        id="address-state"
+                        value={editableCustomer.address.state}
+                        onChange={(e) => setEditableCustomer(prev => ({ 
+                          ...prev, 
+                          address: { ...prev.address, state: e.target.value }
+                        }))}
+                        placeholder="Enter state"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="address-pincode">Pincode</Label>
+                      <Input
+                        id="address-pincode"
+                        value={editableCustomer.address.pincode}
+                        onChange={(e) => setEditableCustomer(prev => ({ 
+                          ...prev, 
+                          address: { ...prev.address, pincode: e.target.value }
+                        }))}
+                        placeholder="Enter pincode"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="font-semibold text-lg">{editableCustomer.name}</div>
+                <div className="text-sm text-gray-600">
+                  {(editableCustomer.address.street || editableCustomer.address.area) && (
+                    <div>{editableCustomer.address.street || ''}, {editableCustomer.address.area || ''}</div>
+                  )}
+                  {(editableCustomer.address.city || editableCustomer.address.state || editableCustomer.address.pincode) && (
+                    <div>{editableCustomer.address.city || ''}, {editableCustomer.address.state || ''} - {editableCustomer.address.pincode || ''}</div>
+                  )}
+                  {editableCustomer.phone && <div>Phone: {editableCustomer.phone}</div>}
+                  {editableCustomer.email && <div>Email: {editableCustomer.email}</div>}
+                  {editableCustomer.gst && <div>GST: {editableCustomer.gst}</div>}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

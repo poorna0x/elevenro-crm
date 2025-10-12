@@ -37,8 +37,6 @@ export default function BillModal({ isOpen, onClose, customer }: BillModalProps)
     
     try {
       generateBillPDF(pdfData, action);
-      const message = action === 'print' ? 'Bill sent to printer!' : 'Bill saved as PDF!';
-      toast.success(message);
     } catch (error) {
       toast.error('Failed to generate bill. Please try again.');
     } finally {

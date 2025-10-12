@@ -21,8 +21,6 @@ export default function AMCModal({ isOpen, onClose, customer }: AMCModalProps) {
     
     try {
       generateAMCPDF(bill);
-      const message = action === 'print' ? 'AMC Agreement sent to printer!' : 'AMC Agreement saved as PDF!';
-      toast.success(message);
     } catch (error) {
       console.error('Error generating AMC:', error);
       toast.error('Failed to generate AMC Agreement');

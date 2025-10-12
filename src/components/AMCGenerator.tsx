@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Plus, Download, FileText, User, Phone, MapPin, Building, Droplets } from 'lucide-react';
+import { Edit, Plus, Download, FileText, User, Phone, MapPin, Building, Droplets, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { Customer, Bill, BillItem, CompanyInfo } from '@/types';
 import { generateAMCPDF } from '@/lib/amc-pdf-generator';
@@ -100,6 +100,22 @@ The AMC does not cover display and lights of the RO.`);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [newNote, setNewNote] = useState('');
 
+  // Editable customer information state
+  const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+  const [editableCustomer, setEditableCustomer] = useState({
+    name: customer.fullName || '',
+    phone: customer.phone || '',
+    email: customer.email || '',
+    gst: customer.gstNumber || '',
+    address: {
+      street: customer.address.street || '',
+      area: customer.address.area || '',
+      city: customer.address.city || '',
+      state: customer.address.state || '',
+      pincode: customer.address.pincode || ''
+    }
+  });
+
   // Calculate totals
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
   const totalAmount = subtotal + serviceCharge;
@@ -166,14 +182,14 @@ The AMC does not cover display and lights of the RO.`);
       company,
       customer: {
         id: customer.id,
-        name: customer.fullName,
-        address: `${customer.address.street || ''}, ${customer.address.area || ''}`.trim() || '',
-        city: customer.address.city || '',
-        state: customer.address.state || '',
-        pincode: customer.address.pincode || '',
-        phone: customer.phone || '',
-        email: customer.email || '',
-        gstNumber: customer.gstNumber || ''
+        name: editableCustomer.name,
+        address: `${editableCustomer.address.street || ''}, ${editableCustomer.address.area || ''}`.trim() || '',
+        city: editableCustomer.address.city || '',
+        state: editableCustomer.address.state || '',
+        pincode: editableCustomer.address.pincode || '',
+        phone: editableCustomer.phone || '',
+        email: editableCustomer.email || '',
+        gstNumber: editableCustomer.gst || ''
       },
       items,
       subtotal,
@@ -189,7 +205,6 @@ The AMC does not cover display and lights of the RO.`);
 
     try {
       generateAMCPDF(bill);
-      toast.success('AMC Agreement generated successfully!');
       onPrint?.(bill);
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -250,27 +265,161 @@ The AMC does not cover display and lights of the RO.`);
           {/* Customer Info */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Customer Information
-              </CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Customer Information
+                </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingCustomer(!isEditingCustomer)}
+                  className="w-full sm:w-auto"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  {isEditingCustomer ? 'View' : 'Edit'}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-gray-500" />
-                <span className="font-medium">{customer.fullName}</span>
-                <Badge variant="outline">{customer.customerId}</Badge>
-              </div>
-              {customer.phone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-500" />
-                  <span>{customer.phone}</span>
+              {isEditingCustomer ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="amc-customer-name">Customer Name</Label>
+                      <Input
+                        id="amc-customer-name"
+                        value={editableCustomer.name}
+                        onChange={(e) => setEditableCustomer(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Enter customer name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="amc-customer-phone">Phone</Label>
+                      <Input
+                        id="amc-customer-phone"
+                        value={editableCustomer.phone}
+                        onChange={(e) => setEditableCustomer(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="amc-customer-email">Email (Optional)</Label>
+                      <Input
+                        id="amc-customer-email"
+                        type="email"
+                        value={editableCustomer.email}
+                        onChange={(e) => setEditableCustomer(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="Enter email address"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="amc-customer-gst">GST Number (Optional)</Label>
+                      <Input
+                        id="amc-customer-gst"
+                        value={editableCustomer.gst}
+                        onChange={(e) => setEditableCustomer(prev => ({ ...prev, gst: e.target.value }))}
+                        placeholder="Enter GST number"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Address</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="amc-address-street">Street</Label>
+                        <Input
+                          id="amc-address-street"
+                          value={editableCustomer.address.street}
+                          onChange={(e) => setEditableCustomer(prev => ({ 
+                            ...prev, 
+                            address: { ...prev.address, street: e.target.value }
+                          }))}
+                          placeholder="Enter street address"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="amc-address-area">Area</Label>
+                        <Input
+                          id="amc-address-area"
+                          value={editableCustomer.address.area}
+                          onChange={(e) => setEditableCustomer(prev => ({ 
+                            ...prev, 
+                            address: { ...prev.address, area: e.target.value }
+                          }))}
+                          placeholder="Enter area"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="amc-address-city">City</Label>
+                        <Input
+                          id="amc-address-city"
+                          value={editableCustomer.address.city}
+                          onChange={(e) => setEditableCustomer(prev => ({ 
+                            ...prev, 
+                            address: { ...prev.address, city: e.target.value }
+                          }))}
+                          placeholder="Enter city"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="amc-address-state">State</Label>
+                        <Input
+                          id="amc-address-state"
+                          value={editableCustomer.address.state}
+                          onChange={(e) => setEditableCustomer(prev => ({ 
+                            ...prev, 
+                            address: { ...prev.address, state: e.target.value }
+                          }))}
+                          placeholder="Enter state"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="amc-address-pincode">Pincode</Label>
+                        <Input
+                          id="amc-address-pincode"
+                          value={editableCustomer.address.pincode}
+                          onChange={(e) => setEditableCustomer(prev => ({ 
+                            ...prev, 
+                            address: { ...prev.address, pincode: e.target.value }
+                          }))}
+                          placeholder="Enter pincode"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
-              {(customer.address.street || customer.address.area || customer.address.city) && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-gray-500" />
-                  <span>{customer.address.street}, {customer.address.area}, {customer.address.city}</span>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-500" />
+                    <span className="font-medium">{editableCustomer.name}</span>
+                    <Badge variant="outline">{customer.customerId}</Badge>
+                  </div>
+                  {editableCustomer.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-gray-500" />
+                      <span>{editableCustomer.phone}</span>
+                    </div>
+                  )}
+                  {editableCustomer.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-gray-500" />
+                      <span>{editableCustomer.email}</span>
+                    </div>
+                  )}
+                  {(editableCustomer.address.street || editableCustomer.address.area || editableCustomer.address.city) && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-500" />
+                      <span>{editableCustomer.address.street}, {editableCustomer.address.area}, {editableCustomer.address.city}</span>
+                    </div>
+                  )}
+                  {editableCustomer.gst && (
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-gray-500" />
+                      <span>GST: {editableCustomer.gst}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
