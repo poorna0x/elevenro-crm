@@ -60,6 +60,7 @@ import { sendNotification, createJobAssignedNotification, createJobCompletedNoti
 import CustomerServicesManager from './CustomerServicesManager';
 import BillModal from './BillModal';
 import AMCModal from './AMCModal';
+import QuotationModal from './QuotationModal';
 
 // Generate job number utility
 const generateJobNumber = (serviceType: 'RO' | 'SOFTENER'): string => {
@@ -94,6 +95,8 @@ const AdminDashboard = () => {
   const [selectedCustomerPhone, setSelectedCustomerPhone] = useState<Customer | null>(null);
   const [billModalOpen, setBillModalOpen] = useState(false);
   const [selectedCustomerForBill, setSelectedCustomerForBill] = useState<Customer | null>(null);
+  const [quotationModalOpen, setQuotationModalOpen] = useState(false);
+  const [selectedCustomerForQuotation, setSelectedCustomerForQuotation] = useState<Customer | null>(null);
   const [amcModalOpen, setAmcModalOpen] = useState(false);
   const [selectedCustomerForAMC, setSelectedCustomerForAMC] = useState<Customer | null>(null);
   const [editFormData, setEditFormData] = useState({
@@ -1547,6 +1550,16 @@ const AdminDashboard = () => {
     setSelectedCustomerForBill(null);
   };
 
+  const handleGenerateQuotation = (customer: Customer) => {
+    setSelectedCustomerForQuotation(customer);
+    setQuotationModalOpen(true);
+  };
+
+  const handleQuotationModalClose = () => {
+    setQuotationModalOpen(false);
+    setSelectedCustomerForQuotation(null);
+  };
+
   const handleGenerateAMC = (customer: Customer) => {
     setSelectedCustomerForAMC(customer);
     setAmcModalOpen(true);
@@ -2780,6 +2793,10 @@ const AdminDashboard = () => {
                             <Receipt className="mr-2 h-4 w-4" />
                             Generate Bill
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleGenerateQuotation(customer)}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Generate Quotation
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleGenerateAMC(customer)}>
                             <Star className="mr-2 h-4 w-4" />
                             Generate AMC
@@ -2875,6 +2892,10 @@ const AdminDashboard = () => {
                           <DropdownMenuItem onClick={() => handleGenerateBill(customer)}>
                             <Receipt className="mr-2 h-4 w-4" />
                             Generate Bill
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleGenerateQuotation(customer)}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Generate Quotation
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleGenerateAMC(customer)}>
                             <Star className="mr-2 h-4 w-4" />
@@ -5458,6 +5479,13 @@ const AdminDashboard = () => {
         isOpen={billModalOpen}
         onClose={handleBillModalClose}
         customer={selectedCustomerForBill}
+      />
+
+      {/* Quotation Generation Modal */}
+      <QuotationModal
+        isOpen={quotationModalOpen}
+        onClose={handleQuotationModalClose}
+        customer={selectedCustomerForQuotation}
       />
 
       {/* AMC Generation Modal */}

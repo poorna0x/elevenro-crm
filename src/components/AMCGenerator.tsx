@@ -104,7 +104,7 @@ The AMC does not cover display and lights of the RO.`);
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
   const [editableCustomer, setEditableCustomer] = useState({
     name: customer.fullName || '',
-    phone: customer.phone || '',
+    phone: typeof customer.phone === 'string' ? customer.phone : (customer as any)?.phone || '',
     email: customer.email || '',
     gst: customer.gstNumber || '',
     address: {

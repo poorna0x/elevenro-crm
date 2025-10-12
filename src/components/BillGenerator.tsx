@@ -41,7 +41,7 @@ const defaultBillItems: BillItem[] = [
 export default function BillGenerator({ customer, onPrint }: BillGeneratorProps) {
   // Safe customer data extraction
   const customerName = customer?.fullName || (customer as any)?.full_name || 'Customer Name';
-  const customerPhone = customer?.phone || '';
+  const customerPhone = typeof customer?.phone === 'string' ? customer.phone : (customer as any)?.phone || '';
   const customerEmail = customer?.email || '';
   const customerAddress = customer?.address || {};
   const customerGst = customer?.gstNumber || '';
@@ -52,7 +52,9 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
   const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0]);
   const [company, setCompany] = useState<CompanyInfo>(defaultCompanyInfo);
   const [items, setItems] = useState<BillItem[]>(defaultBillItems);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState<string[]>([]);
+  const [newNote, setNewNote] = useState('');
+  const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null);
   const [terms, setTerms] = useState(`1. Goods once sold will not be taken back and refund or exchange.
 2. There is 60 Days warranty for RO & PUMP. No Warranty for other spare parts.
 3. Without the bill there will not be any warranty / free service given.
@@ -64,7 +66,6 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
   const [isEditingTerms, setIsEditingTerms] = useState(false);
   const [newTerm, setNewTerm] = useState('');
   const [isEditingNotes, setIsEditingNotes] = useState(false);
-  const [newNote, setNewNote] = useState('');
 
   // Editable customer information state
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
@@ -113,6 +114,37 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
     }
   };
 
+  const addNote = () => {
+    if (newNote.trim()) {
+      setNotes([...notes, newNote.trim()]);
+      setNewNote('');
+    }
+  };
+
+  const editNote = (index: number) => {
+    setEditingNoteIndex(index);
+    setNewNote(notes[index]);
+  };
+
+  const updateNote = () => {
+    if (editingNoteIndex !== null && newNote.trim()) {
+      const updatedNotes = [...notes];
+      updatedNotes[editingNoteIndex] = newNote.trim();
+      setNotes(updatedNotes);
+      setEditingNoteIndex(null);
+      setNewNote('');
+    }
+  };
+
+  const removeNote = (index: number) => {
+    setNotes(notes.filter((_, i) => i !== index));
+  };
+
+  const cancelEdit = () => {
+    setEditingNoteIndex(null);
+    setNewNote('');
+  };
+
   const updateItem = (id: string, field: keyof BillItem, value: string | number) => {
     setItems(items.map(item => {
       if (item.id === id) {
@@ -151,23 +183,10 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
     setTerms(renumberedTerms.join('\n'));
   };
 
-  const addNote = () => {
-    if (newNote.trim()) {
-      const currentNotes = notes.split('\n').filter(line => line.trim());
-      const updatedNotes = [...currentNotes, newNote.trim()].join('\n');
-      setNotes(updatedNotes);
-      setNewNote('');
-    }
-  };
 
-  const removeNote = (index: number) => {
-    const currentNotes = notes.split('\n').filter(line => line.trim());
-    const updatedNotes = currentNotes.filter((_, i) => i !== index).join('\n');
-    setNotes(updatedNotes);
-  };
 
   const termsList = terms.split('\n').filter(line => line.trim());
-  const notesList = notes.split('\n').filter(line => line.trim());
+  const notesList = notes; // notes is already an array now
 
   const handlePrint = (action: 'print' | 'pdf' = 'print') => {
     if (!customer) {
@@ -198,7 +217,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
       totalAmount,
       paymentStatus: 'PENDING',
       paymentMethod: 'CASH',
-      notes,
+      notes: notes.join('\n'),
       terms,
       serviceType: customerServiceType,
       createdAt: new Date().toISOString(),
@@ -254,7 +273,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <CardTitle>Customer Information</CardTitle>
+            <CardTitle>Customer Information</CardTitle>
               <Button
                 variant="outline"
                 size="sm"
@@ -375,9 +394,9 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
+            <div className="space-y-2">
                 <div className="font-semibold text-lg">{editableCustomer.name}</div>
-                <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600">
                   {(editableCustomer.address.street || editableCustomer.address.area) && (
                     <div>{editableCustomer.address.street || ''}, {editableCustomer.address.area || ''}</div>
                   )}
@@ -509,21 +528,21 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
       </Card>
 
       {/* Additional Information */}
-      <Card>
+      <Card className="border-blue-200 bg-blue-50/30">
         <CardHeader>
-          <CardTitle>Additional Information</CardTitle>
+          <CardTitle className="text-lg sm:text-xl text-blue-800">Additional Information</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Notes Section */}
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <h3 className="text-lg font-semibold">Additional Info</h3>
+                <h3 className="text-lg font-semibold text-blue-800">Additional Info</h3>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEditingNotes(!isEditingNotes)}
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto border-blue-300 text-blue-700 hover:bg-blue-50"
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   {isEditingNotes ? 'View' : 'Edit'}
@@ -532,8 +551,8 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
               
               {isEditingNotes ? (
                 <div className="space-y-4">
-                  <div className="text-sm text-gray-600">
-                    Add new notes. Each line will be treated as a separate bullet point.
+                  <div className="text-sm text-blue-600">
+                    Add new notes. Each note will be displayed separately.
                   </div>
                   <div className="flex gap-2">
                     <Input
@@ -542,9 +561,9 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                       placeholder="Enter new note..."
                       onKeyPress={(e) => e.key === 'Enter' && addNote()}
                     />
-                    <Button onClick={addNote} size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add
+                    <Button onClick={addNote} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Note
                     </Button>
                   </div>
                   <Textarea
@@ -557,7 +576,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-blue-600">
                     Current notes:
                   </div>
                   <div className="space-y-2">
@@ -622,13 +641,13 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Current Terms & Conditions:</Label>
-                    <Textarea
-                      value={terms}
-                      onChange={(e) => setTerms(e.target.value)}
+                  <Textarea
+                    value={terms}
+                    onChange={(e) => setTerms(e.target.value)}
                       placeholder="Terms will be automatically numbered..."
                       rows={6}
-                      className="font-mono text-sm"
-                    />
+                    className="font-mono text-sm"
+                  />
                     <div className="text-xs text-gray-500">
                       💡 Tip: Each line will be treated as a separate numbered term. You can edit the full text above or add individual terms using the input above.
                     </div>
