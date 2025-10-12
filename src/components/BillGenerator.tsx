@@ -209,25 +209,25 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Generate Bill</h1>
-        <div className="flex gap-2">
-          <Button onClick={() => handlePrint('print')} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
+    <div className="max-w-4xl mx-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 text-center sm:text-left">Generate Bill</h1>
+        <div className="flex justify-center sm:justify-end">
+          <Button onClick={() => handlePrint('print')} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto min-w-[140px]">
             <Download className="w-4 h-4 mr-2" />
             Download Bill
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
         {/* Bill Information */}
         <Card>
           <CardHeader>
             <CardTitle>Bill Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <CardContent className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <Label htmlFor="billNumber">Bill Number</Label>
                 <Input
@@ -266,10 +266,10 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3 sm:space-y-4">
             {isEditingCustomer ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <Label htmlFor="customer-name">Customer Name</Label>
                     <Input
@@ -308,9 +308,9 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                     />
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Address</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Address</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="address-street">Street</Label>
                       <Input
@@ -397,10 +397,10 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
       {/* Bill Items */}
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <CardTitle>Bill Items</CardTitle>
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <CardTitle className="text-lg sm:text-xl">Bill Items</CardTitle>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <Label htmlFor="serviceCharge" className="text-sm font-medium whitespace-nowrap">Service Charge:</Label>
                 <Input
                   id="serviceCharge"
@@ -409,7 +409,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                   onChange={(e) => setServiceCharge(parseFloat(e.target.value) || 0)}
                   min="0"
                   step="0.01"
-                  className="w-24"
+                  className="w-full sm:w-24"
                   placeholder="0"
                 />
               </div>
@@ -420,12 +420,12 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {items.map((item, index) => (
-              <div key={item.id} className="space-y-4 p-4 border rounded-lg">
+              <div key={item.id} className="space-y-3 sm:space-y-4 p-3 sm:p-4 border rounded-lg">
                 {/* Mobile-first grid layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <div className="sm:col-span-2 lg:col-span-1">
                     <Label>Description</Label>
                     <Input
@@ -445,7 +445,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                   </div>
                   <div className="flex items-end gap-2">
                     <div className="flex-1">
-                      <Label>Unit Price</Label>
+                      <Label>Price</Label>
                       <Input
                         type="number"
                         value={item.unitPrice}
@@ -486,10 +486,10 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
       {/* Bill Summary */}
       <Card>
         <CardHeader>
-          <CardTitle>Bill Summary</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Bill Summary</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div className="flex justify-between text-lg">
               <span>Subtotal:</span>
               <span>₹{subtotal.toLocaleString()}</span>
@@ -588,9 +588,9 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
             </div>
 
             {/* Terms & Conditions Section */}
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <h3 className="text-lg font-semibold">Terms & Conditions</h3>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2">
+                <h3 className="text-base sm:text-lg font-semibold">Terms & Conditions</h3>
                 <Button
                   variant="outline"
                   size="sm"
@@ -607,7 +607,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                   <div className="text-sm text-gray-600">
                     Add new terms and conditions. Each term will be automatically numbered.
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input
                       value={newTerm}
                       onChange={(e) => setNewTerm(e.target.value)}
@@ -615,7 +615,7 @@ export default function BillGenerator({ customer, onPrint }: BillGeneratorProps)
                       onKeyPress={(e) => e.key === 'Enter' && addTerm()}
                       className="flex-1"
                     />
-                    <Button onClick={addTerm} size="sm" disabled={!newTerm.trim()}>
+                    <Button onClick={addTerm} size="sm" disabled={!newTerm.trim()} className="w-full sm:w-auto">
                       <Plus className="w-4 h-4 mr-2" />
                       Add Term
                     </Button>

@@ -213,23 +213,23 @@ The AMC does not cover display and lights of the RO.`);
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center mb-4">
-          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-            <Droplets className="w-8 h-8 text-white" />
+      <div className="text-center mb-4 sm:mb-6 md:mb-8">
+        <div className="flex flex-col sm:flex-row items-center justify-center mb-3 sm:mb-4 gap-3 sm:gap-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-lg flex items-center justify-center sm:mr-3">
+            <Droplets className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
           </div>
-          <div className="text-left">
-            <h1 className="text-3xl font-bold text-blue-600 mb-0">Hydrogen RO</h1>
-            <p className="text-sm text-gray-600 mt-0">AMC Agreement Generator</p>
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-0">Hydrogen RO</h1>
+            <p className="text-xs sm:text-sm text-gray-600 mt-0">AMC Agreement Generator</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
         {/* Form Section */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Bill Details */}
           <Card>
             <CardHeader>
@@ -238,8 +238,8 @@ The AMC does not cover display and lights of the RO.`);
                 AMC Agreement Details
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <CardContent className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label htmlFor="billNumber">Agreement Number *</Label>
                   <Input
