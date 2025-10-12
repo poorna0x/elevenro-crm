@@ -554,10 +554,10 @@ export default function QuotationGenerator({ customer, onPrint }: QuotationGener
       </Card>
 
       {/* Validity Note Section */}
-      <Card className="border-blue-200 bg-blue-50/30">
+      <Card className="border-gray-200 bg-gray-50/30">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <CardTitle className="text-lg sm:text-xl text-blue-800">Validity Note</CardTitle>
+            <CardTitle className="text-lg sm:text-xl text-gray-800">Validity Note</CardTitle>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -581,8 +581,8 @@ export default function QuotationGenerator({ customer, onPrint }: QuotationGener
           </div>
         </CardHeader>
         {showValidityNote && (
-          <CardContent className="space-y-3">
-            <div className="p-4 bg-blue-100 border-2 border-blue-300 rounded-lg">
+          <CardContent className="space-y-3 mb-4">
+            <div className="p-4 bg-gray-100 border border-gray-300 rounded-lg">
               <div className="flex items-start gap-3">
                 <div className="flex-1">
                   <Textarea
@@ -590,20 +590,20 @@ export default function QuotationGenerator({ customer, onPrint }: QuotationGener
                     onChange={(e) => setValidityNote(e.target.value)}
                     placeholder="Enter validity note..."
                     rows={3}
-                    className="w-full bg-transparent border-none p-0 text-blue-900 font-medium resize-none focus:ring-0 focus:border-none"
+                    className="w-full bg-transparent border-none p-0 text-gray-900 font-medium resize-none focus:ring-0 focus:border-none"
                   />
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setValidityNote('This quotation is valid for 30 days from the date of issue. Prices are subject to change without prior notice.')}
-                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-200"
+                  className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700 hover:bg-gray-200"
                 >
                   <Edit className="w-3 h-3" />
                 </Button>
               </div>
             </div>
-            <div className="text-xs text-blue-600">
+            <div className="text-xs text-gray-600">
               This note will appear prominently on the quotation PDF.
             </div>
           </CardContent>
