@@ -275,9 +275,9 @@ function generateAMCHTML(data: AMCPDFData): string {
         
         .signatures {
           margin-top: 40px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 40px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
         }
         
         .signature-box {
@@ -292,11 +292,11 @@ function generateAMCHTML(data: AMCPDFData): string {
           margin-bottom: 5px;
         }
         
-        .signature-line {
-          height: 50px;
-          border: 1px solid #d1d5db;
-          border-radius: 4px;
-          margin: 20px 0 10px 0;
+        .signature-seal {
+          width: 120px;
+          height: 120px;
+          margin: 20px auto 10px auto;
+          display: block;
         }
         
         .signature-date {
@@ -445,6 +445,14 @@ function generateAMCHTML(data: AMCPDFData): string {
       <!-- Agreement Details -->
       <div class="agreement-details">
         <h3 class="agreement-details-title">AGREEMENT DETAILS</h3>
+        <div style="text-align: center; margin-bottom: 20px; padding: 10px; background: #e5f3ff; border-radius: 6px; border: 1px solid #2563eb;">
+          <div style="font-weight: bold; color: #2563eb; font-size: 16px;">Date of Agreement</div>
+          <div style="font-size: 18px; color: #000000; margin-top: 5px;">${new Date(data.billDate).toLocaleDateString('en-IN', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+          })}</div>
+        </div>
         <div class="details-grid">
           <div>
             <div class="detail-item">
@@ -453,7 +461,11 @@ function generateAMCHTML(data: AMCPDFData): string {
             </div>
             <div class="detail-item">
               <span class="detail-label">Agreement Date:</span>
-              <span class="detail-value">${data.billDate}</span>
+              <span class="detail-value">${new Date(data.billDate).toLocaleDateString('en-IN', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+              })}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">Agreement Amount:</span>
@@ -488,15 +500,14 @@ function generateAMCHTML(data: AMCPDFData): string {
       <!-- Signatures -->
       <div class="signatures">
         <div class="signature-box">
-          <div class="signature-label">Customer Signature</div>
-          <div class="signature-line"></div>
-          <div class="signature-date">Date: _______________</div>
-        </div>
-        <div class="signature-box">
           <div class="signature-label">Authorized Signatory</div>
           <div style="font-size: 12px; color: #6b7280; margin-bottom: 5px;">M/s Hydrogen RO</div>
-          <div class="signature-line"></div>
-          <div class="signature-date">Date: _______________</div>
+          <img src="/HydrogenROSeal.webp" alt="Hydrogen RO Seal" class="signature-seal" />
+          <div class="signature-date">Date: ${new Date().toLocaleDateString('en-IN', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+          })}</div>
         </div>
       </div>
 
@@ -506,7 +517,11 @@ function generateAMCHTML(data: AMCPDFData): string {
           <span style="color: #2563eb; font-weight: bold;">💧 Hydrogen RO</span>
         </div>
         <p class="footer-text">This is a computer generated document and does not require a physical signature.</p>
-        <p class="footer-text">Generated on: ${new Date().toLocaleDateString('en-IN')} | Professional RO Water Purifier Services in Bengaluru</p>
+        <p class="footer-text">Generated on: ${new Date().toLocaleDateString('en-IN', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric' 
+        })} | Professional RO Water Purifier Services in Bengaluru</p>
       </div>
     </body>
     </html>
@@ -691,6 +706,13 @@ function handleMobilePrint(bill: Bill, action: 'print' | 'pdf'): void {
         padding: 0;
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 8px 15px rgba(0, 0, 0, 0.4);
         border-radius: 12px;
+      }
+      
+      .signature-seal {
+        width: 120px;
+        height: 120px;
+        margin: 20px auto 10px auto;
+        display: block;
       }
       
       @media print {

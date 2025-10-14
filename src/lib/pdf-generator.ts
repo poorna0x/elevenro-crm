@@ -394,6 +394,8 @@ function handleMobilePrint(billData: PDFBillData, action: 'print' | 'pdf'): void
         padding: 0;
         font-size: 12px;
         -webkit-text-size-adjust: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
       
       .bill-container {
@@ -405,6 +407,8 @@ function handleMobilePrint(billData: PDFBillData, action: 'print' | 'pdf'): void
         border: 2px solid #000;
         box-sizing: border-box;
         border-radius: 12px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
       
       .header {
@@ -568,6 +572,7 @@ function handleMobilePrint(billData: PDFBillData, action: 'print' | 'pdf'): void
         * {
           -webkit-print-color-adjust: exact !important;
           color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
         
         body {
@@ -575,6 +580,11 @@ function handleMobilePrint(billData: PDFBillData, action: 'print' | 'pdf'): void
           padding: 15mm !important;
           font-size: 12pt !important;
           line-height: 1.4 !important;
+          -webkit-font-smoothing: antialiased !important;
+          -moz-osx-font-smoothing: grayscale !important;
+          width: 210mm !important;
+          min-height: 297mm !important;
+          max-width: 210mm !important;
         }
         
         .bill-container {
@@ -586,6 +596,11 @@ function handleMobilePrint(billData: PDFBillData, action: 'print' | 'pdf'): void
           box-shadow: none !important;
           background: white !important;
           box-sizing: border-box !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          width: 210mm !important;
+          min-height: 297mm !important;
+          max-width: 210mm !important;
         }
         
         @page {
@@ -593,6 +608,22 @@ function handleMobilePrint(billData: PDFBillData, action: 'print' | 'pdf'): void
           margin: 20mm 8mm 20mm 8mm !important;
           border: 2px solid #000000 !important;
           border-radius: 12px !important;
+        }
+        
+        /* Force A4 format for devices that default to Letter */
+        @page :first {
+          size: A4 !important;
+          margin: 20mm 8mm 20mm 8mm !important;
+          border: 2px solid #000000 !important;
+          border-radius: 12px !important;
+        }
+        
+        /* Additional A4 enforcement */
+        @media print and (max-width: 210mm) {
+          @page {
+            size: A4 !important;
+            margin: 20mm 8mm 20mm 8mm !important;
+          }
         }
         
         @page :first {
@@ -629,11 +660,76 @@ function handleMobilePrint(billData: PDFBillData, action: 'print' | 'pdf'): void
         .bill-container:not(:first-child) {
           padding-top: 20px !important;
         }
+        
+        /* Additional mobile PDF compatibility */
+        .items-table {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        .items-table th {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        .summary-row.total {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        .header {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
       }
     `;
     
     // Add styles to document
     document.head.appendChild(printStyles);
+    
+    // Add additional mobile-specific optimizations
+    const additionalStyles = document.createElement('style');
+    additionalStyles.id = 'mobile-pdf-format-fix';
+    additionalStyles.textContent = `
+      @media print {
+        @page {
+          size: 210mm 297mm !important;
+          margin: 20mm 8mm 20mm 8mm !important;
+        }
+        
+        body {
+          width: 210mm !important;
+          height: 297mm !important;
+          max-width: 210mm !important;
+          max-height: 297mm !important;
+        }
+        
+        .bill-container {
+          width: 210mm !important;
+          height: 297mm !important;
+          max-width: 210mm !important;
+          max-height: 297mm !important;
+        }
+      }
+    `;
+    document.head.appendChild(additionalStyles);
+    
+    // Force A4 format with JavaScript
+    const forceA4Format = () => {
+      const style = document.createElement('style');
+      style.textContent = `
+        @page {
+          size: 210mm 297mm !important;
+          margin: 20mm 8mm 20mm 8mm !important;
+        }
+      `;
+      document.head.appendChild(style);
+    };
+    
+    // Apply format fix multiple times to ensure it sticks
+    forceA4Format();
+    setTimeout(forceA4Format, 100);
+    setTimeout(forceA4Format, 200);
     
     // Wait a moment for styles to apply, then print
     setTimeout(() => {
@@ -654,6 +750,9 @@ function handleMobilePrint(billData: PDFBillData, action: 'print' | 'pdf'): void
             if (document.head.contains(printStyles)) {
               document.head.removeChild(printStyles);
             }
+            if (document.head.contains(additionalStyles)) {
+              document.head.removeChild(additionalStyles);
+            }
           } catch (cleanupError) {
             console.error('Error during cleanup:', cleanupError);
             // Force cleanup even if there's an error
@@ -667,6 +766,9 @@ function handleMobilePrint(billData: PDFBillData, action: 'print' | 'pdf'): void
         document.title = originalTitle;
         if (document.head.contains(printStyles)) {
           document.head.removeChild(printStyles);
+        }
+        if (document.head.contains(additionalStyles)) {
+          document.head.removeChild(additionalStyles);
         }
         alert('Error generating PDF. Please try again.');
       }
