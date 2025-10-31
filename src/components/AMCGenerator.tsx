@@ -47,6 +47,9 @@ export default function AMCGenerator({ customer, onPrint }: AMCGeneratorProps) {
   const [company, setCompany] = useState<CompanyInfo>(defaultCompanyInfo);
   const [items, setItems] = useState<BillItem[]>(defaultAMCItems);
   const [notes, setNotes] = useState('');
+  const [validity, setValidity] = useState('1 Year');
+  const [customFromDate, setCustomFromDate] = useState('');
+  const [customToDate, setCustomToDate] = useState('');
   const [terms, setTerms] = useState(`SERVICES COVERED BY THE AGREEMENT
 
 Breakdown Support: If any breakdown or problem happens with the RO during this 1-year period, the company will provide service without extra charges.
@@ -175,6 +178,16 @@ The AMC does not cover display and lights of the RO.`);
       return;
     }
 
+    if (validity === 'Custom' && (!customFromDate || !customToDate)) {
+      toast.error('Please select both from and to dates for custom validity');
+      return;
+    }
+
+    if (validity === 'Custom' && customFromDate && customToDate && new Date(customFromDate) >= new Date(customToDate)) {
+      toast.error('To date must be after from date');
+      return;
+    }
+
     const bill: Bill = {
       id: Date.now().toString(),
       billNumber,
@@ -199,6 +212,9 @@ The AMC does not cover display and lights of the RO.`);
       paymentStatus: 'PENDING',
       notes,
       terms,
+      validity: validity === 'Custom' ? 
+        `${new Date(customFromDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })} to ${new Date(customToDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}` : 
+        validity,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -258,6 +274,44 @@ The AMC does not cover display and lights of the RO.`);
                     onChange={(e) => setBillDate(e.target.value)}
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <Label htmlFor="validity">Validity Period *</Label>
+                  <Select value={validity} onValueChange={setValidity}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select validity period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1 Year">1 Year</SelectItem>
+                      <SelectItem value="2 Years">2 Years</SelectItem>
+                      <SelectItem value="3 Years">3 Years</SelectItem>
+                      <SelectItem value="Custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {validity === 'Custom' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <Label htmlFor="customFromDate">From Date</Label>
+                      <Input
+                        id="customFromDate"
+                        type="date"
+                        value={customFromDate}
+                        onChange={(e) => setCustomFromDate(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="customToDate">To Date</Label>
+                      <Input
+                        id="customToDate"
+                        type="date"
+                        value={customToDate}
+                        onChange={(e) => setCustomToDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

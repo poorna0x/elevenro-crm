@@ -480,8 +480,13 @@ export class EmailService {
 
       // For development, just log the email content
       if (import.meta.env.DEV) {
-        console.log('Email content:', emailData);
-        return true;
+        console.log('📧 [DEV MODE] Email would be sent:', {
+          to: emailData.to,
+          subject: emailData.subject,
+          preview: emailData.data.text?.substring(0, 200) + '...'
+        });
+        console.warn('⚠️ In development mode, emails are not actually sent. Configure email service for production.');
+        return false; // Return false in dev mode to indicate email wasn't actually sent
       }
 
       // Send email via API
@@ -503,24 +508,30 @@ export class EmailService {
         
         // If it's a configuration error, log it but don't fail the booking
         if (response.status === 500 && errorData.error?.includes('configuration')) {
-          console.warn('Email service not configured, booking will continue without email notification:', errorData);
-          return true; // Return true to not block the booking process
+          console.warn('⚠️ Email service not configured, booking will continue without email notification:', errorData);
+          return false; // Return false to indicate email was not sent
         }
         
         throw new Error(`Email service error: ${errorData.error || response.statusText}`);
       }
 
       const result = await response.json();
-      console.log('Email sent successfully:', result);
+      console.log('✅ Email sent successfully:', result);
       return true;
 
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('❌ Error sending email:', error);
       
-      // Don't fail the entire booking process if email fails
-      // Just log the error and continue
-      console.warn('Email notification failed, but booking will continue');
-      return true;
+      // Log more details about the error
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          console.warn('⚠️ Network error while sending email. Check your internet connection and email service configuration.');
+        }
+      }
+      
+      // Return false to indicate email was not sent
+      // Don't throw error to avoid blocking the booking process
+      return false;
     }
   }
 

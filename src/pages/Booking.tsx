@@ -989,11 +989,32 @@ const Booking: React.FC = () => {
       // Check if customer already exists by phone number
       let customer;
       let isExistingCustomer = false;
-      const { data: existingCustomer, error: findError } = await db.customers.getByPhone(formData.phone);
       
-      if (findError) {
+      let existingCustomer = null;
+      let findError = null;
+      
+      try {
+        const result = await db.customers.getByPhone(formData.phone);
+        existingCustomer = result.data;
+        findError = result.error;
+      } catch (networkError: any) {
+        // Handle network errors (DNS, connection issues, etc.)
+        const errorMessage = networkError?.message || String(networkError);
+        if (errorMessage.includes('Failed to fetch') || 
+            errorMessage.includes('ERR_NAME_NOT_RESOLVED') ||
+            errorMessage.includes('NetworkError') ||
+            errorMessage.includes('network')) {
+          throw new Error(
+            'Unable to connect to the server. Please check your internet connection and ensure the Supabase project is configured correctly. ' +
+            'If the problem persists, contact support.'
+          );
+        }
+        findError = networkError;
+      }
+      
+      if (findError && !findError.message?.includes('connect')) {
         console.error('Error checking existing customer:', findError);
-        // Continue with creating new customer if there's an error
+        // Continue with creating new customer if there's a non-network error
       }
       
       if (existingCustomer) {
@@ -1024,13 +1045,40 @@ const Booking: React.FC = () => {
         console.log('Updating customer with ID:', (existingCustomer as any).id);
         console.log('Update data:', updateData);
         
-        const { data: updatedCustomer, error: updateError } = await db.customers.update((existingCustomer as any).id, updateData);
+        let updatedCustomer = null;
+        let updateError = null;
+        
+        try {
+          const result = await db.customers.update((existingCustomer as any).id, updateData);
+          updatedCustomer = result.data;
+          updateError = result.error;
+        } catch (networkError: any) {
+          // Handle network errors
+          const errorMessage = networkError?.message || String(networkError);
+          if (errorMessage.includes('Failed to fetch') || 
+              errorMessage.includes('ERR_NAME_NOT_RESOLVED') ||
+              errorMessage.includes('NetworkError') ||
+              errorMessage.includes('network')) {
+            throw new Error(
+              'Unable to connect to the server. Please check your internet connection and ensure the Supabase project is configured correctly. ' +
+              'If the problem persists, contact support.'
+            );
+          }
+          updateError = networkError;
+        }
         
         console.log('Update result:', { updatedCustomer, updateError });
         
         if (updateError) {
           console.error('Customer update error:', updateError);
-          throw new Error(`Error updating customer: ${updateError.message}`);
+          const errorMessage = updateError.message || String(updateError);
+          if (errorMessage.includes('Failed to fetch') || 
+              errorMessage.includes('ERR_NAME_NOT_RESOLVED')) {
+            throw new Error(
+              'Unable to connect to the database. Please check your internet connection and try again.'
+            );
+          }
+          throw new Error(`Error updating customer: ${errorMessage}`);
         }
         
         if (!updatedCustomer) {
@@ -1069,11 +1117,38 @@ const Booking: React.FC = () => {
           preferred_language: 'ENGLISH' as const,
         };
 
-        const { data: newCustomer, error: customerError } = await db.customers.create(customerData);
+        let newCustomer = null;
+        let customerError = null;
+        
+        try {
+          const result = await db.customers.create(customerData);
+          newCustomer = result.data;
+          customerError = result.error;
+        } catch (networkError: any) {
+          // Handle network errors
+          const errorMessage = networkError?.message || String(networkError);
+          if (errorMessage.includes('Failed to fetch') || 
+              errorMessage.includes('ERR_NAME_NOT_RESOLVED') ||
+              errorMessage.includes('NetworkError') ||
+              errorMessage.includes('network')) {
+            throw new Error(
+              'Unable to connect to the server. Please check your internet connection and ensure the Supabase project is configured correctly. ' +
+              'If the problem persists, contact support.'
+            );
+          }
+          customerError = networkError;
+        }
         
         if (customerError) {
           console.error('Customer creation error:', customerError);
-          throw new Error(`Error creating customer: ${customerError.message}`);
+          const errorMessage = customerError.message || String(customerError);
+          if (errorMessage.includes('Failed to fetch') || 
+              errorMessage.includes('ERR_NAME_NOT_RESOLVED')) {
+            throw new Error(
+              'Unable to connect to the database. Please check your internet connection and try again.'
+            );
+          }
+          throw new Error(`Error creating customer: ${errorMessage}`);
         }
         
         if (!newCustomer) {
@@ -1123,19 +1198,37 @@ const Booking: React.FC = () => {
       }
 
       // Send confirmation email
-      await emailService.sendBookingConfirmation({
-        customerName: formData.fullName,
-        email: formData.email,
-        jobNumber: (job as any)?.jobNumber || 'N/A',
-        serviceType: formData.serviceType,
-        serviceSubType: formData.service === 'Other' ? formData.customService : formData.service,
-        brand: formData.brandName || 'Not specified',
-        model: formData.modelName || 'Not specified',
-        scheduledDate: new Date().toISOString(),
-        scheduledTimeSlot: formData.preferredTime,
-        serviceAddress: formData.address,
-        phone: formData.phone,
-      });
+      try {
+        const emailSent = await emailService.sendBookingConfirmation({
+          customerName: formData.fullName,
+          email: formData.email,
+          jobNumber: (job as any)?.job_number || (job as any)?.jobNumber || 'N/A',
+          serviceType: formData.serviceType,
+          serviceSubType: formData.service === 'Other' ? formData.customService : formData.service,
+          brand: formData.brandName || 'Not specified',
+          model: formData.modelName || 'Not specified',
+          scheduledDate: formData.serviceDate ? formData.serviceDate : new Date().toISOString().split('T')[0],
+          scheduledTimeSlot: formData.preferredTime,
+          serviceAddress: formData.address,
+          phone: formData.phone,
+        });
+        
+        if (emailSent) {
+          console.log('Email confirmation sent successfully to:', formData.email);
+          // Show success message about email (non-blocking)
+          toast.success('Confirmation email sent!', {
+            description: 'Please check your inbox (and spam folder) for booking details.',
+            duration: 5000,
+          });
+        }
+      } catch (emailError) {
+        // Log error but don't fail the booking
+        console.error('Failed to send confirmation email:', emailError);
+        toast.warning('Booking confirmed, but email could not be sent.', {
+          description: 'Your booking was saved successfully. Please check your booking details below.',
+          duration: 6000,
+        });
+      }
 
       const customerAction = isExistingCustomer ? 'updated' : 'created';
       
@@ -1164,7 +1257,29 @@ const Booking: React.FC = () => {
       
     } catch (error) {
       console.error('Booking error:', error);
-      toast.error(`Booking failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Unknown error occurred';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Check for network-related errors
+        if (errorMessage.includes('Failed to fetch') || 
+            errorMessage.includes('ERR_NAME_NOT_RESOLVED') ||
+            errorMessage.includes('NetworkError') ||
+            errorMessage.includes('network') ||
+            errorMessage.includes('connect')) {
+          errorMessage = 
+            'Unable to connect to the server. This could be due to:\n' +
+            '• No internet connection\n' +
+            '• Database server is unavailable\n' +
+            '• Incorrect server configuration\n\n' +
+            'Please check your internet connection and try again. If the problem persists, contact support.';
+        }
+      }
+      
+      toast.error(`Booking failed: ${errorMessage}`, { duration: 8000 });
       setShowSuccessLoader(false);
     } finally {
       setIsSubmitting(false);

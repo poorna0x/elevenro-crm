@@ -2485,15 +2485,22 @@ const AdminDashboard = () => {
           const bDate = new Date(b.customer.createdAt).getTime();
           return bDate - aDate;
         })
-    : customersWithJobs.filter(item => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        (item.customer.customer_id || item.customer.customerId)?.toLowerCase().includes(searchLower) ||
-        (item.customer.full_name || item.customer.fullName)?.toLowerCase().includes(searchLower) ||
-        item.customer.phone?.includes(searchTerm) ||
-        item.customer.email?.toLowerCase().includes(searchLower)
-      );
-    });
+    : filteredCustomers.map(customer => {
+        // Find the customer in customersWithJobs to get their jobs
+        const customerWithJobs = customersWithJobs.find(cwj => cwj.customer.id === customer.id);
+        // If found, return it; otherwise create a new entry with empty jobs
+        return customerWithJobs || {
+          customer,
+          allJobs: [],
+          upcomingJobs: [],
+          completedJobs: [],
+          cancelledJobs: []
+        };
+      }).sort((a, b) => {
+        const aDate = new Date(a.customer.createdAt).getTime();
+        const bDate = new Date(b.customer.createdAt).getTime();
+        return bDate - aDate;
+      });
 
 
   const filteredJobs = jobs.filter(job => {

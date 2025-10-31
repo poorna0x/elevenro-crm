@@ -214,26 +214,6 @@ function generateAMCHTML(data: AMCPDFData): string {
           font-size: 14px;
         }
         
-        .summary-section {
-          background: #f0fdf4;
-          padding: 15px;
-          border-radius: 8px;
-          margin-bottom: 20px;
-          border-left: 4px solid #10b981;
-        }
-        
-        .summary-title {
-          font-weight: bold;
-          color: #047857;
-          margin-bottom: 10px;
-          font-size: 16px;
-          text-align: center;
-        }
-        
-        .summary-content p {
-          margin-bottom: 8px;
-          font-size: 14px;
-        }
         
         .agreement-details {
           background: #f8fafc;
@@ -371,32 +351,50 @@ function generateAMCHTML(data: AMCPDFData): string {
         <p>We M/s <strong>Hydrogen RO</strong>, Authorized for Service by RO Care India, undertake to maintain your <strong>RO Water Purifier</strong> Unit as detailed below:</p>
       </div>
 
-      <!-- Customer Information -->
-      <div class="customer-info-section">
-        <h3 class="section-title">Customer Information</h3>
-        <div class="customer-details">
-          <div class="customer-detail-row">
-            <span class="customer-label">Customer Name:</span>
-            <span class="customer-value">${data.customer.name}</span>
+      <!-- Agreement Details -->
+      <div class="agreement-details">
+        <h3 class="agreement-details-title">AGREEMENT DETAILS</h3>
+        <div class="details-grid">
+          <div>
+            <div class="detail-item">
+              <span class="detail-label">Customer Name:</span>
+              <span class="detail-value">${data.customer.name}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Phone Number:</span>
+              <span class="detail-value">${data.customer.phone}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Address:</span>
+              <span class="detail-value">${data.customer.address}, ${data.customer.city} - ${data.customer.pincode}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">RO Brand:</span>
+              <span class="detail-value">${data.items[0]?.name || 'RO Water Purifier'}</span>
+            </div>
           </div>
-          <div class="customer-detail-row">
-            <span class="customer-label">Phone Number:</span>
-            <span class="customer-value">${data.customer.phone}</span>
+          <div>
+            <div class="detail-item">
+              <span class="detail-label">Agreement Amount:</span>
+              <span class="detail-value">₹${data.totalAmount.toLocaleString()}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Date of Agreement:</span>
+              <span class="detail-value">${new Date(data.billDate).toLocaleDateString('en-IN', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+              })}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Validity:</span>
+              <span class="detail-value">${data.validity && data.validity.includes(' to ') ? data.validity : (data.validity || '1 Year') + ' from Agreement Date'}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Agreement Number:</span>
+              <span class="detail-value">${data.billNumber}</span>
+            </div>
           </div>
-          <div class="customer-detail-row">
-            <span class="customer-label">Email:</span>
-            <span class="customer-value">${data.customer.email}</span>
-          </div>
-          <div class="customer-detail-row">
-            <span class="customer-label">Address:</span>
-            <span class="customer-value">${data.customer.address}, ${data.customer.city} - ${data.customer.pincode}</span>
-          </div>
-          ${data.customer.gstNumber ? `
-          <div class="customer-detail-row">
-            <span class="customer-label">GST Number:</span>
-            <span class="customer-value">${data.customer.gstNumber}</span>
-          </div>
-          ` : ''}
         </div>
       </div>
 
@@ -428,66 +426,7 @@ function generateAMCHTML(data: AMCPDFData): string {
         </ul>
       </div>
 
-      <!-- Summary Section -->
-      <div class="summary-section">
-        <h3 class="summary-title">🔍 Summary in Simple Words</h3>
-        <div class="summary-content">
-          <p>You (the customer) paid ₹${data.totalAmount.toLocaleString()} for 1-year full AMC service of your RO Water Purifier.</p>
-          <p>All repairs, filters, and breakdown services are included, with a guarantee of 24-hour resolution.</p>
-          <p>The service covers water quality maintenance (50–150 TDS) and overall machine health.</p>
-          <p>Extra travel charges apply if your location is outside the municipal area.</p>
-          <p>You can't cancel/transfer this AMC until it expires.</p>
-          <p>Legal disputes go to Bangalore court.</p>
-          <p>The AMC does not cover display and lights of the RO.</p>
-        </div>
-      </div>
 
-      <!-- Agreement Details -->
-      <div class="agreement-details">
-        <h3 class="agreement-details-title">AGREEMENT DETAILS</h3>
-        <div style="text-align: center; margin-bottom: 20px; padding: 10px; background: #e5f3ff; border-radius: 6px; border: 1px solid #2563eb;">
-          <div style="font-weight: bold; color: #2563eb; font-size: 16px;">Date of Agreement</div>
-          <div style="font-size: 18px; color: #000000; margin-top: 5px;">${new Date(data.billDate).toLocaleDateString('en-IN', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric' 
-          })}</div>
-        </div>
-        <div class="details-grid">
-          <div>
-            <div class="detail-item">
-              <span class="detail-label">Agreement Number:</span>
-              <span class="detail-value">${data.billNumber}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Agreement Date:</span>
-              <span class="detail-value">${new Date(data.billDate).toLocaleDateString('en-IN', { 
-                day: '2-digit', 
-                month: '2-digit', 
-                year: 'numeric' 
-              })}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Agreement Amount:</span>
-              <span class="detail-value">₹${data.totalAmount.toLocaleString()}</span>
-            </div>
-          </div>
-          <div>
-            <div class="detail-item">
-              <span class="detail-label">Customer Name:</span>
-              <span class="detail-value">${data.customer.name}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Phone:</span>
-              <span class="detail-value">${data.customer.phone}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Address:</span>
-              <span class="detail-value">${data.customer.address}, ${data.customer.city}</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- Additional Notes -->
       ${data.notes ? `
