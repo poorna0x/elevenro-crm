@@ -97,6 +97,7 @@ ${notCoveredWithPreFilter}`;
   const [serviceCharge, setServiceCharge] = useState(0);
   const [isEditingTerms, setIsEditingTerms] = useState(false);
   const [newTerm, setNewTerm] = useState('');
+  const [termSection, setTermSection] = useState<'services' | 'terms'>('services');
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [newNote, setNewNote] = useState('');
 
@@ -129,10 +130,52 @@ ${notCoveredWithPreFilter}`;
 
   const addTerm = () => {
     if (newTerm.trim()) {
-      const currentTerms = terms.split('\n').filter(line => line.trim());
-      const termNumber = currentTerms.length + 1;
-      const formattedTerm = `${termNumber}. ${newTerm.trim()}`;
-      const updatedTerms = [...currentTerms, formattedTerm].join('\n');
+      const formattedTerm = newTerm.trim();
+      let updatedTerms = '';
+      
+      if (termSection === 'services') {
+        // Add to Services Covered section
+        const servicesMatch = terms.match(/(SERVICES COVERED BY THE AGREEMENT[\s\S]*?)(?=⚖️\s*TERMS AND CONDITIONS|Not Covered:|$)/i);
+        
+        if (servicesMatch) {
+          // Add to end of Services Covered section
+          updatedTerms = terms.replace(
+            /(SERVICES COVERED BY THE AGREEMENT[\s\S]*?)(?=⚖️\s*TERMS AND CONDITIONS|Not Covered:|$)/i,
+            `$1\n${formattedTerm}`
+          );
+        } else {
+          // Services section doesn't exist, create it
+          const termsMatch = terms.match(/⚖️\s*TERMS AND CONDITIONS/i);
+          if (termsMatch) {
+            updatedTerms = terms.replace(
+              /(⚖️\s*TERMS AND CONDITIONS)/i,
+              `SERVICES COVERED BY THE AGREEMENT\n\n${formattedTerm}\n\n$1`
+            );
+          } else {
+            updatedTerms = `SERVICES COVERED BY THE AGREEMENT\n\n${formattedTerm}${terms ? '\n\n' + terms : ''}`;
+          }
+        }
+      } else {
+        // Add to Terms and Conditions section
+        const termsMatch = terms.match(/⚖️\s*TERMS AND CONDITIONS[\s\S]*?(?=Not Covered:|$)/i);
+        
+        if (termsMatch) {
+          // Add to Terms section (before Not Covered if it exists)
+          updatedTerms = terms.replace(
+            /(⚖️\s*TERMS AND CONDITIONS[\s\S]*?)(?=Not Covered:|$)/i,
+            `$1\n${formattedTerm}`
+          );
+        } else {
+          // Terms section doesn't exist, create it
+          const servicesMatch = terms.match(/SERVICES COVERED BY THE AGREEMENT/i);
+          if (servicesMatch) {
+            updatedTerms = terms + '\n\n⚖️ TERMS AND CONDITIONS\n\n' + formattedTerm;
+          } else {
+            updatedTerms = (terms ? terms + '\n\n' : '') + '⚖️ TERMS AND CONDITIONS\n\n' + formattedTerm;
+          }
+        }
+      }
+      
       setTerms(updatedTerms);
       setNewTerm('');
     }
@@ -184,9 +227,7 @@ ${notCoveredWithPreFilter}`;
       validityEndDate = endDate.toISOString().split('T')[0];
     }
 
-    // Generate fresh terms based on current pre-sediment filtration selection
-    const finalTerms = generateTerms(includesPreSedimentFiltration);
-
+    // Use the current terms state (preserves any manual edits)
     // Create a single item from the AMC cost
     const amcItem: BillItem = {
       id: '1',
@@ -222,7 +263,7 @@ ${notCoveredWithPreFilter}`;
       totalAmount,
       paymentStatus: 'PENDING',
       notes,
-      terms: finalTerms,
+      terms,
       validity: validity === 'Custom' ? 
         `${new Date(customFromDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })} to ${new Date(customToDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}` : 
         `${new Date(billDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })} to ${new Date(validityEndDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`,
@@ -657,15 +698,24 @@ ${notCoveredWithPreFilter}`;
               {isEditingTerms ? (
                 <div className="space-y-4">
                   <div className="text-sm text-gray-600">
-                    Edit AMC terms and conditions. Each term will be automatically numbered.
+                    Edit AMC terms and conditions. Choose which section to add the new term to.
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
+                  <div className="space-y-2">
+                    <Select value={termSection} onValueChange={(value: 'services' | 'terms') => setTermSection(value)}>
+                      <SelectTrigger className="w-full sm:w-[200px]">
+                        <SelectValue placeholder="Select section" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="services">Services Covered</SelectItem>
+                        <SelectItem value="terms">Terms & Conditions</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Textarea
                       value={newTerm}
                       onChange={(e) => setNewTerm(e.target.value)}
-                      placeholder="Enter new term (e.g., 'Service response within 24 hours')"
-                      onKeyPress={(e) => e.key === 'Enter' && addTerm()}
-                      className="flex-1"
+                      placeholder="Enter new term (e.g., 'Service response within 24 hours' or multi-line text)"
+                      rows={4}
+                      className="resize-none"
                     />
                     <Button onClick={addTerm} size="sm" disabled={!newTerm.trim()} className="w-full sm:w-auto">
                       <Plus className="w-4 h-4 mr-2" />

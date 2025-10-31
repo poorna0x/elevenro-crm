@@ -584,33 +584,145 @@ function generateAMCHTML(data: AMCPDFData): string {
         </div>
       </div>
 
-      <!-- Services Covered -->
-      <div class="services-section">
-        <h3 class="services-title">SERVICES COVERED BY THE AGREEMENT ARE AS FOLLOWS:</h3>
-        <ul class="services-list">
-          <li><strong>Breakdown Support:</strong> If any breakdown or problem happens with the RO during the AMC period, the company will provide service without extra charges.</li>
-          <li><strong>Filters / RO Membrane / Consumables:</strong> Company will clean, repair, or replace filters and parts needed for smooth working.</li>
-          <li><strong>Safe RO output:</strong> Water quality TDS between 50 to 150, as per WHO guidelines or as per customer preference.</li>
-          <li><strong>Clean cosmetics and smooth working</strong> of the machine.</li>
-          <li><strong>Quick service:</strong> Any breakdown will be resolved within 24 hours.</li>
-          <li><strong>Full Care of RO:</strong> The company takes responsibility for complete maintenance and support during the AMC period.</li>
-        </ul>
-      </div>
+      <!-- Services Covered and Terms and Conditions -->
+      ${data.terms ? (() => {
+        const terms = data.terms;
+        let servicesSection = '';
+        let termsSection = '';
+        
+        // Split by major sections - more flexible matching
+        const servicesMatch = terms.match(/SERVICES COVERED BY THE AGREEMENT\s*\n?([\s\S]*?)(?=⚖️\s*TERMS AND CONDITIONS|Not Covered:|$)/i);
+        const termsMatch = terms.match(/⚖️\s*TERMS AND CONDITIONS\s*\n?([\s\S]*?)(?=Not Covered:|$)/i);
+        const notCoveredMatch = terms.match(/Not Covered:\s*([\s\S]*?)$/i);
+        
+        // Helper function to parse lines into list items
+        const parseLinesToItems = (content) => {
+          return content.split('\n')
+            .map(line => line.trim())
+            .filter(line => line && line.length > 0)
+            .map(line => {
+              // Remove leading numbers like "17." or "1."
+              line = line.replace(/^\d+\.\s*/, '');
+              
+              // Skip empty lines and section headers
+              if (!line || line.match(/^SERVICES COVERED/i) || line.match(/^⚖️/i)) {
+                return null;
+              }
+              
+              // Format as bold label if it has a colon pattern
+              const boldMatch = line.match(/^([^:]+):\s*(.*)$/);
+              if (boldMatch && boldMatch[2].trim()) {
+                return `<li><strong>${boldMatch[1].trim()}:</strong> ${boldMatch[2].trim()}</li>`;
+              }
+              // Regular list item
+              return `<li>${line}</li>`;
+            })
+            .filter(item => item !== null)
+            .join('');
+        };
+        
+        // Parse Services Covered
+        if (servicesMatch) {
+          const servicesContent = servicesMatch[1].trim();
+          const items = parseLinesToItems(servicesContent);
+          
+          if (items) {
+            servicesSection = `
+              <div class="services-section">
+                <h3 class="services-title">SERVICES COVERED BY THE AGREEMENT ARE AS FOLLOWS:</h3>
+                <ul class="services-list">
+                  ${items}
+                </ul>
+              </div>
+            `;
+          }
+        }
+        
+        // Parse Terms and Conditions
+        if (termsMatch) {
+          const termsContent = termsMatch[1].trim();
+          const items = parseLinesToItems(termsContent);
+          
+          if (items) {
+            termsSection = `
+              <div class="terms-section">
+                <h3 class="terms-title">⚖️ TERMS AND CONDITIONS</h3>
+                <ul class="terms-list">
+                  ${items}
+                </ul>
+              </div>
+            `;
+          }
+        }
+        
+        // Handle Not Covered - add to terms section
+        if (notCoveredMatch) {
+          const notCoveredContent = notCoveredMatch[1].trim();
+          if (notCoveredContent) {
+            const notCoveredItem = `<li><strong>Not Covered:</strong> ${notCoveredContent}</li>`;
+            
+            if (termsSection) {
+              // Insert before closing </ul>
+              termsSection = termsSection.replace('</ul>', `${notCoveredItem}</ul>`);
+            } else {
+              // Create new terms section
+              termsSection = `
+                <div class="terms-section">
+                  <h3 class="terms-title">⚖️ TERMS AND CONDITIONS</h3>
+                  <ul class="terms-list">
+                    ${notCoveredItem}
+                  </ul>
+                </div>
+              `;
+            }
+          }
+        }
+        
+        // If no sections were found, treat entire content as terms
+        if (!servicesSection && !termsSection) {
+          const allItems = parseLinesToItems(terms);
+          if (allItems) {
+            termsSection = `
+              <div class="terms-section">
+                <h3 class="terms-title">TERMS AND CONDITIONS</h3>
+                <ul class="terms-list">
+                  ${allItems}
+                </ul>
+              </div>
+            `;
+          }
+        }
+        
+        return servicesSection + termsSection;
+      })() : `
+        <!-- Services Covered -->
+        <div class="services-section">
+          <h3 class="services-title">SERVICES COVERED BY THE AGREEMENT ARE AS FOLLOWS:</h3>
+          <ul class="services-list">
+            <li><strong>Breakdown Support:</strong> If any breakdown or problem happens with the RO during the AMC period, the company will provide service without extra charges.</li>
+            <li><strong>Filters / RO Membrane / Consumables:</strong> Company will clean, repair, or replace filters and parts needed for smooth working.</li>
+            <li><strong>Safe RO output:</strong> Water quality TDS between 50 to 150, as per WHO guidelines or as per customer preference.</li>
+            <li><strong>Clean cosmetics and smooth working</strong> of the machine.</li>
+            <li><strong>Quick service:</strong> Any breakdown will be resolved within 24 hours.</li>
+            <li><strong>Full Care of RO:</strong> The company takes responsibility for complete maintenance and support during the AMC period.</li>
+          </ul>
+        </div>
 
-      <!-- Terms and Conditions -->
-      <div class="terms-section">
-        <h3 class="terms-title">⚖️ TERMS AND CONDITIONS</h3>
-        <ul class="terms-list">
-          <li><strong>No Early Termination:</strong> You cannot cancel this agreement before expiry. It also cannot be transferred to another person if you sell/gift the machine.</li>
-          <li><strong>Extra Charges:</strong> If service is outside municipal limits, extra charges for travel/stay will apply.</li>
-          <li><strong>Disputes:</strong> Any legal disputes will be handled only in Bangalore courts.</li>
-          <li><strong>Renewal:</strong> After expiry, renewal requires a new agreement.</li>
-          <li><strong>Customer's Duty:</strong> The customer must make the RO available for servicing when the company's authorized representative visits.</li>
-          <li>If the customer fails to give the machine for servicing, it will still be treated as service given, and no refund will be made.</li>
-          <li><strong>Agreement Modification:</strong> Cannot be changed unless written and signed by both parties.</li>
-          <li><strong>Not Covered:</strong> Display and lights of the RO, RO tap, body, and tank are not covered under this AMC.</li>
-        </ul>
-      </div>
+        <!-- Terms and Conditions -->
+        <div class="terms-section">
+          <h3 class="terms-title">⚖️ TERMS AND CONDITIONS</h3>
+          <ul class="terms-list">
+            <li><strong>No Early Termination:</strong> You cannot cancel this agreement before expiry. It also cannot be transferred to another person if you sell/gift the machine.</li>
+            <li><strong>Extra Charges:</strong> If service is outside municipal limits, extra charges for travel/stay will apply.</li>
+            <li><strong>Disputes:</strong> Any legal disputes will be handled only in Bangalore courts.</li>
+            <li><strong>Renewal:</strong> After expiry, renewal requires a new agreement.</li>
+            <li><strong>Customer's Duty:</strong> The customer must make the RO available for servicing when the company's authorized representative visits.</li>
+            <li>If the customer fails to give the machine for servicing, it will still be treated as service given, and no refund will be made.</li>
+            <li><strong>Agreement Modification:</strong> Cannot be changed unless written and signed by both parties.</li>
+            <li><strong>Not Covered:</strong> Display and lights of the RO, RO tap, body, and tank are not covered under this AMC.</li>
+          </ul>
+        </div>
+      `}
 
 
 
