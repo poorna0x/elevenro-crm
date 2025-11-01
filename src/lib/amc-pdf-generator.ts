@@ -766,6 +766,9 @@ function generateAMCHTML(data: AMCPDFData): string {
           month: '2-digit', 
           year: 'numeric' 
         })} | Professional RO Water Purifier Services in Bengaluru</p>
+        <p class="footer-text" style="margin-top: 10px;">
+          Phone: 8884944288 | Email: mail@hydrogenro.com | Website: hydrogenro.com
+        </p>
       </div>
     </body>
     </html>
