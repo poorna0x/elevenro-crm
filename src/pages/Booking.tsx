@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { ChevronLeft, ChevronRight, MapPin, Camera, Upload, Check, Phone, Mail, User, Home, Clock, Wrench } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Camera, Upload, Check, Phone, Mail, User, Home, Clock, Wrench, Loader2, Search, Navigation } from 'lucide-react';
 import { db } from '@/lib/supabase';
 import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { emailService } from '@/lib/email';
@@ -19,6 +19,14 @@ import HoneypotField from '@/components/HoneypotField';
 import BehavioralTracker from '@/components/BehavioralTracker';
 import SecurityStatus from '@/components/SecurityStatus';
 import { useSecurity } from '@/contexts/SecurityContext';
+import DraggableMap from '@/components/DraggableMap';
+
+declare global {
+  interface Window {
+    google: typeof google;
+    initMap: () => void;
+  }
+}
 
 interface FormData {
   // Customer Information
@@ -66,6 +74,21 @@ const Booking: React.FC = () => {
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+
+  // Location search states for service provider
+  const [locationSearchQuery, setLocationSearchQuery] = useState('');
+  const [locationSearchResult, setLocationSearchResult] = useState<{ lat: number; lng: number } | null>(null);
+  const [distance, setDistance] = useState<{ value: number; unit: string } | null>(null);
+  const [duration, setDuration] = useState<{ value: number; unit: string } | null>(null);
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+  const locationSearchInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  // Address autocomplete states and refs
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const addressAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const [currentLocationLoading, setCurrentLocationLoading] = useState(false);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 12.9716, lng: 77.5946 });
 
   // Get tomorrow's date
   const getTomorrowDate = () => {
@@ -455,6 +478,239 @@ const Booking: React.FC = () => {
     setFormData(prev => ({ ...prev, modelName: model }));
     setShowModelSuggestions(false);
   };
+
+  // Initialize Google Maps for both address and location search
+  useEffect(() => {
+    if (currentStep !== 3) return;
+    
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      return;
+    }
+
+    let checkInterval: NodeJS.Timeout | null = null;
+
+    // Check if script is already loaded
+    if (!window.google || !window.google.maps) {
+      // Check if script already exists
+      const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+      if (!existingScript) {
+        // Load the script
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
+        script.async = true;
+        script.defer = true;
+        
+        script.onload = () => {
+          initAllAutocompletes();
+        };
+        
+        document.head.appendChild(script);
+      } else {
+        // Script already exists, wait for it to load
+        checkInterval = setInterval(() => {
+          if (window.google && window.google.maps && window.google.maps.places) {
+            clearInterval(checkInterval as NodeJS.Timeout);
+            initAllAutocompletes();
+          }
+        }, 100);
+      }
+    } else {
+      // Google Maps already loaded, initialize immediately
+      initAllAutocompletes();
+    }
+
+    function initAllAutocompletes() {
+      // Don't re-initialize if already initialized
+      if (addressAutocompleteRef.current || autocompleteRef.current) {
+        return;
+      }
+
+      // Initialize address autocomplete
+      if (addressInputRef.current && window.google?.maps?.places) {
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          addressInputRef.current,
+          {
+            componentRestrictions: { country: 'in' },
+            fields: ['formatted_address', 'geometry']
+          }
+        );
+
+        addressAutocompleteRef.current = autocomplete;
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place.geometry && place.geometry.location) {
+            const location = {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng()
+            };
+            setFormData(prev => ({
+              ...prev,
+              address: place.formatted_address || '',
+              coordinates: location
+            }));
+            setMapCenter(location);
+            toast.success('Address set!');
+          }
+        });
+      }
+
+      // Initialize location search autocomplete
+      if (locationSearchInputRef.current && window.google?.maps?.places) {
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          locationSearchInputRef.current,
+          {
+            componentRestrictions: { country: 'in' },
+            fields: ['formatted_address', 'geometry']
+          }
+        );
+
+        autocompleteRef.current = autocomplete;
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place.geometry && place.geometry.location) {
+            const location = {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng()
+            };
+            setLocationSearchResult(location);
+            setLocationSearchQuery(place.formatted_address || '');
+            toast.success('Location found!');
+          }
+        });
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
+      // Don't remove autocomplete instances as they might be used
+    };
+  }, [currentStep]);
+
+  // Get current location handler
+  const handleGetCurrentLocation = () => {
+    setCurrentLocationLoading(true);
+
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      setCurrentLocationLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        
+        // Reverse geocode to get address
+        try {
+          const geocoder = new window.google.maps.Geocoder();
+          geocoder.geocode({ location }, (results, status) => {
+            setCurrentLocationLoading(false);
+            
+            if (status === window.google.maps.GeocoderStatus.OK && results && results[0]) {
+              const address = results[0].formatted_address;
+              setFormData(prev => ({
+                ...prev,
+                address: address,
+                coordinates: location
+              }));
+              setMapCenter(location);
+              toast.success('Location captured successfully!');
+            } else {
+              toast.error('Could not get address for this location');
+            }
+          });
+        } catch (error) {
+          setCurrentLocationLoading(false);
+          toast.error('Failed to get address');
+        }
+      },
+      (error) => {
+        setCurrentLocationLoading(false);
+        let errorMsg = 'Failed to get your location';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMsg = 'Permission denied. Please allow location access.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMsg = 'Location information unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMsg = 'Location request timed out. Please try again.';
+            break;
+        }
+        
+        toast.error(errorMsg);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
+
+  // Calculate distance and time using Distance Matrix API
+  const calculateDistanceAndTime = async (origin: { lat: number; lng: number }, destination: { lat: number; lng: number }) => {
+    setIsCalculatingDistance(true);
+    
+    try {
+      const distanceMatrix = new window.google.maps.DistanceMatrixService();
+      
+      distanceMatrix.getDistanceMatrix(
+        {
+          origins: [origin],
+          destinations: [destination],
+          travelMode: window.google.maps.TravelMode.DRIVING,
+          unitSystem: window.google.maps.UnitSystem.METRIC,
+        },
+        (response, status) => {
+          setIsCalculatingDistance(false);
+          
+          if (status === window.google.maps.DistanceMatrixStatus.OK && response) {
+            const result = response.rows[0].elements[0];
+            
+            if (result.status === window.google.maps.DistanceMatrixElementStatus.OK) {
+              setDistance({
+                value: result.distance.value,
+                unit: result.distance.text,
+              });
+              setDuration({
+                value: result.duration.value,
+                unit: result.duration.text,
+              });
+              toast.success('Distance and time calculated!');
+            } else {
+              toast.error('Could not calculate distance');
+            }
+          } else {
+            toast.error('Error calculating distance');
+          }
+        }
+      );
+    } catch (error) {
+      setIsCalculatingDistance(false);
+      toast.error('Failed to calculate distance');
+    }
+  };
+
+  // Memoize the location change handler to prevent DraggableMap from re-rendering
+  const handleMapLocationChange = useCallback((location: { lat: number; lng: number }) => {
+    setFormData(prev => ({
+      ...prev,
+      coordinates: location
+    }));
+    setMapCenter(location);
+  }, []);
 
   const nextStep = () => {
     if (currentStep < 6) {
@@ -1552,111 +1808,62 @@ const Booking: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="address">Service Address *</Label>
-                <div className="relative">
-                  <Textarea
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    placeholder="Enter your complete address including flat number, building name, street, area, city..."
-                    className={`mt-1 min-h-[100px] ${
-                      showValidation && !formData.address 
-                        ? 'border-2 border-black dark:border-white' 
-                        : ''
-                    } ${
-                      formData.address === 'Please wait a few seconds while we get your location...'
-                        ? 'text-blue-600 dark:text-blue-400 font-medium'
-                        : ''
-                    }`}
-                    disabled={isLoadingLocation}
-                  />
-                  {isLoadingLocation && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 rounded-md">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              
-              {/* Google Maps Link Input */}
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Label htmlFor="googleMapsLink">Google Maps Link</Label>
-                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                    Recommended
-                  </Badge>
-                </div>
-                <div className="mt-1 space-y-2">
-                  <Input
-                    id="googleMapsLink"
-                    value={formData.googleMapsLink}
-                    onChange={(e) => handleGoogleMapsLinkChange(e.target.value)}
-                    placeholder="Paste Google Maps shareable link here (e.g., https://maps.app.goo.gl/...)"
-                    className="text-sm"
-                  />
-                  <div className="flex gap-2 mb-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        // Try to open Google Maps app first, fallback to web
-                        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                        
-                        if (isMobile) {
-                          // For mobile, try app first, then web
-                          const appUrl = 'comgooglemaps://';
-                          const webUrl = 'https://www.google.com/maps';
-                          
-                          // Try to open app
-                          window.location.href = appUrl;
-                          
-                          // Fallback to web after a short delay
-                          setTimeout(() => {
-                            window.open(webUrl, '_blank', 'noopener,noreferrer');
-                          }, 1000);
-                        } else {
-                          // For desktop, open web version
-                          window.open('https://www.google.com/maps', '_blank', 'noopener,noreferrer');
-                        }
-                      }}
-                      className="text-xs"
-                    >
-                      <MapPin className="w-4 h-4 mr-1" />
-                      Open Google Maps
-                    </Button>
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Input
+                      ref={addressInputRef}
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                      placeholder="Search your address..."
+                      className={`${
+                        showValidation && !formData.address 
+                          ? 'border-2 border-black dark:border-white' 
+                          : ''
+                      }`}
+                      disabled={currentLocationLoading}
+                    />
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    💡 <strong>We recommend sharing a Google Maps link</strong> to help our technicians find your exact location easily and save time. 
-                    Click "Open Google Maps" above, find your location, then click "Share" → "Copy link" and paste it here.
-                  </p>
-                  
-                  {/* Google Maps Link Preview */}
-                  {formData.googleMapsLink && (
-                    <div className="mt-3">
-                      <div className="text-xs text-gray-600 mb-2">📍 Location Link:</div>
-                      <div className="p-3 bg-gray-50 rounded-lg border">
-                        <a 
-                          href={formData.googleMapsLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-sm break-all hover:underline"
-                        >
-                          🔗 {formData.googleMapsLink}
-                        </a>
-                        <p className="text-xs text-gray-500 mt-2">
-                          Click to verify this opens the correct location
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                  <Button
+                    type="button"
+                    onClick={handleGetCurrentLocation}
+                    disabled={currentLocationLoading}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {currentLocationLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Getting Location...
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-4 h-4 mr-2" />
+                        Use Current Location
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
-              
+
+              {/* Draggable Map */}
+              {formData.coordinates.lat !== 0 && formData.coordinates.lng !== 0 && (
+                <div className="mt-4">
+                  <Label className="mb-2 block">Confirm Your Location on Map</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    💡 Drag the marker to adjust your exact location
+                  </p>
+                  <div className="rounded-lg overflow-hidden border">
+                    <DraggableMap
+                      center={mapCenter}
+                      onLocationChange={handleMapLocationChange}
+                      height="300px"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <Label>Upload Images (Optional)</Label>
                 
