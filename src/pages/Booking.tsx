@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { ChevronLeft, ChevronRight, MapPin, Camera, Upload, Check, Phone, Mail, User, Home, Clock, Wrench, Loader2, Search, Navigation } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Camera, Upload, Check, Phone, Mail, User, Home, Clock, Wrench, Loader2, Search, Navigation, X } from 'lucide-react';
 import { db } from '@/lib/supabase';
 import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { emailService } from '@/lib/email';
@@ -1816,14 +1816,24 @@ const Booking: React.FC = () => {
                       value={formData.address}
                       onChange={(e) => handleInputChange('address', e.target.value)}
                       placeholder="Search your address..."
-                      className={`${
+                      className={`pr-10 ${
                         showValidation && !formData.address 
                           ? 'border-2 border-black dark:border-white' 
                           : ''
                       }`}
                       disabled={currentLocationLoading}
                     />
-                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    {formData.address ? (
+                      <button
+                        type="button"
+                        onClick={() => handleInputChange('address', '')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    )}
                   </div>
                   <Button
                     type="button"
