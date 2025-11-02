@@ -485,12 +485,23 @@ const Booking: React.FC = () => {
     if (currentStep !== 3) return;
     
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      console.warn('Google Maps API key not found. Autocomplete will not work.');
+    
+    // Debug logging
+    console.log('🔑 Google Maps API Key Check:', {
+      hasKey: !!apiKey,
+      keyLength: apiKey?.length || 0,
+      keyPrefix: apiKey ? apiKey.substring(0, 10) + '...' : 'NO KEY',
+      keyValue: apiKey || 'MISSING'
+    });
+    
+    if (!apiKey || apiKey === 'your_google_maps_api_key' || apiKey.length < 20) {
+      console.error('❌ Google Maps API key not configured properly!');
+      console.error('Please set VITE_GOOGLE_MAPS_API_KEY in your environment variables.');
+      toast.error('Google Maps API key not configured. Please contact support.');
       return;
     }
     
-    console.log('Loading Google Maps API with key:', apiKey ? 'Key found (length: ' + apiKey.length + ')' : 'No key');
+    console.log('✅ Google Maps API key loaded successfully');
 
     let checkInterval: NodeJS.Timeout | null = null;
 
