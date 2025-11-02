@@ -486,8 +486,11 @@ const Booking: React.FC = () => {
     
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
+      console.warn('Google Maps API key not found. Autocomplete will not work.');
       return;
     }
+    
+    console.log('Loading Google Maps API with key:', apiKey ? 'Key found (length: ' + apiKey.length + ')' : 'No key');
 
     let checkInterval: NodeJS.Timeout | null = null;
 
@@ -504,6 +507,11 @@ const Booking: React.FC = () => {
         
         script.onload = () => {
           initAllAutocompletes();
+        };
+        
+        script.onerror = () => {
+          console.error('Failed to load Google Maps API. Check your API key and billing.');
+          toast.error('Failed to load Google Maps. Please check console for details.');
         };
         
         document.head.appendChild(script);

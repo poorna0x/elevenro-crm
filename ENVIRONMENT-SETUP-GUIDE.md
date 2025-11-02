@@ -18,6 +18,9 @@ HOSTINGER_EMAIL_PASS=your-email-password
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
+# Google Maps API (OPTIONAL - for location autocomplete and maps)
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+
 # Optional
 VITE_EMAIL_API_URL=/.netlify/functions/send-email
 VITE_EMAIL_FROM=noreply@yourdomain.com
