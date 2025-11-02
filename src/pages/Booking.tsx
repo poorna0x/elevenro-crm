@@ -522,61 +522,64 @@ const Booking: React.FC = () => {
     }
 
     function initAllAutocompletes() {
-      // Initialize address autocomplete
-      if (addressInputRef.current && window.google?.maps?.places && !addressAutocompleteRef.current) {
-        const autocomplete = new window.google.maps.places.Autocomplete(
-          addressInputRef.current,
-          {
-            componentRestrictions: { country: 'in' },
-            fields: ['formatted_address', 'geometry']
-          }
-        );
+      // Small delay to ensure DOM is ready and refs are attached
+      setTimeout(() => {
+        // Initialize address autocomplete
+        if (addressInputRef.current && window.google?.maps?.places && !addressAutocompleteRef.current) {
+          const autocomplete = new window.google.maps.places.Autocomplete(
+            addressInputRef.current,
+            {
+              componentRestrictions: { country: 'in' },
+              fields: ['formatted_address', 'geometry']
+            }
+          );
 
-        addressAutocompleteRef.current = autocomplete;
+          addressAutocompleteRef.current = autocomplete;
 
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place.geometry && place.geometry.location) {
-            const location = {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng()
-            };
-            setFormData(prev => ({
-              ...prev,
-              address: place.formatted_address || '',
-              coordinates: location
-            }));
-            setMapCenter(location);
-            toast.success('Address set!');
-          }
-        });
-      }
+          autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+              const location = {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+              };
+              setFormData(prev => ({
+                ...prev,
+                address: place.formatted_address || '',
+                coordinates: location
+              }));
+              setMapCenter(location);
+              toast.success('Address set!');
+            }
+          });
+        }
 
-      // Initialize location search autocomplete
-      if (locationSearchInputRef.current && window.google?.maps?.places && !autocompleteRef.current) {
-        const autocomplete = new window.google.maps.places.Autocomplete(
-          locationSearchInputRef.current,
-          {
-            componentRestrictions: { country: 'in' },
-            fields: ['formatted_address', 'geometry']
-          }
-        );
+        // Initialize location search autocomplete
+        if (locationSearchInputRef.current && window.google?.maps?.places && !autocompleteRef.current) {
+          const autocomplete = new window.google.maps.places.Autocomplete(
+            locationSearchInputRef.current,
+            {
+              componentRestrictions: { country: 'in' },
+              fields: ['formatted_address', 'geometry']
+            }
+          );
 
-        autocompleteRef.current = autocomplete;
+          autocompleteRef.current = autocomplete;
 
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place.geometry && place.geometry.location) {
-            const location = {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng()
-            };
-            setLocationSearchResult(location);
-            setLocationSearchQuery(place.formatted_address || '');
-            toast.success('Location found!');
-          }
-        });
-      }
+          autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+              const location = {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+              };
+              setLocationSearchResult(location);
+              setLocationSearchQuery(place.formatted_address || '');
+              toast.success('Location found!');
+            }
+          });
+        }
+      }, 100);
     }
 
     // Cleanup function
@@ -618,6 +621,10 @@ const Booking: React.FC = () => {
                 address: address,
                 coordinates: location
               }));
+              // Update the input field
+              if (addressInputRef.current) {
+                addressInputRef.current.value = address;
+              }
               setMapCenter(location);
               toast.success('Location captured successfully!');
             } else {
@@ -700,12 +707,34 @@ const Booking: React.FC = () => {
   };
 
   // Memoize the location change handler to prevent DraggableMap from re-rendering
-  const handleMapLocationChange = useCallback((location: { lat: number; lng: number }) => {
+  const handleMapLocationChange = useCallback(async (location: { lat: number; lng: number }) => {
     setFormData(prev => ({
       ...prev,
       coordinates: location
     }));
     setMapCenter(location);
+    
+    // Reverse geocode to update the address
+    if (window.google?.maps?.Geocoder) {
+      try {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ location }, (results, status) => {
+          if (status === window.google.maps.GeocoderStatus.OK && results && results[0]) {
+            const address = results[0].formatted_address;
+            setFormData(prev => ({
+              ...prev,
+              address: address
+            }));
+            // Update the input field
+            if (addressInputRef.current) {
+              addressInputRef.current.value = address;
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error reverse geocoding:', error);
+      }
+    }
   }, []);
 
   const nextStep = () => {
@@ -1809,8 +1838,6 @@ const Booking: React.FC = () => {
                     <Input
                       ref={addressInputRef}
                       id="address"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
                       placeholder="Search your address..."
                       className={`pr-10 ${
                         showValidation && !formData.address 
@@ -1822,7 +1849,12 @@ const Booking: React.FC = () => {
                     {formData.address ? (
                       <button
                         type="button"
-                        onClick={() => handleInputChange('address', '')}
+                        onClick={() => {
+                          handleInputChange('address', '');
+                          if (addressInputRef.current) {
+                            addressInputRef.current.value = '';
+                          }
+                        }}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <X className="w-4 h-4" />
