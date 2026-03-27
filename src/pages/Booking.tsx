@@ -1525,6 +1525,14 @@ const Booking: React.FC = () => {
                   : null)
           };
 
+      const hostname = window.location.hostname.toLowerCase();
+      const bookingSource =
+        hostname.includes('elevenro.com')
+          ? 'elevenro'
+          : hostname.includes('hydrogenro.com')
+            ? 'hydrogenro'
+            : 'unknown';
+
       const jobData = {
         job_number: generateJobNumber(formData.serviceType),
         customer_id: customer.id,
@@ -1547,6 +1555,8 @@ const Booking: React.FC = () => {
         }],
         estimated_cost: 0,
         payment_status: 'PENDING' as const,
+        booking_source: bookingSource,
+        booking_domain: hostname,
       };
 
       // Retry once on connection-like failures (transient network/Supabase issues)

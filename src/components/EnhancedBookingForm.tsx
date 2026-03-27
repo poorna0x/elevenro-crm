@@ -235,6 +235,14 @@ const EnhancedBookingForm = () => {
         throw new Error(customerError.message);
       }
 
+      const hostname = window.location.hostname.toLowerCase();
+      const bookingSource =
+        hostname.includes('elevenro.com')
+          ? 'elevenro'
+          : hostname.includes('hydrogenro.com')
+            ? 'hydrogenro'
+            : 'unknown';
+
       // Create job record
       const jobData = {
         job_number: generateJobNumber(data.serviceType),
@@ -254,6 +262,8 @@ const EnhancedBookingForm = () => {
         requirements: [{ lead_source: 'Website' }],
         estimated_cost: 0, // Will be updated by admin
         payment_status: 'PENDING' as const,
+        booking_source: bookingSource,
+        booking_domain: hostname,
       };
 
       const { data: job, error: jobError } = await db.jobs.create(jobData);

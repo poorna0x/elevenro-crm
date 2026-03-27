@@ -376,6 +376,14 @@ const BookingSection = () => {
         throw new Error(customerError.message);
       }
 
+      const hostname = window.location.hostname.toLowerCase();
+      const bookingSource =
+        hostname.includes('elevenro.com')
+          ? 'elevenro'
+          : hostname.includes('hydrogenro.com')
+            ? 'hydrogenro'
+            : 'unknown';
+
       // Create job record
       const jobData = {
         job_number: generateJobNumber(formData.serviceType.toUpperCase()),
@@ -396,6 +404,8 @@ const BookingSection = () => {
         estimated_cost: 0,
         payment_status: 'PENDING' as const,
         before_photos: formData.images,
+        booking_source: bookingSource,
+        booking_domain: hostname,
       };
 
       const { data: job, error: jobError } = await db.jobs.create(jobData);
