@@ -10,7 +10,7 @@ const CanonicalTag = () => {
     const shouldHaveCanonical = !noIndexPages.some(page => location.pathname.startsWith(page));
     
     // Get the base URL
-    const baseUrl = 'https://hydrogenro.com';
+    const baseUrl = 'https://elevenro.com';
     
     // Build the canonical URL - remove trailing slash except for homepage
     const pathname = location.pathname === '/' ? '' : location.pathname;

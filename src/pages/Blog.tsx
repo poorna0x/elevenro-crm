@@ -15,15 +15,15 @@ const Blog = () => {
         {JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Blog",
-          "name": "Hydrogen RO Blog",
+          "name": "ElevenRO Blog",
           "description": "Expert insights, maintenance tips, and latest news on RO water purification technology in Bengaluru",
-          "url": "https://hydrogenro.com/blog",
+          "url": "https://elevenro.com/blog",
           "publisher": {
             "@type": "Organization",
-            "name": "Hydrogen RO",
+            "name": "ElevenRO",
             "logo": {
               "@type": "ImageObject",
-              "url": "https://hydrogenro.com/logo.png"
+              "url": "https://elevenro.com/logo.png"
             }
           }
         })}
@@ -33,7 +33,7 @@ const Blog = () => {
 
       <main className="flex-1">
         <PageHero 
-          title="Hydrogen RO Blog"
+          title="ElevenRO Blog"
           description="Expert insights, maintenance tips, and the latest news on water purification technology in Bengaluru, Karnataka"
           showButtons={true}
         />

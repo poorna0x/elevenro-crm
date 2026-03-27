@@ -1,279 +1,118 @@
-import React from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import PageHero from '@/components/PageHero';
-import { Card, CardContent } from '@/components/ui/card';
-import { Filter, Wrench, RefreshCw, CheckCircle, DollarSign, Clock, Shield, MapPin, Settings } from 'lucide-react';
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Wrench, Settings, RefreshCcw, Droplets, HeartPulse, Filter, CheckCircle2, ArrowRight } from "lucide-react";
 
-const Services = () => {
+const services = [
+  {
+    icon: Wrench,
+    title: "RO Installation",
+    description:
+      "Professional installation of all major RO water purifier brands. Our trained technicians handle plumbing, electrical connections, and setup with precision.",
+    features: ["All brand support", "Same-day installation", "Free site inspection", "1-year warranty"],
+  },
+  {
+    icon: Settings,
+    title: "Annual Maintenance Contract",
+    description:
+      "Keep your purifier running at peak performance with our comprehensive AMC plans. Includes scheduled visits, filter changes, and priority support.",
+    features: ["4 scheduled visits/year", "Free filter replacements", "Priority support", "Discounted repairs"],
+  },
+  {
+    icon: RefreshCcw,
+    title: "Filter & Cartridge Replacement",
+    description:
+      "Genuine OEM filters and cartridges for all brands. We ensure your purifier delivers the purest water with timely replacements.",
+    features: ["100% genuine parts", "All brands covered", "Quick turnaround", "Performance tested"],
+  },
+  {
+    icon: HeartPulse,
+    title: "Repair & Diagnostics",
+    description:
+      "Expert diagnosis and repair for leaks, low flow, bad taste, motor issues, and more. We fix it right the first time.",
+    features: ["90-day repair warranty", "Transparent pricing", "Genuine spare parts", "Same-day repair"],
+  },
+  {
+    icon: Droplets,
+    title: "Water Quality Testing",
+    description:
+      "Comprehensive TDS, pH, and contamination testing to ensure your water meets WHO safety standards. Free with any service booking.",
+    features: ["TDS measurement", "pH level check", "Contamination analysis", "Detailed report"],
+  },
+  {
+    icon: Filter,
+    title: "Deep Cleaning & Sanitization",
+    description:
+      "Thorough cleaning of tanks, membranes, and internal components to remove biofilm, scale, and bacteria buildup.",
+    features: ["Tank sanitization", "Membrane flush", "UV chamber cleaning", "Anti-bacterial treatment"],
+  },
+];
+
+const ServicesPage = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      {/* SEO Meta Tags - These will be handled by the main index.html */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Service",
-          "name": "RO Water Purifier Services",
-          "description": "Professional RO water purifier installation, repair, and maintenance services in Bengaluru, Karnataka",
-          "image": "https://hydrogenro.com/og-image.jpg",
-          "provider": {
-            "@type": "LocalBusiness",
-            "name": "Hydrogen RO",
-            "address": {
-              "@type": "PostalAddress",
-              "streetAddress": "MG Road",
-              "addressLocality": "Bengaluru",
-              "addressRegion": "Karnataka",
-              "postalCode": "560001",
-              "addressCountry": "IN"
-            },
-            "telephone": "+91-8884944288",
-            "email": "info@hydrogenro.com",
-            "url": "https://hydrogenro.com",
-            "areaServed": {
-              "@type": "City",
-              "name": "Bengaluru"
-            },
-            "serviceArea": {
-              "@type": "GeoCircle",
-              "geoMidpoint": {
-                "@type": "GeoCoordinates",
-                "latitude": 12.9716,
-                "longitude": 77.5946
-              },
-              "geoRadius": "50000"
-            }
-          },
-          "offers": [
-            {
-              "@type": "Offer",
-              "name": "RO Installation",
-              "description": "Professional RO water purifier installation service",
-              "price": "499",
-              "priceCurrency": "INR",
-              "availability": "https://schema.org/InStock"
-            },
-            {
-              "@type": "Offer",
-              "name": "RO Service",
-              "description": "Expert RO water purifier repair and troubleshooting",
-              "price": "399",
-              "priceCurrency": "INR",
-              "availability": "https://schema.org/InStock"
-            },
-            {
-              "@type": "Offer",
-              "name": "Filter Replacement",
-              "description": "RO filter replacement and maintenance service",
-              "price": "1799",
-              "priceCurrency": "INR",
-              "availability": "https://schema.org/InStock"
-            },
-            {
-              "@type": "Offer",
-              "name": "Water Softener",
-              "description": "Water softener installation and service",
-              "price": "499",
-              "priceCurrency": "INR",
-              "availability": "https://schema.org/InStock"
-            }
-          ],
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "5",
-            "reviewCount": "2300",
-            "bestRating": "5",
-            "worstRating": "1"
-          }
-        })}
-      </script>
+    <div className="min-h-screen bg-background">
+      <Navbar />
 
-      <Header />
+      <section className="pt-32 pb-16 bg-section-alt">
+        <div className="container mx-auto px-6 text-center max-w-3xl">
+          <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-3 opacity-0 animate-fade-up">Our Services</p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight opacity-0 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+            Everything Your Water Purifier{" "}
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Needs</span>
+          </h1>
+          <p className="mt-5 text-lg text-muted-foreground leading-relaxed opacity-0 animate-fade-up" style={{ animationDelay: "0.2s" }}>
+            From installation to deep cleaning, we provide end-to-end care for every water purifier brand and model.
+          </p>
+        </div>
+      </section>
 
-      <main className="flex-1">
-        <PageHero 
-          title="RO Water Purifier Services in Bengaluru"
-          description="Professional RO water purifier installation, repair, and maintenance services by certified technicians in Bengaluru, Karnataka. Same-day service, 24/7 emergency support across all areas of Bangalore."
-        />
-
-        {/* Why Choose Section */}
-        <section className="py-16 px-2 md:px-12 bg-background">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                Why Choose Our RO Services?
-              </h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="cosmic-card text-center hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Shield className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
-                    Certified Technicians
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    All RO technicians are certified and trained professionals
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="cosmic-card text-center hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Clock className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
-                    Same Day Service
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    Quick response times with same-day service available
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="cosmic-card text-center hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
-                    All Brands Supported
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    Expert service for all major RO water purifier brands
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="cosmic-card text-center hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <DollarSign className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
-                    Competitive Pricing
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    Transparent pricing with no hidden fees
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Main Services */}
-        <section className="py-16 px-2 md:px-12 bg-background">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                Complete RO Water Purifier Services
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <Card className="cosmic-card hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                    <Filter className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-2xl font-semibold mb-3 text-foreground">RO Installation</h3>
-                  <div className="mb-4">
-                    <p className="text-primary font-bold text-lg">
-                      Installation: ₹499 | Service: ₹399
-                    </p>
-                  </div>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li>• Complete RO system setup</li>
-                    <li>• Water quality testing</li>
-                    <li>• All brands service supported</li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card className="cosmic-card hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                    <Wrench className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-2xl font-semibold mb-4 text-foreground">RO Repair & Maintenance</h3>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li>• Complete system repair</li>
-                    <li>• Emergency 24/7 support</li>
-                    <li>• All brands service supported</li>
-                    <li>• Annual maintenance plans</li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card className="cosmic-card hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                    <RefreshCw className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-2xl font-semibold mb-3 text-foreground">Filter Replacement</h3>
-                  <div className="mb-4">
-                    <p className="text-primary font-bold text-lg">
-                      Starting from ₹1799
-                    </p>
-                  </div>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li>• All filter types</li>
-                    <li>• Pre & post filters</li>
-                    <li>• RO membrane replacement</li>
-                    <li>• UV lamp maintenance</li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card className="cosmic-card hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                    <Settings className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-2xl font-semibold mb-3 text-foreground">Water Softener</h3>
-                  <div className="mb-4">
-                    <p className="text-primary font-bold text-lg">
-                      Starting from ₹499
-                    </p>
-                  </div>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li>• Softener installation</li>
-                    <li>• Resin level management</li>
-                    <li>• Salt level monitoring</li>
-                    <li>• All brands service supported</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Contact Section */}
-        <section className="py-16 px-2 md:px-12 bg-background">
-          <div className="max-w-4xl mx-auto">
-            <Card className="cosmic-card">
-              <CardContent className="p-8">
-                <div className="text-center">
-                  <h3 className="text-2xl font-semibold mb-6 text-foreground">Contact Us</h3>
-                  <div className="space-y-3 text-foreground">
-                    <p>Phone: +91-8884944288, +91-9886944288</p>
-                    <p>Email: info@hydrogenro.com</p>
-                    <p>Available: 24/7 Emergency Service</p>
-                  </div>
+      <section className="py-20">
+        <div className="container mx-auto px-6 space-y-16">
+          {services.map((service, i) => (
+            <div
+              key={service.title}
+              className={`flex flex-col lg:flex-row gap-10 items-start opacity-0 animate-fade-up ${i % 2 !== 0 ? "lg:flex-row-reverse" : ""}`}
+              style={{ animationDelay: `${i * 0.08}s` }}
+            >
+              <div className="flex-1 space-y-5">
+                <div className="inline-flex items-center justify-center h-14 w-14 rounded-xl bg-primary/10 text-primary">
+                  <service.icon className="h-7 w-7" />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-      </main>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground">{service.title}</h2>
+                <p className="text-muted-foreground leading-relaxed max-w-xl">{service.description}</p>
+                <ul className="grid grid-cols-2 gap-3">
+                  {service.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-foreground">
+                      <CheckCircle2 className="h-4 w-4 text-accent flex-shrink-0" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex-1 w-full bg-section-alt rounded-2xl border border-border p-10 flex items-center justify-center min-h-[220px]">
+                <service.icon className="h-24 w-24 text-primary/20" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="py-16 bg-section-alt">
+        <div className="container mx-auto px-6 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Ready to get started?</h2>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">Book a service today and experience the ElevenRO difference.</p>
+          <Link to="/book">
+            <Button variant="hero" size="lg" className="text-base px-10">
+              Book Service <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+          </Link>
+        </div>
+      </section>
 
       <Footer />
     </div>
   );
 };
 
-export default Services;
+export default ServicesPage;

@@ -1067,7 +1067,7 @@ function createBillContent(data: PDFBillData): string {
       <!-- Header -->
       <div class="header">
         <div class="logo-container">
-          <img src="/fulllogo.webp" alt="Hydrogenro Logo" class="full-logo" />
+          <img src="/fulllogo.webp" alt="ElevenRO Logo" class="full-logo" />
         </div>
         <div class="company-details">
           <div>${data.company.address}, ${data.company.city} - ${data.company.pincode}</div>
@@ -1165,7 +1165,7 @@ function createBillContent(data: PDFBillData): string {
       <div class="signatures">
         <div class="signature-box">
           <div class="signature-label" style="text-align: center;">Authorized Signatory</div>
-          <img src="/HydrogenROSeal.webp" alt="Hydrogen RO Seal" class="signature-seal" />
+          <img src="/HydrogenROSeal.webp" alt="ElevenRO Seal" class="signature-seal" />
           <div class="signature-date" style="text-align: center;">Date: ${new Date(data.billDate).toLocaleDateString('en-IN', { 
             day: '2-digit', 
             month: '2-digit', 
@@ -1176,7 +1176,7 @@ function createBillContent(data: PDFBillData): string {
       
       <!-- Footer -->
       <div class="footer">
-        <p>Thank you for choosing Hydrogenro!</p>
+        <p>Thank you for choosing ElevenRO!</p>
         <p>For any queries, contact us at ${data.company.phone} or ${data.company.email}</p>
       </div>
     </div>
@@ -1554,7 +1554,7 @@ function generateBillHTML(data: PDFBillData): string {
         <!-- Header -->
         <div class="header">
           <div class="logo-container">
-            <img src="/fulllogo.webp" alt="Hydrogenro Logo" class="full-logo" />
+            <img src="/fulllogo.webp" alt="ElevenRO Logo" class="full-logo" />
           </div>
           <div class="company-details">
             <div>${data.company.address}, ${data.company.city} - ${data.company.pincode}</div>
@@ -1652,7 +1652,7 @@ function generateBillHTML(data: PDFBillData): string {
         <div class="signatures">
           <div class="signature-box">
             <div class="signature-label" style="text-align: center;">Authorized Signatory</div>
-            <img src="/HydrogenROSeal.webp" alt="Hydrogen RO Seal" class="signature-seal" />
+            <img src="/HydrogenROSeal.webp" alt="ElevenRO Seal" class="signature-seal" />
             <div class="signature-date" style="text-align: center;">Date: ${new Date(data.billDate).toLocaleDateString('en-IN', { 
               day: '2-digit', 
               month: '2-digit', 
@@ -1663,7 +1663,7 @@ function generateBillHTML(data: PDFBillData): string {
         
         <!-- Footer -->
         <div class="footer">
-          <p>Thank you for choosing Hydrogenro!</p>
+          <p>Thank you for choosing ElevenRO!</p>
           <p>For any queries, contact us at ${data.company.phone} or ${data.company.email}</p>
         </div>
       </div>

@@ -1,296 +1,62 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Wrench, Filter, RefreshCw, Settings, CheckCircle, Clock, Shield, Phone, AlertCircle } from 'lucide-react';
+import { Wrench, Settings, RefreshCcw, Droplets, HeartPulse, Filter } from "lucide-react";
 
-const ServicesSection = () => {
-  const navigate = useNavigate();
-
-  const handleBookService = () => {
-    navigate('/book');
-  };
-
-  const services = [
-    {
-      icon: Filter,
-      title: "RO Installation & Repair",
-      description: "Complete RO water purifier installation, re-installation, and expert repair services across Bangalore, Karnataka.",
-      features: ["New RO installation", "RO re-installation", "Complete system repair", "Performance optimization"],
-      pricing: "Installation: ₹499 | Service: ₹399",
-      details: {
-        includes: [
-          "Complete RO system installation & setup",
-          "RO re-installation & relocation",
-          "Water quality testing & calibration",
-          "System programming & user training",
-          "Pipe connections & electrical setup",
-          "UV lamp installation & maintenance",
-          "Pump & motor repair/replacement",
-          "Leakage repair & pipe fixing",
-          "Free maintenance for 3 months"
-        ],
-        benefits: [
-          "Certified installation technicians",
-          "Same-day installation available",
-          "Genuine spare parts & warranty",
-          "24/7 emergency repair support",
-          "All brands service supported",
-          "Professional installation guarantee"
-        ],
-        terms: [
-          "Installation (₹499) does not include plumbing items or any extra RO things, and assembly",
-          "Service charge (₹399) is service charge only, not including filters cost"
-        ]
-      }
-    },
+const services = [
     {
       icon: Wrench,
-      title: "Water Softener Service",
-      description: "Complete water softener installation, re-installation, resin level management, and maintenance services in Bengaluru.",
-      features: ["Softener installation", "Re-installation", "Resin level management", "Salt level monitoring"],
-      pricing: "Starting from ₹499",
-      details: {
-        includes: [
-          "Water softener installation & setup",
-          "Softener re-installation & relocation",
-          "Resin level checking & replacement",
-          "Salt level monitoring & refilling",
-          "System programming & calibration",
-          "Water hardness testing & analysis",
-          "Bypass valve installation & repair",
-          "Drain line setup & maintenance",
-          "Control valve repair & replacement"
-        ],
-        benefits: [
-          "Reduces water hardness effectively",
-          "Protects appliances from scaling",
-          "Softer skin and hair benefits",
-          "Energy savings on heating",
-          "Extended appliance lifespan",
-          "Professional resin management"
-        ],
-        terms: [
-          "Starting from ₹499 is visiting charge, not including resin"
-        ]
-      }
-    },
-    {
-      icon: RefreshCw,
-      title: "RO Filter Replacement",
-      description: "Complete filter replacement service for all RO water purifier filters - pre-filters, membranes, carbon filters, and more.",
-      features: ["All filter types", "Pre-filter replacement", "RO membrane changing", "Carbon & post-filters"],
-      pricing: "Starting from ₹1799",
-      details: {
-        includes: [
-          "Pre-filter (PP, sediment) replacement",
-          "RO membrane replacement & cleaning",
-          "Carbon filter (pre & post) replacement",
-          "UV lamp replacement & maintenance",
-          "Mineral filter replacement",
-          "Alkaline filter replacement",
-          "System sanitization & cleaning",
-          "Water flow testing & optimization",
-          "Filter life monitoring & reminders"
-        ],
-        benefits: [
-          "Improved water quality & purity",
-          "Better taste and odor removal",
-          "Extended RO system lifespan",
-          "Cost-effective filter maintenance",
-          "Genuine filter parts guarantee",
-          "Professional filter installation"
-        ],
-        terms: [
-          "Price starting from ₹1799 does not include RO membrane"
-        ]
-      }
+      title: "Installation",
+      description: "Professional RO purifier installation with precision plumbing and setup.",
     },
     {
       icon: Settings,
-      title: "RO Maintenance Packages",
-      description: "Comprehensive maintenance packages with different service levels - basic, premium, and full filter service packages.",
-      features: ["Basic maintenance", "Premium packages", "Full filter service", "Annual contracts"],
-      details: {
-        includes: [
-          "Basic Package: Quarterly inspection & cleaning",
-          "Premium Package: Bi-monthly service + filter replacement",
-          "Full Filter Service: Complete filter replacement package",
-          "Annual Contract: Year-round maintenance & support",
-          "System performance optimization",
-          "Water quality testing & analysis",
-          "Priority booking & emergency support",
-          "Filter life monitoring & reminders",
-          "Comprehensive system health check"
-        ],
-        benefits: [
-          "Prevents major breakdowns & costly repairs",
-          "Maintains optimal water quality year-round",
-          "Cost-effective maintenance plans",
-          "Extended warranty coverage",
-          "Priority customer support",
-          "Flexible package options"
-        ]
-      }
-    }
-  ];
+      title: "Annual Maintenance",
+      description: "Comprehensive yearly servicing to keep your purifier performing at its best.",
+    },
+    {
+      icon: RefreshCcw,
+      title: "Filter Replacement",
+      description: "Genuine filter replacements for all major water purifier brands.",
+    },
+    {
+      icon: HeartPulse,
+      title: "Repair & Diagnostics",
+      description: "Quick diagnosis and expert repair for any water purifier issue.",
+    },
+    {
+      icon: Droplets,
+      title: "Water Quality Testing",
+      description: "Free TDS and quality testing to ensure your water meets safety standards.",
+    },
+    {
+      icon: Filter,
+      title: "Membrane Cleaning",
+      description: "Deep RO membrane cleaning and replacement for optimal flow and purity.",
+    },
+];
 
+const ServicesSection = () => {
   return (
-    <section id="services" className="py-16 px-2 md:px-12 bg-muted/30">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-            RO Water Purifier Services in Bengaluru
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-4">
-            Comprehensive water treatment solutions for homes and offices across Bangalore, Karnataka. Expert RO installation, repair, and maintenance services.
+    <section id="services" className="py-24 bg-section-alt">
+      <div className="container mx-auto px-6">
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-3">Our Services</p>
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground">Complete Water Purifier Care</h2>
+          <p className="mt-4 text-muted-foreground leading-relaxed">
+            From installation to maintenance, we cover every aspect of water purifier service to give you pure, safe water every day.
           </p>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {services.map((service, index) => (
-            <Card key={index} className="cosmic-card hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <service.icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-xl font-semibold text-foreground">
-                          {service.title}
-                        </h3>
-                      </div>
-                      {service.pricing && (
-                        <div className="mb-3">
-                          <p className="text-primary font-bold text-lg">
-                            {service.pricing}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-muted-foreground mb-4">
-                      {service.description}
-                    </p>
-                    <ul className="space-y-2 mb-4">
-                      {service.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="w-full">
-                          Learn More
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto w-[calc(100%-2rem)] md:w-full rounded-lg">
-                        <DialogHeader>
-                          <DialogTitle className="flex items-center gap-3 text-2xl">
-                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                              <service.icon className="w-5 h-5 text-primary" />
-                            </div>
-                            {service.title}
-                          </DialogTitle>
-                        </DialogHeader>
-                        
-                        <div className="space-y-6">
-                          <p className="text-muted-foreground text-lg">
-                            {service.description}
-                          </p>
-                          
-                          {/* Pricing */}
-                          {service.pricing && (
-                            <div className="bg-primary/10 rounded-lg p-4 text-center">
-                              <p className="text-primary font-bold text-lg">
-                                {service.pricing}
-                              </p>
-                            </div>
-                          )}
-                          
-                          {/* What's Included */}
-                          <div>
-                            <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                              <CheckCircle className="w-5 h-5 text-primary" />
-                              What's Included
-                            </h4>
-                            <ul className="space-y-2">
-                              {service.details.includes.map((item, itemIndex) => (
-                                <li key={itemIndex} className="flex items-center gap-2 text-muted-foreground">
-                                  <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                                  {item}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                          
-                          {/* Benefits */}
-                          <div>
-                            <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                              <Shield className="w-5 h-5 text-primary" />
-                              Benefits
-                            </h4>
-                            <ul className="space-y-2">
-                              {service.details.benefits.map((benefit, benefitIndex) => (
-                                <li key={benefitIndex} className="flex items-center gap-2 text-muted-foreground">
-                                  <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                                  {benefit}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                          
-                          {/* Terms & Conditions */}
-                          {service.details.terms && service.details.terms.length > 0 && (
-                            <div>
-                              <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                                <AlertCircle className="w-5 h-5 text-orange-500" />
-                                Terms & Conditions
-                              </h4>
-                              <ul className="space-y-2">
-                                {service.details.terms.map((term, termIndex) => (
-                                  <li key={termIndex} className="flex items-start gap-2 text-muted-foreground text-sm">
-                                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                                    <span>{term}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          
-                          {/* Call to Action */}
-                          <div className="bg-primary/5 rounded-lg p-6 text-center">
-                            <h4 className="text-lg font-semibold text-foreground mb-2">
-                              Ready to Book This Service?
-                            </h4>
-                            <p className="text-muted-foreground mb-4">
-                              Get a free quote and schedule your service today
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                              <Button 
-                                onClick={handleBookService}
-                                className="bg-primary text-primary-foreground hover:bg-primary/90"
-                              >
-                                Book Now
-                              </Button>
-                              <Button variant="outline" className="flex items-center gap-2">
-                                <Phone className="w-4 h-4" />
-                                Call: +91-8884944288
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {services.map((service, i) => (
+            <div
+              key={service.title}
+              className="group bg-card rounded-xl border border-border p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 opacity-0 animate-fade-up"
+              style={{ animationDelay: `${i * 0.1}s` }}
+            >
+              <div className="inline-flex items-center justify-center h-12 w-12 rounded-lg bg-primary/10 text-primary mb-5 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+                <service.icon className="h-6 w-6" />
+              </div>
+              <h3 className="text-lg font-semibold text-card-foreground mb-2">{service.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p>
+            </div>
           ))}
         </div>
       </div>

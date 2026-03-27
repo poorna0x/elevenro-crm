@@ -136,10 +136,10 @@ const AMC = () => {
       // Set font
       pdf.setFont('helvetica');
       
-      // Header with Hydrogen RO Branding
+      // Header with ElevenRO Branding
       pdf.setFontSize(24);
       pdf.setTextColor(37, 99, 235); // Blue color
-      pdf.text('Hydrogen RO', 105, 20, { align: 'center' });
+      pdf.text('ElevenRO', 105, 20, { align: 'center' });
       
       pdf.setFontSize(8);
       pdf.setTextColor(107, 114, 128); // Gray color
@@ -153,8 +153,8 @@ const AMC = () => {
       pdf.text('Authorized for Service by RO Care India', 105, 50, { align: 'center' });
       pdf.text('Ground Floor, 13, 4th Main Road, Next To Jain Temple, Seshadripuram, Kumara Park West', 105, 55, { align: 'center' });
       pdf.text('Bengaluru, Bengaluru Urban, Karnataka, 560020', 105, 60, { align: 'center' });
-      pdf.text('Phone: 9886944288 & 8884944288 | Email: mail@hydrogenro.com', 105, 65, { align: 'center' });
-      pdf.text('Website: hydrogenro.com | GST No: 29LIJPS5140P1Z6', 105, 70, { align: 'center' });
+      pdf.text('Phone: 9886944288 & 8884944288 | Email: mail@elevenro.com', 105, 65, { align: 'center' });
+      pdf.text('Website: elevenro.com | GST No: 29LIJPS5140P1Z6', 105, 70, { align: 'center' });
       
       // Line separator
       pdf.line(20, 60, 190, 60);
@@ -162,7 +162,7 @@ const AMC = () => {
       // Agreement content
       let yPosition = 70;
       pdf.setFontSize(12);
-      pdf.text(`We Hydrogen RO, Authorized for Service by RO Care India, undertake to maintain your ${formData.productName} Unit as detailed below:`, 20, yPosition);
+      pdf.text(`We ElevenRO, Authorized for Service by RO Care India, undertake to maintain your ${formData.productName} Unit as detailed below:`, 20, yPosition);
       
       yPosition += 15;
       pdf.setFontSize(11);
@@ -476,7 +476,7 @@ const AMC = () => {
                           <Droplets className="w-4 h-4" />
                         </div>
                         <div>
-                          <h2 className="text-lg font-medium">Hydrogen RO</h2>
+                          <h2 className="text-lg font-medium">ElevenRO</h2>
                           <p className="text-sm text-background/70">Water Purification Solutions</p>
                         </div>
                       </div>
@@ -494,14 +494,14 @@ const AMC = () => {
                             <p className="text-muted-foreground text-sm mb-3">Bengaluru, Bengaluru Urban, Karnataka, 560020</p>
                             <div className="flex gap-6 text-sm">
                               <span className="text-foreground">📞 9886944288 & 8884944288</span>
-                              <span className="text-foreground">✉️ mail@hydrogenro.com</span>
+                              <span className="text-foreground">✉️ mail@elevenro.com</span>
                             </div>
                           </div>
 
                           {/* Agreement Content */}
                           <div className="space-y-6">
                             <p className="text-sm leading-relaxed">
-                              We <strong>Hydrogen RO</strong>, Authorized for Service by RO Care India, undertake to maintain your <strong>{formData.productName || 'Kent RO'}</strong> Unit as detailed below:
+                              We <strong>ElevenRO</strong>, Authorized for Service by RO Care India, undertake to maintain your <strong>{formData.productName || 'Kent RO'}</strong> Unit as detailed below:
                             </p>
                             
                             <div className="border-l-2 border-muted-foreground pl-4">
@@ -631,7 +631,7 @@ const AMC = () => {
             margin: '0 auto',
             fontWeight: '400'
           }}>
-            {/* Header with Hydrogen RO Branding */}
+            {/* Header with ElevenRO Branding */}
             <div className="text-center mb-8 border-b-2 border-blue-600 pb-6">
               {/* Logo Section */}
               <div className="flex items-center justify-center mb-4">
@@ -639,7 +639,7 @@ const AMC = () => {
                   <Droplets className="w-8 h-8 text-white" />
                 </div>
                 <div className="text-left">
-                  <h1 className="text-3xl font-bold text-blue-600 mb-0">Hydrogen RO</h1>
+                  <h1 className="text-3xl font-bold text-blue-600 mb-0">ElevenRO</h1>
                   <p className="text-sm text-gray-600 mt-0">Water Purification Solutions</p>
                 </div>
               </div>
@@ -652,10 +652,10 @@ const AMC = () => {
                 <p className="text-gray-700">Bengaluru, Bengaluru Urban, Karnataka, 560020</p>
                 <div className="flex justify-center gap-6 mt-2 text-xs">
                   <span className="text-blue-600">📞 9886944288 & 8884944288</span>
-                  <span className="text-blue-600">✉️ mail@hydrogenro.com</span>
+                  <span className="text-blue-600">✉️ mail@elevenro.com</span>
                 </div>
                 <div className="flex justify-center gap-6 mt-1 text-xs">
-                  <span className="text-gray-600">🌐 hydrogenro.com</span>
+                  <span className="text-gray-600">🌐 elevenro.com</span>
                   <span className="text-gray-600">🏢 GST: 29LIJPS5140P1Z6</span>
                 </div>
               </div>
@@ -665,7 +665,7 @@ const AMC = () => {
             <div className="mb-6">
               <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg mb-4">
                 <p className="mb-4 text-sm">
-                  We <strong className="text-blue-600">Hydrogen RO</strong>, Authorized for Service by RO Care India, undertake to maintain your <strong className="text-green-600">{formData.productName}</strong> Unit as detailed below:
+                  We <strong className="text-blue-600">ElevenRO</strong>, Authorized for Service by RO Care India, undertake to maintain your <strong className="text-green-600">{formData.productName}</strong> Unit as detailed below:
                 </p>
               </div>
               
@@ -794,7 +794,7 @@ const AMC = () => {
             <div className="text-center mt-8 p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
                 <Droplets className="w-4 h-4 text-blue-600 mr-2" />
-                <span className="font-semibold text-blue-600">Hydrogen RO</span>
+                <span className="font-semibold text-blue-600">ElevenRO</span>
               </div>
               <p className="text-xs text-gray-600 mb-1">This is a computer generated document and does not require a physical signature.</p>
               <p className="text-xs text-gray-500">Generated on: {new Date().toLocaleDateString('en-IN')} | Professional RO Water Purifier Services in Bengaluru</p>

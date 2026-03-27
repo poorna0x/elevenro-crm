@@ -21,10 +21,10 @@ const defaultCompanyInfo: CompanyInfo = {
   state: "Karnataka",
   pincode: "560020",
   phone: "9886944288 & 8884944288",
-  email: "mail@hydrogenro.com",
+  email: "mail@elevenro.com",
   gstNumber: "29LIJPS5140P1Z6",
   panNumber: "LIJPS5140P",
-  website: "hydrogenro.com"
+  website: "elevenro.com"
 };
 
 const defaultBillItems: BillItem[] = [

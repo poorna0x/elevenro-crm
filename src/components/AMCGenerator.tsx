@@ -28,10 +28,10 @@ const defaultCompanyInfo: CompanyInfo = {
   state: "Karnataka",
   pincode: "560020",
   phone: "9886944288 & 8884944288",
-  email: "mail@hydrogenro.com",
+  email: "mail@elevenro.com",
   gstNumber: "29LIJPS5140P1Z6",
   panNumber: "LIJPS5140P",
-  website: "hydrogenro.com"
+  website: "elevenro.com"
 };
 
 export default function AMCGenerator({ customer, onPrint, onAMCSaved }: AMCGeneratorProps) {
@@ -106,7 +106,7 @@ ${notCoveredWithPreFilter}`;
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [newNote, setNewNote] = useState('');
   const [isEditingIntro, setIsEditingIntro] = useState(false);
-  const [agreementIntro, setAgreementIntro] = useState('We <strong>Hydrogen RO</strong>, Authorized Service Provider, undertake to maintain your <strong>RO Water Purifier</strong> Unit as detailed below:');
+  const [agreementIntro, setAgreementIntro] = useState('We <strong>ElevenRO</strong>, Authorized Service Provider, undertake to maintain your <strong>RO Water Purifier</strong> Unit as detailed below:');
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -434,7 +434,7 @@ ${notCoveredWithPreFilter}`;
             <Droplets className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
           </div>
           <div className="text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-0">Hydrogen RO</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-0">ElevenRO</h1>
             <p className="text-xs sm:text-sm text-gray-600 mt-0">AMC Agreement Generator</p>
           </div>
         </div>
@@ -902,7 +902,7 @@ ${notCoveredWithPreFilter}`;
                     className="font-mono text-sm"
                   />
                   <div className="text-xs text-gray-500">
-                    💡 Tip: Use HTML tags like &lt;strong&gt; for bold text (e.g., &lt;strong&gt;Hydrogen RO&lt;/strong&gt;)
+                    💡 Tip: Use HTML tags like &lt;strong&gt; for bold text (e.g., &lt;strong&gt;ElevenRO&lt;/strong&gt;)
                   </div>
                 </div>
               ) : (

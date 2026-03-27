@@ -174,7 +174,7 @@ const SpareParts = () => {
           "@type": "Product",
           "name": "RO Spare Parts",
           "description": "Genuine RO water purifier spare parts and filters at competitive prices. All brands supported.",
-          "image": "https://hydrogenro.com/og-image.jpg",
+          "image": "https://elevenro.com/og-image.jpg",
           "offers": {
             "@type": "AggregateOffer",
             "priceCurrency": "INR",
@@ -265,7 +265,7 @@ const SpareParts = () => {
                     <p className="text-lg font-semibold text-primary">
                       +91-8884944288, +91-9886944288
                     </p>
-                    <p>Email: info@hydrogenro.com</p>
+                    <p>Email: info@elevenro.com</p>
                     <p className="text-sm text-muted-foreground">
                       Available: 24/7 Emergency Service
                     </p>

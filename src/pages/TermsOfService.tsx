@@ -42,7 +42,7 @@ const TermsOfService = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p>
-                    Welcome to Hydrogen RO Water Purifier Services. These Terms of Service ("Terms") govern your use of our website and services. By accessing or using our services, you agree to be bound by these Terms.
+                    Welcome to ElevenRO Water Purifier Services. These Terms of Service ("Terms") govern your use of our website and services. By accessing or using our services, you agree to be bound by these Terms.
                   </p>
                 </CardContent>
               </Card>
@@ -134,7 +134,7 @@ const TermsOfService = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p>
-                    Hydrogen RO shall not be liable for any indirect, incidental, special, or consequential damages arising from the use of our services. Our total liability shall not exceed the amount paid for the specific service.
+                    ElevenRO shall not be liable for any indirect, incidental, special, or consequential damages arising from the use of our services. Our total liability shall not exceed the amount paid for the specific service.
                   </p>
                 </CardContent>
               </Card>
@@ -176,7 +176,7 @@ const TermsOfService = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <Mail className="w-5 h-5 text-primary" />
-                      <span>support@hydrogenro.com</span>
+                      <span>support@elevenro.com</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <MapPin className="w-5 h-5 text-primary" />

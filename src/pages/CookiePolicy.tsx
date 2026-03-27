@@ -44,7 +44,7 @@ const CookiePolicy: React.FC = () => {
                     Cookies are small text files that are stored on your device when you visit our website. They help us provide you with a better experience by remembering your preferences and understanding how you use our site.
                   </p>
                   <p>
-                    This Cookie Policy explains how Hydrogen RO uses cookies and similar technologies on our website.
+                    This Cookie Policy explains how ElevenRO uses cookies and similar technologies on our website.
                   </p>
                 </CardContent>
               </Card>
@@ -214,7 +214,7 @@ const CookiePolicy: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <Mail className="w-5 h-5 text-primary" />
-                      <span>mail@hydrogenro.com</span>
+                      <span>mail@elevenro.com</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <MapPin className="w-5 h-5 text-primary" />

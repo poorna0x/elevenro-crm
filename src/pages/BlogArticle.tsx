@@ -103,15 +103,15 @@ const BlogArticle = () => {
   };
 
   const handleEmail = () => {
-    window.open('mailto:info@hydrogenro.com', '_self');
+    window.open('mailto:info@elevenro.com', '_self');
   };
   
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <SEOHead
-        title={`${article.title} | Hydrogen RO Blog`}
-        description={`${article.title}. Expert RO water purifier tips and guides for Bengaluru. Read on Hydrogen RO blog.`}
-        canonical={`https://hydrogenro.com/blog/${article.slug}`}
+        title={`${article.title} | ElevenRO Blog`}
+        description={`${article.title}. Expert RO water purifier tips and guides for Bengaluru. Read on ElevenRO blog.`}
+        canonical={`https://elevenro.com/blog/${article.slug}`}
       />
       <Header />
       
@@ -174,7 +174,7 @@ const BlogArticle = () => {
 
           <h2 className="text-2xl font-semibold mb-4 text-gray-900">5. Schedule Professional Servicing</h2>
           <p className="text-gray-700 mb-4">
-            While DIY maintenance is helpful, professional servicing is indispensable. Hydrogen RO offers comprehensive maintenance plans in Bengaluru.
+            While DIY maintenance is helpful, professional servicing is indispensable. ElevenRO offers comprehensive maintenance plans in Bengaluru.
           </p>
           <ul className="list-disc list-inside ml-4 mb-6 text-gray-700">
             <li>Our certified technicians perform thorough inspections, advanced cleaning, and precise filter replacements.</li>
@@ -183,7 +183,7 @@ const BlogArticle = () => {
 
           <h2 className="text-2xl font-semibold mb-4 text-gray-900">Conclusion</h2>
           <p className="text-gray-700 mb-6">
-            Regular maintenance is key to enjoying pure, healthy water from your RO purifier for years to come. By following these simple steps and scheduling periodic professional servicing with Hydrogen RO, you can ensure your system remains in top condition.
+            Regular maintenance is key to enjoying pure, healthy water from your RO purifier for years to come. By following these simple steps and scheduling periodic professional servicing with ElevenRO, you can ensure your system remains in top condition.
           </p>
         </div>
 
@@ -191,7 +191,7 @@ const BlogArticle = () => {
           <CardContent className="p-8">
             <h3 className="text-2xl font-semibold mb-6 text-center text-foreground">Need Professional Help?</h3>
             <p className="text-center text-muted-foreground mb-8">
-            For professional RO maintenance and repair services in Bengaluru, contact Hydrogen RO.
+            For professional RO maintenance and repair services in Bengaluru, contact ElevenRO.
           </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Call Button */}

@@ -488,7 +488,7 @@ function generateAMCHTML(data: AMCPDFData, options?: AMCPDFOptions): string {
         <!-- Header -->
         <div class="header">
           <div class="logo-container">
-            <img src="/fulllogo.webp" alt="Hydrogenro Logo" class="full-logo" />
+            <img src="/fulllogo.webp" alt="ElevenRO Logo" class="full-logo" />
           </div>
           <div class="company-details">
             <div>${data.company.address}, ${data.company.city} - ${data.company.pincode}</div>
@@ -505,7 +505,7 @@ function generateAMCHTML(data: AMCPDFData, options?: AMCPDFOptions): string {
         </div>
       ` : `
         <div class="agreement-intro">
-          <p>We <strong>Hydrogen RO</strong>, Authorized Service Provider, undertake to maintain your <strong>RO Water Purifier</strong> Unit as detailed below:</p>
+          <p>We <strong>ElevenRO</strong>, Authorized Service Provider, undertake to maintain your <strong>RO Water Purifier</strong> Unit as detailed below:</p>
         </div>
       `}
 
@@ -773,7 +773,7 @@ function generateAMCHTML(data: AMCPDFData, options?: AMCPDFOptions): string {
       <div class="signatures">
         <div class="signature-box">
           <div class="signature-label">Authorized Signatory</div>
-          <img src="/HydrogenROSeal.webp" alt="Hydrogen RO Seal" class="signature-seal" />
+          <img src="/HydrogenROSeal.webp" alt="ElevenRO Seal" class="signature-seal" />
           <div class="signature-date">Date: ${new Date(data.billDate).toLocaleDateString('en-IN', { 
             day: '2-digit', 
             month: '2-digit', 
@@ -785,7 +785,7 @@ function generateAMCHTML(data: AMCPDFData, options?: AMCPDFOptions): string {
       <!-- Footer -->
       <div class="footer">
         <div class="footer-logo">
-          <span style="color: #2563eb; font-weight: bold;">💧 Hydrogen RO</span>
+          <span style="color: #2563eb; font-weight: bold;">💧 ElevenRO</span>
         </div>
         ${options?.showComputerGeneratedText !== false ? `
         <p class="footer-text">This is a Computer Generated Invoice. No signature is required. This invoice is valid and legally binding.</p>
@@ -796,7 +796,7 @@ function generateAMCHTML(data: AMCPDFData, options?: AMCPDFOptions): string {
           year: 'numeric' 
         })} | Professional RO Water Purifier Services in Bengaluru</p>
         <p class="footer-text" style="margin-top: 10px;">
-          Phone: 8884944288 | Email: mail@hydrogenro.com | Website: hydrogenro.com
+          Phone: 8884944288 | Email: mail@elevenro.com | Website: elevenro.com
         </p>
       </div>
     </body>

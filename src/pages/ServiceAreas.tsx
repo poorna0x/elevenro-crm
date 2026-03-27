@@ -14,10 +14,10 @@ const ServiceAreas = () => {
           "@type": "Service",
           "name": "RO Service Areas in Bengaluru",
           "description": "Professional RO water purifier services across all areas of Bengaluru, Karnataka",
-          "image": "https://hydrogenro.com/og-image.jpg",
+          "image": "https://elevenro.com/og-image.jpg",
           "provider": {
             "@type": "LocalBusiness",
-            "name": "Hydrogen RO",
+            "name": "ElevenRO",
             "address": {
               "@type": "PostalAddress",
               "streetAddress": "MG Road",
@@ -27,8 +27,8 @@ const ServiceAreas = () => {
               "addressCountry": "IN"
             },
             "telephone": "+91-8884944288",
-            "email": "info@hydrogenro.com",
-            "url": "https://hydrogenro.com",
+            "email": "info@elevenro.com",
+            "url": "https://elevenro.com",
             "areaServed": {
               "@type": "City",
               "name": "Bengaluru"
@@ -68,10 +68,10 @@ const ServiceAreas = () => {
           "@type": "Product",
           "name": "RO Water Purifier Service",
           "description": "Professional RO water purifier installation, repair, and maintenance services in Bengaluru, Karnataka",
-          "image": "https://hydrogenro.com/og-image.jpg",
+          "image": "https://elevenro.com/og-image.jpg",
           "brand": {
             "@type": "Brand",
-            "name": "Hydrogen RO"
+            "name": "ElevenRO"
           },
           "offers": {
             "@type": "Offer",
@@ -81,7 +81,7 @@ const ServiceAreas = () => {
             "availability": "https://schema.org/InStock",
             "seller": {
               "@type": "Organization",
-              "name": "Hydrogen RO"
+              "name": "ElevenRO"
             },
             "areaServed": {
               "@type": "City",

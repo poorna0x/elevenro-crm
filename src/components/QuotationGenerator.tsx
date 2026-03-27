@@ -28,10 +28,10 @@ const defaultCompanyInfo: CompanyInfo = {
   state: "Karnataka",
   pincode: "560020",
   phone: "9886944288 & 8884944288",
-  email: "mail@hydrogenro.com",
+  email: "mail@elevenro.com",
   gstNumber: "29LIJPS5140P1Z6",
   panNumber: "LIJPS5140P",
-  website: "hydrogenro.com"
+  website: "elevenro.com"
 };
 
 const defaultQuotationItems: BillItem[] = [
@@ -47,7 +47,7 @@ const defaultQuotationItems: BillItem[] = [
 ];
 
 const defaultBankDetails = {
-  accountHolderName: 'HYDROGEN RO',
+  accountHolderName: 'ELEVENRO',
   bankName: 'HDFC Bank',
   branchName: 'BOMMANAHALLY',
   accountNumber: '50200095252857',
@@ -1003,7 +1003,7 @@ export default function QuotationGenerator({ customer, onPrint }: QuotationGener
                   id="accountHolderName"
                   value={bankDetails.accountHolderName}
                   onChange={(e) => handleBankDetailChange('accountHolderName', e.target.value)}
-                  placeholder="Hydrogen RO"
+                  placeholder="ElevenRO"
                 />
               </div>
               <div>
@@ -1057,7 +1057,7 @@ export default function QuotationGenerator({ customer, onPrint }: QuotationGener
                   id="upiId"
                   value={bankDetails.upiId}
                   onChange={(e) => handleBankDetailChange('upiId', e.target.value)}
-                  placeholder="hydrogenro@oksbi"
+                  placeholder="elevenro@oksbi"
                 />
               </div>
             </div>

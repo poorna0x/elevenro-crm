@@ -16,7 +16,7 @@ const ContactSection = () => {
   };
 
   const handleEmail = () => {
-    window.open('mailto:mail@hydrogenro.com', '_self');
+    window.open('mailto:mail@elevenro.com', '_self');
   };
 
   return (
@@ -24,7 +24,7 @@ const ContactSection = () => {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-            Contact Hydrogen RO - Best RO Service in Bengaluru
+            Contact ElevenRO - Best RO Service in Bengaluru
           </h2>
           <p className="text-lg text-muted-foreground">
             Get in touch for all your RO water purifier needs across Bangalore, Karnataka. Expert technicians ready to serve you.
@@ -110,7 +110,7 @@ const ContactSection = () => {
                 className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black mt-auto"
               >
                 <Mail className="w-5 h-5 mr-2" />
-                mail@hydrogenro.com
+                mail@elevenro.com
               </Button>
             </CardContent>
           </Card>
@@ -125,7 +125,7 @@ const ContactSection = () => {
           <p>Mon-Fri: 8AM - 8PM, Saturday: 9AM - 6PM, Sunday: Emergency RO Service Only, 24/7 Emergency RO Repair Available</p>
           
           <h3>Contact Information</h3>
-          <p>Phone: +91-8884944288, +91-9886944288, Email: mail@hydrogenro.com, WhatsApp: +91-8884944288</p>
+          <p>Phone: +91-8884944288, +91-9886944288, Email: mail@elevenro.com, WhatsApp: +91-8884944288</p>
         </div>
       </div>
     </section>

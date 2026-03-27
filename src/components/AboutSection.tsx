@@ -7,10 +7,10 @@ const AboutSection = () => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-            About Hydrogen RO - Leading RO Service Provider in Bengaluru
+            About ElevenRO - Leading RO Service Provider in Bengaluru
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Hydrogen RO is Bengaluru's most trusted water purifier service company, committed to providing clean, safe water through expert RO installation, repair, and water softener services across Bangalore, Karnataka. Our certified technicians deliver fast service with guaranteed customer satisfaction.
+            ElevenRO is Bengaluru's most trusted water purifier service company, committed to providing clean, safe water through expert RO installation, repair, and water softener services across Bangalore, Karnataka. Our certified technicians deliver fast service with guaranteed customer satisfaction.
           </p>
         </div>
         

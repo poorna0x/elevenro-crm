@@ -1,241 +1,127 @@
-import React from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import PageHero from '@/components/PageHero';
-import { Card, CardContent } from '@/components/ui/card';
-import { Shield, Clock, DollarSign, Users, Award, Heart } from 'lucide-react';
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Users, Target, Award, Droplets, ArrowRight } from "lucide-react";
 
-const About = () => {
+const stats = [
+  { value: "10,000+", label: "Families Served" },
+  { value: "15+", label: "Cities Covered" },
+  { value: "50+", label: "Expert Technicians" },
+  { value: "98%", label: "Customer Satisfaction" },
+];
 
+const values = [
+  {
+    icon: Droplets,
+    title: "Purity First",
+    description: "Every service we deliver is guided by a single goal - ensuring the purest water reaches your glass.",
+  },
+  {
+    icon: Users,
+    title: "Customer Obsessed",
+    description: "We listen, we care, and we go the extra mile. Your satisfaction drives everything we do.",
+  },
+  {
+    icon: Target,
+    title: "Precision Service",
+    description: "Our technicians are factory-trained and equipped with the latest tools for flawless execution.",
+  },
+  {
+    icon: Award,
+    title: "Trust & Transparency",
+    description: "No hidden charges, genuine parts, and honest diagnostics - always.",
+  },
+];
+
+const AboutPage = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      {/* SEO Meta Tags - These will be handled by the main index.html */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "AboutPage",
-          "name": "About Hydrogen RO",
-          "description": "Learn about Hydrogen RO, your trusted partner for RO water purifier services in Bengaluru, Karnataka",
-          "mainEntity": {
-            "@type": "LocalBusiness",
-            "name": "Hydrogen RO",
-            "description": "Professional RO water purifier installation, repair, and maintenance services in Bengaluru, Karnataka",
-            "image": "https://hydrogenro.com/og-image.jpg",
-            "foundingDate": "2019",
-            "address": {
-              "@type": "PostalAddress",
-              "streetAddress": "MG Road",
-              "addressLocality": "Bengaluru",
-              "addressRegion": "Karnataka",
-              "postalCode": "560001",
-              "addressCountry": "IN"
-            },
-            "telephone": "+91-8884944288",
-            "email": "info@hydrogenro.com",
-            "url": "https://hydrogenro.com",
-            "areaServed": {
-              "@type": "City",
-              "name": "Bengaluru"
-            },
-            "numberOfEmployees": "15-20",
-            "aggregateRating": {
-              "@type": "AggregateRating",
-              "ratingValue": "5",
-              "reviewCount": "2300",
-              "bestRating": "5",
-              "worstRating": "1"
-            },
-            "hasOfferCatalog": {
-              "@type": "OfferCatalog",
-              "name": "RO Water Purifier Services",
-              "itemListElement": [
-                {
-                  "@type": "Offer",
-                  "itemOffered": {
-                    "@type": "Service",
-                    "name": "RO Installation"
-                  }
-                },
-                {
-                  "@type": "Offer",
-                  "itemOffered": {
-                    "@type": "Service",
-                    "name": "RO Repair"
-                  }
-                },
-                {
-                  "@type": "Offer",
-                  "itemOffered": {
-                    "@type": "Service",
-                    "name": "Filter Replacement"
-                  }
-                }
-              ]
-            }
-          }
-        })}
-      </script>
+    <div className="min-h-screen bg-background">
+      <Navbar />
 
-      <Header />
+      <section className="pt-32 pb-16 bg-section-alt">
+        <div className="container mx-auto px-6 text-center max-w-3xl">
+          <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-3 opacity-0 animate-fade-up">About Us</p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight opacity-0 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+            On a Mission to Deliver{" "}
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Pure Water</span>
+          </h1>
+          <p className="mt-5 text-lg text-muted-foreground leading-relaxed opacity-0 animate-fade-up" style={{ animationDelay: "0.2s" }}>
+            ElevenRO was founded with a simple belief - every family deserves access to clean, safe drinking water without the hassle.
+          </p>
+        </div>
+      </section>
 
-      <main className="flex-1">
-        <PageHero 
-          title="About Hydrogen RO Leading RO Service Provider"
-          description="Hydrogen RO is your trusted partner for clean water solutions in Bengaluru, Karnataka. We've been serving the community with professional RO water purifier services since 2019."
-        />
+      <section className="py-16 border-b border-border">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {stats.map((stat, i) => (
+              <div key={stat.label} className="text-center opacity-0 animate-fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
+                <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{stat.value}</p>
+                <p className="mt-2 text-sm text-muted-foreground font-medium">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-        {/* Our Mission & Story */}
-        <section className="py-16 px-2 md:px-12 bg-background">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-              <Card className="cosmic-card">
-                <CardContent className="p-8">
-                  <h2 className="text-2xl font-semibold mb-4 text-foreground">Our Mission</h2>
-                  <p className="text-muted-foreground">
-                    To provide clean, safe drinking water to every home in Bengaluru through professional 
-                    RO water purifier installation, repair, and maintenance services.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="cosmic-card">
-                <CardContent className="p-8">
-                  <h2 className="text-2xl font-semibold mb-4 text-foreground">Our Story</h2>
-                  <p className="text-muted-foreground">
-                    Founded in 2019, Hydrogen RO started as a small team of certified technicians with a 
-                    passion for water purification technology. Over the years, we've grown to become one 
-                    of the most trusted RO service providers in Bengaluru, serving over 3000+ satisfied customers.
-                  </p>
-                </CardContent>
-              </Card>
+      <section className="py-20">
+        <div className="container mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-6">
+              <h2 className="text-3xl font-bold text-foreground">Our Story</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                Started in 2015, ElevenRO began as a small team of passionate water purifier technicians who saw a gap in the market - reliable, transparent, and affordable water purifier servicing.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                Today, we've grown into one of the most trusted water purifier service brands, serving over 10,000 families across 15+ cities. Our team of 50+ certified technicians delivers excellence with every visit.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                We partner with all major brands including Kent, Aquaguard, Pureit, LivPure, and more - using only genuine spare parts and filters to ensure your purifier performs at its best.
+              </p>
+            </div>
+            <div className="bg-section-alt rounded-2xl border border-border p-16 flex items-center justify-center">
+              <Droplets className="h-32 w-32 text-primary/15" />
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Our Values */}
-        <section className="py-16 px-2 md:px-12 bg-background">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                Our Values
-              </h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="cosmic-card text-center hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Heart className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
-                    Customer First
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    We prioritize customer satisfaction above everything else
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="cosmic-card text-center hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Shield className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
-                    Quality Assurance
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    Only genuine parts and certified technicians
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="cosmic-card text-center hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Clock className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
-                    Timely Service
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    Punctual service delivery with same-day availability
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="cosmic-card text-center hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Award className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
-                    Excellence
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    Striving for excellence in every service we provide
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+      <section className="py-20 bg-section-alt">
+        <div className="container mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <h2 className="text-3xl font-bold text-foreground">Our Values</h2>
+            <p className="mt-4 text-muted-foreground">The principles that guide everything we do.</p>
           </div>
-        </section>
-
-        {/* Our Team & Certifications */}
-        <section className="py-16 px-2 md:px-12 bg-background">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-              <Card className="cosmic-card">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                    <Users className="w-8 h-8 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-semibold mb-4 text-foreground">Our Team</h2>
-                  <p className="text-muted-foreground">
-                    Our team consists of certified and experienced technicians who are dedicated to 
-                    providing the best RO water purifier services in Bengaluru. All our technicians 
-                    undergo regular training to stay updated with the latest technology and techniques.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="cosmic-card">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                    <Award className="w-8 h-8 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-semibold mb-4 text-foreground">Certifications & Awards</h2>
-                  <div className="space-y-2 text-muted-foreground">
-                    <p>• Certified Technicians - All technicians are certified and trained</p>
-                    <p>• Customer Choice - Most trusted RO service provider in Bengaluru</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Contact Section */}
-        <section className="py-16 px-2 md:px-12 bg-background">
-          <div className="max-w-4xl mx-auto">
-            <Card className="cosmic-card">
-              <CardContent className="p-8">
-                <div className="text-center">
-                  <h3 className="text-2xl font-semibold mb-6 text-foreground">Contact Us</h3>
-                  <div className="space-y-3 text-foreground">
-                    <p>Phone: +91-8884944288, +91-9886944288</p>
-                    <p>Email: info@hydrogenro.com</p>
-                  </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {values.map((v, i) => (
+              <div key={v.title} className="bg-card rounded-xl border border-border p-7 text-center opacity-0 animate-fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className="inline-flex items-center justify-center h-12 w-12 rounded-lg bg-primary/10 text-primary mb-4">
+                  <v.icon className="h-6 w-6" />
                 </div>
-              </CardContent>
-            </Card>
+                <h3 className="font-semibold text-card-foreground mb-2">{v.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{v.description}</p>
+              </div>
+            ))}
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
+
+      <section className="py-16">
+        <div className="container mx-auto px-6 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Join the ElevenRO Family</h2>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">Experience the difference that trusted, professional water purifier service makes.</p>
+          <Link to="/book">
+            <Button variant="hero" size="lg" className="text-base px-10">
+              Book a Service <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+          </Link>
+        </div>
+      </section>
 
       <Footer />
     </div>
   );
 };
 
-export default About;
+export default AboutPage;

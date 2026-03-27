@@ -317,7 +317,7 @@ export const emailTemplates = {
         <div class="container">
           <div class="header">
             <h1>Service Booking Confirmed!</h1>
-            <p>Thank you for choosing Hydrogen RO</p>
+            <p>Thank you for choosing ElevenRO</p>
           </div>
           
           <div class="content">
@@ -396,7 +396,7 @@ export const emailTemplates = {
               </div>
               
               <div class="contact-info">
-                <p><strong>Email:</strong> info@hydrogenro.com</p>
+                <p><strong>Email:</strong> info@elevenro.com</p>
                 <p><strong>Available:</strong> 24/7 Emergency Support</p>
               </div>
             </div>
@@ -407,7 +407,7 @@ export const emailTemplates = {
             
             <div class="footer">
               <p>Best regards,</p>
-              <p class="company-name">Hydrogen RO Team</p>
+              <p class="company-name">ElevenRO Team</p>
               <p style="margin-top: 16px; font-size: 12px;">
                 Your trusted partner for clean water solutions
               </p>
@@ -446,13 +446,13 @@ export const emailTemplates = {
       Need Help? Contact Us Instantly!
       - WhatsApp: https://wa.me/919876543210
       - Phone: +91-9876543210
-      - Email: info@hydrogenro.com
+      - Email: info@elevenro.com
       - Available: 24/7 Emergency Support
       
       Thank you for trusting us with your water purifier needs! 💧
       
       Best regards,
-      Hydrogen RO Team
+      ElevenRO Team
       Your trusted partner for clean water solutions
     `
   })
@@ -466,7 +466,7 @@ export class EmailService {
   constructor() {
     // Use your deployed API URL (Netlify Functions, Vercel, etc.)
     this.apiUrl = import.meta.env.VITE_EMAIL_API_URL || '/.netlify/functions/send-email';
-    this.fromEmail = import.meta.env.VITE_EMAIL_FROM || 'noreply@hydrogenro.com';
+    this.fromEmail = import.meta.env.VITE_EMAIL_FROM || 'noreply@elevenro.com';
   }
 
   async sendEmail(emailData: EmailData): Promise<boolean> {

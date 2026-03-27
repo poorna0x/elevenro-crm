@@ -27,13 +27,13 @@ const Testimonials = () => {
 
   const testimonials = [
     {
-      quote: "Hydrogen RO installed our new RO system perfectly in Koramangala. The water taste is amazing and the service was professional throughout. Best RO installation service in Bengaluru!",
+      quote: "ElevenRO installed our new RO system perfectly in Koramangala. The water taste is amazing and the service was professional throughout. Best RO installation service in Bengaluru!",
       author: "Priya Sharma",
       position: "Homeowner, Koramangala",
       gender: "female"
     },
     {
-      quote: "Their water softener service solved our hard water issues completely in Whitefield. Fast service and great pricing! Highly recommend Hydrogen RO for water treatment solutions.",
+      quote: "Their water softener service solved our hard water issues completely in Whitefield. Fast service and great pricing! Highly recommend ElevenRO for water treatment solutions.",
       author: "Rajesh Kumar",
       position: "Business Owner, Whitefield",
       gender: "male"
@@ -51,7 +51,7 @@ const Testimonials = () => {
       gender: "male"
     },
     {
-      quote: "Professional RO installation and excellent customer service in HSR Layout. The team was punctual and cleaned up after the work. Highly satisfied with Hydrogen RO!",
+      quote: "Professional RO installation and excellent customer service in HSR Layout. The team was punctual and cleaned up after the work. Highly satisfied with ElevenRO!",
       author: "Kavitha Nair",
       position: "Homeowner, HSR Layout",
       gender: "female"
@@ -75,7 +75,7 @@ const Testimonials = () => {
       gender: "male"
     },
     {
-      quote: "Hydrogen RO provided excellent RO installation service in Marathahalli. The water quality is perfect and the technician was very professional. Highly recommended!",
+      quote: "ElevenRO provided excellent RO installation service in Marathahalli. The water quality is perfect and the technician was very professional. Highly recommended!",
       author: "Deepa Rao",
       position: "Homeowner, Marathahalli",
       gender: "female"
@@ -99,7 +99,7 @@ const Testimonials = () => {
             What our customers say
           </h2>
           <p className="text-muted-foreground text-lg">
-            Join hundreds of satisfied customers who trust Hydrogen RO for their water treatment needs
+            Join hundreds of satisfied customers who trust ElevenRO for their water treatment needs
           </p>
         </div>
         

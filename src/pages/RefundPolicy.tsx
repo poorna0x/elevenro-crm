@@ -42,7 +42,7 @@ const RefundPolicy = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p>
-                    At Hydrogen RO Water Purifier Services, we strive to provide excellent service and customer satisfaction. This Refund Policy outlines the terms and conditions for refunds for our water purifier services.
+                    At ElevenRO Water Purifier Services, we strive to provide excellent service and customer satisfaction. This Refund Policy outlines the terms and conditions for refunds for our water purifier services.
                   </p>
                 </CardContent>
               </Card>
@@ -211,7 +211,7 @@ const RefundPolicy = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <Mail className="w-5 h-5 text-primary" />
-                      <span>refunds@hydrogenro.com</span>
+                      <span>refunds@elevenro.com</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <MapPin className="w-5 h-5 text-primary" />

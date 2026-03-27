@@ -4,66 +4,68 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%; /* Very light grey */
-    --foreground: 0 0% 20%; /* Dark grey */
+    --background: 200 100% 98%; /* Very light icy blue */
+    --foreground: 206 62% 17%; /* Deep ocean blue for text */
 
-    --card: 0 0% 96%; /* Light grey card */
-    --card-foreground: 0 0% 20%;
+    --card: 200 100% 99%; /* White-blue card */
+    --card-foreground: 206 62% 17%;
 
-    --popover: 0 0% 96%;
-    --popover-foreground: 0 0% 20%;
+    --popover: 200 100% 99%;
+    --popover-foreground: 206 62% 17%;
 
-    --primary: 0 0% 25%; /* Dark grey primary */
-    --primary-foreground: 0 0% 98%; /* Very light grey */
+    --primary: 201 96% 42%; /* Vibrant water blue */
+    --primary-foreground: 210 40% 98%; /* Near-white */
 
-    --secondary: 0 0% 92%; /* Light grey secondary */
-    --secondary-foreground: 0 0% 25%;
+    --secondary: 199 78% 93%; /* Soft blue secondary */
+    --secondary-foreground: 206 62% 17%;
 
-    --muted: 0 0% 88%; /* Medium light grey */
-    --muted-foreground: 0 0% 45%; /* Medium grey */
+    --muted: 199 60% 92%; /* Mist blue */
+    --muted-foreground: 205 35% 38%; /* Muted slate blue */
 
-    --accent: 0 0% 25%; /* Dark grey accent */
-    --accent-foreground: 0 0% 98%;
+    --accent: 191 91% 36%; /* Teal-water accent */
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 85%; /* Light grey border */
-    --input: 0 0% 90%;
-    --ring: 0 0% 25%; /* Dark grey ring */
+    --border: 198 40% 83%; /* Soft blue border */
+    --input: 199 50% 95%;
+    --ring: 201 96% 42%; /* Primary blue ring */
+    --section-alt: 198 78% 95%;
 
     --radius: 0.5rem;
   }
 
   .dark-mode,
   .dark {
-    --background: 0 0% 8%; /* Dark charcoal */
-    --foreground: 0 0% 95%; /* Light grey/white */
+    --background: 209 68% 8%; /* Deep navy */
+    --foreground: 200 100% 96%; /* Pale ice text */
 
-    --card: 0 0% 12%; /* Slightly lighter charcoal */
-    --card-foreground: 0 0% 95%;
+    --card: 208 58% 12%;
+    --card-foreground: 200 100% 96%;
 
-    --popover: 0 0% 12%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 208 58% 12%;
+    --popover-foreground: 200 100% 96%;
 
-    --primary: 0 0% 85%; /* Light grey */
-    --primary-foreground: 0 0% 15%; /* Dark charcoal */
+    --primary: 197 96% 64%; /* Bright aqua in dark mode */
+    --primary-foreground: 210 60% 12%;
 
-    --secondary: 0 0% 18%; /* Medium charcoal */
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 208 45% 18%;
+    --secondary-foreground: 200 100% 96%;
 
-    --muted: 0 0% 22%; /* Lighter charcoal */
-    --muted-foreground: 0 0% 70%; /* Medium grey */
+    --muted: 208 38% 22%;
+    --muted-foreground: 200 34% 74%;
 
-    --accent: 0 0% 85%; /* Light grey accent */
-    --accent-foreground: 0 0% 15%;
+    --accent: 191 90% 58%;
+    --accent-foreground: 210 60% 12%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 22%; /* Medium charcoal border */
-    --input: 0 0% 22%;
-    --ring: 0 0% 85%; /* Light grey ring */
+    --border: 208 35% 28%;
+    --input: 208 36% 20%;
+    --ring: 197 96% 64%;
+    --section-alt: 208 55% 12%;
   }
 
   * {
@@ -136,11 +138,11 @@
   }
 
   .cosmic-gradient {
-    background: linear-gradient(135deg, rgba(230, 230, 230, 0.8) 0%, rgba(200, 200, 200, 0.6) 100%);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.18) 0%, rgba(56, 189, 248, 0.12) 50%, rgba(125, 211, 252, 0.1) 100%);
   }
 
   .dark-mode .cosmic-gradient {
-    background: linear-gradient(135deg, rgba(64, 64, 64, 0.2) 0%, rgba(32, 32, 32, 0.4) 100%);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(14, 116, 144, 0.26) 100%);
   }
 
   .cosmic-glow {
@@ -160,7 +162,7 @@
   }
 
   .dark-mode .cosmic-glow::before {
-    background: radial-gradient(circle at center, rgba(64, 64, 64, 0.08) 0%, transparent 70%);
+    background: radial-gradient(circle at center, rgba(56, 189, 248, 0.18) 0%, transparent 70%);
   }
 
   .cosmic-grid {
@@ -172,8 +174,8 @@
 
   .dark-mode .cosmic-grid {
     background-image: 
-      linear-gradient(rgba(64, 64, 64, 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(64, 64, 64, 0.08) 1px, transparent 1px);
+      linear-gradient(rgba(56, 189, 248, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56, 189, 248, 0.1) 1px, transparent 1px);
   }
 
   .text-balance {
@@ -214,7 +216,7 @@
   }
 
   .dark-mode .icon-glow {
-    filter: drop-shadow(0 0 6px rgba(64, 64, 64, 0.2));
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.25));
   }
   
   .collapsible-trigger:hover .icon-glow {
@@ -222,7 +224,7 @@
   }
 
   .dark-mode .collapsible-trigger:hover .icon-glow {
-    filter: drop-shadow(0 0 10px rgba(64, 64, 64, 0.3));
+    filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.35));
   }
 
   .task-card {

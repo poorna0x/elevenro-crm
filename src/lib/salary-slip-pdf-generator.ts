@@ -426,7 +426,7 @@ function generateSalarySlipHTML(data: SalarySlipPDFData, includeDayWiseBreakdown
         <!-- Header -->
         <div class="header">
           <div class="logo-container">
-            <img src="/fulllogo.webp" alt="Hydrogenro Logo" class="full-logo" />
+            <img src="/fulllogo.webp" alt="ElevenRO Logo" class="full-logo" />
           </div>
           <div class="company-details">
             <div>${data.company.address}, ${data.company.city} - ${data.company.pincode}</div>
@@ -558,7 +558,7 @@ function generateSalarySlipHTML(data: SalarySlipPDFData, includeDayWiseBreakdown
           
           <div class="signature-box">
             <div class="signature-label">Authorized Signatory</div>
-            <img src="/HydrogenROSeal.webp" alt="Hydrogen RO Seal" class="signature-seal" />
+            <img src="/HydrogenROSeal.webp" alt="ElevenRO Seal" class="signature-seal" />
             <div class="signature-date">Date: ${formatDate(paymentDate)}</div>
           </div>
         </div>
@@ -744,7 +744,7 @@ function generateSalarySlipHTML(data: SalarySlipPDFData, includeDayWiseBreakdown
         <!-- Footer -->
         <div class="footer">
           <div>This is a computer-generated salary slip.</div>
-          <div style="margin-top: 5px;">💧 <span style="color: #2563eb; font-weight: bold;">Hydrogen RO</span> - Authorized Service Provider</div>
+          <div style="margin-top: 5px;">💧 <span style="color: #2563eb; font-weight: bold;">ElevenRO</span> - Authorized Service Provider</div>
         </div>
       </div>
     </body>
@@ -774,7 +774,7 @@ export function generateSalarySlipPDF(
       state: 'Karnataka',
       pincode: '560020',
       phone: '9886944288 & 8884944288',
-      email: 'mail@hydrogenro.com',
+      email: 'mail@elevenro.com',
       gstNumber: '29LIJPS5140P1Z6'
     };
 

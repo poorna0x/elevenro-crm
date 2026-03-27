@@ -54,10 +54,10 @@ const PageHero: React.FC<PageHeroProps> = ({
         </div>
         
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium tracking-tighter text-balance text-foreground">
-          {typeof title === 'string' && title.startsWith('About Hydrogen') ? (
+          {typeof title === 'string' && title.startsWith('About Eleven') ? (
             <>
-              <span className="whitespace-nowrap">About Hydrogen RO</span>
-              {title.replace('About Hydrogen RO', '')}
+              <span className="whitespace-nowrap">About ElevenRO</span>
+              {title.replace('About ElevenRO', '')}
             </>
           ) : (
             title

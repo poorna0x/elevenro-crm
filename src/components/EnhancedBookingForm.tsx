@@ -107,7 +107,7 @@ const EnhancedBookingForm = () => {
   };
 
   const handleEmail = () => {
-    window.open('mailto:mail@hydrogenro.com', '_self');
+    window.open('mailto:mail@elevenro.com', '_self');
   };
 
   const handleNext = async () => {

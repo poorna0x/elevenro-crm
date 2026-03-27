@@ -124,7 +124,7 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
             hidefooter: false, // Show footer with custom text
             hidelogo: false, // Show ALTCHA logo
             strings: {
-              footer: 'Protected by HydrogenRO' // Customize footer text
+              footer: 'Protected by ElevenRO' // Customize footer text
             }
           });
           console.log('[ALTCHA] Widget configured successfully');
@@ -148,7 +148,7 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
         const shadowRoot = widgetElement.shadowRoot;
         const root = shadowRoot || widgetElement;
         
-        // Function to replace "Protected by ALTCHA" text with "Protected by HydrogenRO"
+        // Function to replace "Protected by ALTCHA" text with "Protected by ElevenRO"
         const replaceFooterText = (element: Node) => {
           // Walk through all text nodes
           const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
@@ -157,8 +157,8 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
             if (node.textContent) {
               // Replace various forms of "Protected by ALTCHA"
               const newText = node.textContent
-                .replace(/Protected by ALTCHA/gi, 'Protected by HydrogenRO')
-                .replace(/Protected by altcha/gi, 'Protected by HydrogenRO');
+                .replace(/Protected by ALTCHA/gi, 'Protected by ElevenRO')
+                .replace(/Protected by altcha/gi, 'Protected by ElevenRO');
               if (newText !== node.textContent) {
                 node.textContent = newText;
               }

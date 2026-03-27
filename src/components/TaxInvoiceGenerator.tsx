@@ -67,10 +67,10 @@ const defaultCompanyInfo: CompanyInfo = {
   state: "Karnataka",
   pincode: "560020",
   phone: "9886944288 & 8884944288",
-  email: "mail@hydrogenro.com",
+  email: "mail@elevenro.com",
   gstNumber: "29LIJPS5140P1Z6",
   panNumber: "LIJPS5140P",
-  website: "hydrogenro.com"
+  website: "elevenro.com"
 };
 
 const defaultBankDetails = {
@@ -78,7 +78,7 @@ const defaultBankDetails = {
   accountNumber: "50200095252857",
   ifscCode: "HDFC0001048",
   branchName: "BOMMANAHALLY",
-  accountHolderName: "HYDROGEN RO",
+  accountHolderName: "ELEVENRO",
   accountType: "Current Account",
   upiId: "",
   note: "Account Type: Current Account. Please share the payment confirmation once the transfer is complete."
@@ -223,7 +223,7 @@ export default function TaxInvoiceGenerator({ customer, onPrint, onTaxInvoiceSav
   const [useDSC, setUseDSC] = useState(false);
   const [dscAuthorizedSignatory, setDscAuthorizedSignatory] = useState('Authorized Signatory');
   const [dscNameDesignation, setDscNameDesignation] = useState('Srujan - Proprietor');
-  const [dscCompanyName, setDscCompanyName] = useState('Hydrogen RO');
+  const [dscCompanyName, setDscCompanyName] = useState('ElevenRO');
   const [dscBoxWidth, setDscBoxWidth] = useState(75); // Default width in mm
   const [dscBoxHeight, setDscBoxHeight] = useState(22.5); // Default height in mm
   
@@ -1485,7 +1485,7 @@ export default function TaxInvoiceGenerator({ customer, onPrint, onTaxInvoiceSav
                     htmlFor="showFooterText"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                   >
-                    Show Footer Text ("Thank you for choosing Hydrogenro!" and contact information)
+                    Show Footer Text ("Thank you for choosing ElevenRO!" and contact information)
                   </Label>
                 </div>
                 <p className="text-xs text-gray-500 ml-6">
@@ -1586,7 +1586,7 @@ export default function TaxInvoiceGenerator({ customer, onPrint, onTaxInvoiceSav
                         id="dscCompanyName"
                         value={dscCompanyName}
                         onChange={(e) => setDscCompanyName(e.target.value)}
-                        placeholder="e.g., Hydrogen RO"
+                        placeholder="e.g., ElevenRO"
                       />
                     </div>
                     

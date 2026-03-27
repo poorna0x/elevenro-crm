@@ -42,7 +42,7 @@ const PrivacyPolicy = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p>
-                    At Hydrogen RO Water Purifier Services, we are committed to protecting your privacy and personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our services.
+                    At ElevenRO Water Purifier Services, we are committed to protecting your privacy and personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our services.
                   </p>
                 </CardContent>
               </Card>
@@ -234,7 +234,7 @@ const PrivacyPolicy = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <Mail className="w-5 h-5 text-primary" />
-                      <span>privacy@hydrogenro.com</span>
+                      <span>privacy@elevenro.com</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <MapPin className="w-5 h-5 text-primary" />
