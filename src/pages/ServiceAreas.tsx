@@ -26,7 +26,7 @@ const ServiceAreas = () => {
               "postalCode": "560001",
               "addressCountry": "IN"
             },
-            "telephone": "+91-8884944288",
+            "telephone": "+91-9880693311",
             "email": "info@elevenro.com",
             "url": "https://elevenro.com",
             "areaServed": {

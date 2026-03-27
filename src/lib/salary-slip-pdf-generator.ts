@@ -773,7 +773,7 @@ export function generateSalarySlipPDF(
       city: 'Bengaluru',
       state: 'Karnataka',
       pincode: '560020',
-      phone: '9886944288 & 8884944288',
+      phone: '9880693311 & 9880693311',
       email: 'mail@elevenro.com',
       gstNumber: '29LIJPS5140P1Z6'
     };

@@ -387,10 +387,10 @@ export const emailTemplates = {
               </p>
               
               <div class="contact-buttons">
-                <a href="tel:+918884944288" class="contact-btn btn-phone">
+                <a href="tel:+919880693311" class="contact-btn btn-phone">
                   📞 Phone
                 </a>
-                <a href="https://wa.me/918884944288?text=Hi, I have a booking for ${data.serviceType} service. My name is ${data.customerName}" class="contact-btn btn-message">
+                <a href="https://wa.me/919880693311?text=Hi, I have a booking for ${data.serviceType} service. My name is ${data.customerName}" class="contact-btn btn-message">
                   💬 WhatsApp Us
                 </a>
               </div>

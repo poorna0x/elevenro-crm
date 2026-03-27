@@ -12,7 +12,7 @@ const ContactSection = () => {
   };
 
   const handleWhatsApp = () => {
-    window.open('https://wa.me/918884944288', '_blank', 'noopener,noreferrer');
+    window.open('https://wa.me/919880693311', '_blank', 'noopener,noreferrer');
   };
 
   const handleEmail = () => {
@@ -52,16 +52,16 @@ const ContactSection = () => {
               ) : (
                 <div className="space-y-3 mt-auto">
                   <Button 
-                    onClick={() => handleCall('+918884944288')}
+                    onClick={() => handleCall('+919880693311')}
                     className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
                   >
-                    Call: +91-8884944288
+                    Call: +91-9880693311
                   </Button>
                   <Button 
-                    onClick={() => handleCall('+919886944288')}
+                    onClick={() => handleCall('+919880693311')}
                     className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
                   >
-                    Call: +91-9886944288
+                    Call: +91-9880693311
                   </Button>
                   <Button 
                     onClick={() => setShowCallOptions(false)}
@@ -125,7 +125,7 @@ const ContactSection = () => {
           <p>Mon-Fri: 8AM - 8PM, Saturday: 9AM - 6PM, Sunday: Emergency RO Service Only, 24/7 Emergency RO Repair Available</p>
           
           <h3>Contact Information</h3>
-          <p>Phone: +91-8884944288, +91-9886944288, Email: mail@elevenro.com, WhatsApp: +91-8884944288</p>
+          <p>Phone: +91-9880693311, +91-9880693311, Email: mail@elevenro.com, WhatsApp: +91-9880693311</p>
         </div>
       </div>
     </section>

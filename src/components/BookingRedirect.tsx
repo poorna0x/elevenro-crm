@@ -89,11 +89,11 @@ const BookingRedirect: React.FC = () => {
             </p>
             <Button 
               variant="outline"
-              onClick={() => window.open('tel:+918884944288', '_self')}
+              onClick={() => window.open('tel:+919880693311', '_self')}
               className="flex items-center gap-2 mx-auto"
             >
               <Phone className="w-4 h-4" />
-              Call: +91-8884944288
+              Call: +91-9880693311
             </Button>
           </div>
         </div>

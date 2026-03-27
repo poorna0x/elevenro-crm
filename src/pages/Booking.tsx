@@ -2861,14 +2861,14 @@ const Booking: React.FC = () => {
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 justify-center items-center">
                       <Button 
-                        onClick={() => window.open('tel:+918884944288', '_self')}
+                        onClick={() => window.open('tel:+919880693311', '_self')}
                         className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"
                       >
                         <Phone className="w-4 h-4" />
-                        Call: +91-8884944288
+                        Call: +91-9880693311
                       </Button>
                       <Button 
-                        onClick={() => window.open('https://wa.me/918884944288', '_blank', 'noopener,noreferrer')}
+                        onClick={() => window.open('https://wa.me/919880693311', '_blank', 'noopener,noreferrer')}
                         className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"
                       >
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

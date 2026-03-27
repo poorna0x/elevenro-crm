@@ -5,7 +5,7 @@ import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const contactInfo = [
-  { icon: Phone, label: "Phone", value: "+91 88849 44288", href: "tel:+918884944288" },
+  { icon: Phone, label: "Phone", value: "+91 98806 93311", href: "tel:+919880693311" },
   { icon: Mail, label: "Email", value: "mail@elevenro.com", href: "mailto:mail@elevenro.com" },
   { icon: MapPin, label: "Address", value: "Bengaluru, Karnataka" },
   { icon: Clock, label: "Working Hours", value: "Mon - Sat, 8:00 AM - 8:00 PM" },

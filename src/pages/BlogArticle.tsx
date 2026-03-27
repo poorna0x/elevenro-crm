@@ -99,7 +99,7 @@ const BlogArticle = () => {
   };
 
   const handleWhatsApp = () => {
-    window.open('https://wa.me/918884944288', '_blank', 'noopener,noreferrer');
+    window.open('https://wa.me/919880693311', '_blank', 'noopener,noreferrer');
   };
 
   const handleEmail = () => {
@@ -212,16 +212,16 @@ const BlogArticle = () => {
                 ) : (
           <div className="space-y-2">
                     <Button 
-                      onClick={() => handleCall('+918884944288')}
+                      onClick={() => handleCall('+919880693311')}
                       className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
                     >
-                      Call: +91-8884944288
+                      Call: +91-9880693311
                     </Button>
                     <Button 
-                      onClick={() => handleCall('+919886944288')}
+                      onClick={() => handleCall('+919880693311')}
                       className="w-full bg-black dark:bg-white hover:scale-105 transition-transform duration-200 text-white dark:text-black"
                     >
-                      Call: +91-9886944288
+                      Call: +91-9880693311
                     </Button>
                     <Button 
                       onClick={() => setShowCallOptions(false)}

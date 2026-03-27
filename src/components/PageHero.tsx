@@ -37,7 +37,7 @@ const PageHero: React.FC<PageHeroProps> = ({
   };
 
   const handleCall = () => {
-    window.open('tel:+918884944288', '_self');
+    window.open('tel:+919880693311', '_self');
   };
 
   return (
@@ -82,7 +82,7 @@ const PageHero: React.FC<PageHeroProps> = ({
                 variant="outline" 
                 className="border-border text-foreground hover:bg-accent hover:text-accent-foreground text-sm sm:text-base h-12 w-full max-w-[280px] sm:w-auto sm:min-w-[200px] px-6 sm:px-8 transition-all duration-200 min-h-[48px]"
               >
-                Call: +91-8884944288
+                Call: +91-9880693311
               </Button>
             </div>
             

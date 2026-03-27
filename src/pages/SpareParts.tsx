@@ -263,7 +263,7 @@ const SpareParts = () => {
                   <div className="space-y-3 text-foreground">
                     <p>Call us to order spare parts or get assistance:</p>
                     <p className="text-lg font-semibold text-primary">
-                      +91-8884944288, +91-9886944288
+                      +91-9880693311, +91-9880693311
                     </p>
                     <p>Email: info@elevenro.com</p>
                     <p className="text-sm text-muted-foreground">

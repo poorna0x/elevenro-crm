@@ -18,7 +18,7 @@ const CTASection = () => {
 
         <div className="grid sm:grid-cols-3 gap-6 max-w-3xl mx-auto mb-12">
           {[
-            { icon: Phone, label: "Call Us", value: "+91 88849 44288" },
+            { icon: Phone, label: "Call Us", value: "+91 98806 93311" },
             { icon: Mail, label: "Email", value: "mail@elevenro.com" },
             { icon: MapPin, label: "Location", value: "Bengaluru" },
           ].map((item) => (
