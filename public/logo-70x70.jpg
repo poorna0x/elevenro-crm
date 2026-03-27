@@ -11,11 +11,11 @@
     />
     
     <!-- Primary Meta Tags -->
-    <title>ElevenRO - #1 Best RO Service in Bengaluru Bangalore | 5★ Rated</title>
-    <meta name="title" content="ElevenRO - #1 Best RO Service in Bengaluru Bangalore | 5★ Rated" />
-    <meta name="description" content="ElevenRO - #1 best RO water purifier service in Bengaluru, Bangalore. 5★ rated with 2300+ reviews. RO service in Electronic City, BTM, HSR, Whitefield, Koramangala, Hebbal, Yelahanka, Sarjapur, Bellandur, JP Nagar, Banashankari, Tumakuru, Nelamangala, Attibele, Chandapura, Devanahalli and all areas. Same-day service, 24/7 support. Call +91-8884944288." />
-    <meta name="keywords" content="best RO service Bengaluru, best RO service Bangalore, #1 RO water purifier service Bangalore, top RO installation Bengaluru, best RO repair Bangalore, RO service Electronic City, RO service BTM Layout, RO service HSR Layout, RO service Whitefield, RO service Koramangala, RO service Hebbal, RO service Yelahanka, RO service Sarjapur, RO service Bellandur, RO service JP Nagar, RO service Banashankari, RO service Tumakuru, RO service Nelamangala, RO service Attibele, RO service Chandapura, RO service Devanahalli, RO service Indiranagar, RO service Marathahalli, RO service Jayanagar, RO service Malleshwaram, RO service Yeshwanthpur, RO service Peenya, RO service Vijayanagar, RO service Basavanagudi, RO service Doddaballapur, RO service Hosur, ElevenRO service, RO water purifier Bengaluru, RO installation Bangalore, RO repair Karnataka, water softener Bangalore, RO maintenance Bengaluru, RO filter replacement Bangalore, RO service all pincodes Bengaluru, RO service 560001 to 560110, best RO company Bangalore, RO service near me Bengaluru, RO technician Bangalore, RO service contact Bengaluru, same day RO service Bangalore, Aquaguard Kent Pureit Livpure RO service Bengaluru, RO service online Bangalore" />
-    <meta name="author" content="ElevenRO - Water Purifier Services" />
+    <title>Hydrogen RO - #1 Best RO Service in Bengaluru Bangalore | 5★ Rated</title>
+    <meta name="title" content="Hydrogen RO - #1 Best RO Service in Bengaluru Bangalore | 5★ Rated" />
+    <meta name="description" content="Hydrogen RO - #1 best RO water purifier service in Bengaluru, Bangalore. 5★ rated with 2300+ reviews. RO service in Electronic City, BTM, HSR, Whitefield, Koramangala, Hebbal, Yelahanka, Sarjapur, Bellandur, JP Nagar, Banashankari, Tumakuru, Nelamangala, Attibele, Chandapura, Devanahalli and all areas. Same-day service, 24/7 support. Call +91-8884944288." />
+    <meta name="keywords" content="best RO service Bengaluru, best RO service Bangalore, #1 RO water purifier service Bangalore, top RO installation Bengaluru, best RO repair Bangalore, RO service Electronic City, RO service BTM Layout, RO service HSR Layout, RO service Whitefield, RO service Koramangala, RO service Hebbal, RO service Yelahanka, RO service Sarjapur, RO service Bellandur, RO service JP Nagar, RO service Banashankari, RO service Tumakuru, RO service Nelamangala, RO service Attibele, RO service Chandapura, RO service Devanahalli, RO service Indiranagar, RO service Marathahalli, RO service Jayanagar, RO service Malleshwaram, RO service Yeshwanthpur, RO service Peenya, RO service Vijayanagar, RO service Basavanagudi, RO service Doddaballapur, RO service Hosur, Hydrogen RO service, RO water purifier Bengaluru, RO installation Bangalore, RO repair Karnataka, water softener Bangalore, RO maintenance Bengaluru, RO filter replacement Bangalore, RO service all pincodes Bengaluru, RO service 560001 to 560110, best RO company Bangalore, RO service near me Bengaluru, RO technician Bangalore, RO service contact Bengaluru, same day RO service Bangalore, Aquaguard Kent Pureit Livpure RO service Bengaluru, RO service online Bangalore" />
+    <meta name="author" content="Hydrogen RO - Water Purifier Services" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <meta name="googlebot" content="index, follow" />
     <meta name="bingbot" content="index, follow" />
@@ -36,7 +36,7 @@
       document.head.appendChild(m);
     }
   } else {
-    var h = 'https://elevenro.com' + (p ? p : '');
+    var h = 'https://hydrogenro.com' + (p ? p : '');
     var link = document.createElement('link');
     link.rel = 'canonical';
     link.href = h;
@@ -47,21 +47,21 @@
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://elevenro.com" />
+    <meta property="og:url" content="https://hydrogenro.com" />
     <meta property="og:title" content="Best RO Water Purifier Services in Bengaluru Bangalore | RO Installation & Repair" />
     <meta property="og:description" content="Expert RO water purifier installation, repair & maintenance in Bengaluru, Bangalore. Serving Electronic City, BTM, HSR, Whitefield, Koramangala, Hebbal, Sarjapur, Bellandur, Tumakuru, Nelamangala, Attibele, Chandapura, Devanahalli and all areas. Same-day service, 24/7 support. Trusted by 2300+ customers." />
-    <meta property="og:image" content="/og-image.jpg" />
+    <meta property="og:image" content="https://hydrogenro.com/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content="ElevenRO" />
+    <meta property="og:site_name" content="Hydrogen RO" />
     <meta property="og:locale" content="en_IN" />
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://elevenro.com" />
+    <meta name="twitter:url" content="https://hydrogenro.com" />
     <meta name="twitter:title" content="Best RO Water Purifier Services in Bengaluru Bangalore | RO Installation & Repair" />
     <meta name="twitter:description" content="Expert RO in Bengaluru, Bangalore. Electronic City, BTM, HSR, Whitefield, Koramangala, Hebbal, Sarjapur, Bellandur, Tumakuru, Nelamangala, Attibele, Chandapura, Devanahalli. Same-day service, 24/7 support." />
-    <meta name="twitter:image" content="/og-image.jpg" />
+    <meta name="twitter:image" content="https://hydrogenro.com/og-image.jpg" />
     
     <!-- Additional SEO Meta Tags -->
     <meta name="geo.region" content="IN-KA" />
@@ -78,16 +78,16 @@
     <meta name="language" content="English" />
     
     <!-- Advanced SEO Meta Tags -->
-    <meta name="theme-color" content="#0ea5e9" />
-    <meta name="msapplication-TileColor" content="#0ea5e9" />
+    <meta name="theme-color" content="#1e293b" />
+    <meta name="msapplication-TileColor" content="#1e293b" />
     <meta name="msapplication-config" content="/browserconfig.xml" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="ElevenRO" />
-    <meta name="application-name" content="ElevenRO" />
+    <meta name="apple-mobile-web-app-title" content="Hydrogen RO" />
+    <meta name="application-name" content="Hydrogen RO" />
     <meta name="msapplication-tooltip" content="Best RO Water Purifier Services in Bengaluru" />
     <meta name="msapplication-starturl" content="/" />
-    <meta name="msapplication-navbutton-color" content="#0ea5e9" />
+    <meta name="msapplication-navbutton-color" content="#1e293b" />
     <meta name="msapplication-TileImage" content="/fulllogo.png" />
     <meta name="msapplication-square70x70logo" content="/logo-70x70.jpg" />
     <meta name="msapplication-square150x150logo" content="/logo-150x150.jpg" />
@@ -140,7 +140,7 @@
     
     <!-- Rich Snippets Meta Tags -->
     <meta name="business:contact_data:phone_number" content="+91-8884944288" />
-    <meta name="business:contact_data:website" content="https://elevenro.com" />
+    <meta name="business:contact_data:website" content="https://hydrogenro.com" />
     <meta name="business:contact_data:locality" content="Bengaluru" />
     <meta name="business:contact_data:region" content="Karnataka" />
     <meta name="business:contact_data:country_name" content="India" />
@@ -162,21 +162,36 @@
     <!-- IMPORTANT: favicon.ico must be first for Google Search results -->
     <!-- Updated version to force Google to refresh cached favicon -->
     <!-- Google specifically looks for /favicon.ico at root, so we provide both -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=4" />
-    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=4" />
+    <link rel="icon" type="image/x-icon" href="https://hydrogenro.com/favicon.ico?v=4" />
+    <link rel="shortcut icon" type="image/x-icon" href="https://hydrogenro.com/favicon.ico?v=4" />
     <!-- Additional favicon link for Google Search (without version for compatibility) -->
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="https://hydrogenro.com/favicon.ico" />
     <!-- SVG favicon (supports light/dark theme via prefers-color-scheme) -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
+    <link rel="icon" type="image/svg+xml" href="https://hydrogenro.com/favicon.svg?v=4" />
     <!-- Apple Touch Icon for iOS devices -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://hydrogenro.com/apple-touch-icon.png?v=4" />
     <!-- Android Chrome icons -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4" />
+    <link rel="icon" type="image/png" sizes="32x32" href="https://hydrogenro.com/favicon-32x32.png?v=4" />
+    <link rel="icon" type="image/png" sizes="16x16" href="https://hydrogenro.com/favicon-16x16.png?v=4" />
     <!-- Windows tiles -->
-    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png?v=4" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png?v=4" />
-    <link rel="manifest" href="/site.webmanifest" id="pwa-manifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="https://hydrogenro.com/android-chrome-192x192.png?v=4" />
+    <link rel="icon" type="image/png" sizes="512x512" href="https://hydrogenro.com/android-chrome-512x512.png?v=4" />
+    <!-- PWA Manifest - Set dynamically based on path for iOS compatibility -->
+    <script>
+      // Set correct manifest IMMEDIATELY (before iOS reads it)
+      // This must run synchronously before the manifest link is parsed
+      (function() {
+        const path = window.location.pathname;
+        let manifestHref = '/site.webmanifest';
+        if (path.startsWith('/technician')) {
+          manifestHref = '/technician-manifest.json';
+        } else if (path.startsWith('/admin')) {
+          manifestHref = '/admin-manifest.json';
+        }
+        // Create manifest link with correct href immediately
+        document.write('<link rel="manifest" href="' + manifestHref + '" id="pwa-manifest" />');
+      })();
+    </script>
     
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -686,7 +701,7 @@
         "https://www.instagram.com/hydrogenro",
         "https://www.linkedin.com/company/hydrogenro"
       ],
-      "image": "/fulllogo.png",
+      "image": "https://hydrogenro.com/fulllogo.png",
       "knowsAbout": [
         "RO Water Purifier Installation",
         "RO Water Purifier Repair",
@@ -719,7 +734,7 @@
       "@type": "Organization",
       "name": "Hydrogen RO",
       "url": "https://hydrogenro.com",
-      "logo": "/fulllogo.png",
+      "logo": "https://hydrogenro.com/fulllogo.png",
       "contactPoint": {
         "@type": "ContactPoint",
         "telephone": "+91-8884944288",
@@ -976,7 +991,7 @@
       "@type": "Service",
       "name": "RO Water Purifier Installation Service",
       "description": "Professional RO water purifier installation service in Bengaluru, Karnataka",
-      "image": "/og-image.jpg",
+      "image": "https://hydrogenro.com/og-image.jpg",
       "provider": {
         "@type": "LocalBusiness",
         "name": "Hydrogen RO",
@@ -1113,7 +1128,7 @@
         "name": "Hydrogen RO",
         "logo": {
           "@type": "ImageObject",
-          "url": "/fulllogo.png"
+          "url": "https://hydrogenro.com/fulllogo.png"
         }
       }
     }
@@ -1174,7 +1189,7 @@
       "@type": "Product",
       "name": "RO Water Purifier Service in Bengaluru",
       "description": "Professional RO water purifier installation, repair, and maintenance services in Bengaluru, Bangalore, Karnataka. Same-day service, 24/7 emergency support, certified technicians, genuine spare parts, transparent pricing.",
-      "image": "/og-image.jpg",
+      "image": "https://hydrogenro.com/og-image.jpg",
       "category": "Water Purifier Service",
       "serviceType": "RO Installation, RO Repair, RO Maintenance, Filter Replacement",
       "brand": {
@@ -1223,7 +1238,7 @@
       "@type": "Service",
       "name": "RO Water Purifier Services",
       "description": "Comprehensive RO water purifier installation, repair, and maintenance services across Bengaluru",
-      "image": "/og-image.jpg",
+      "image": "https://hydrogenro.com/og-image.jpg",
       "provider": {
         "@type": "LocalBusiness",
         "name": "Hydrogen RO",
@@ -1298,7 +1313,7 @@
       "@type": "Article",
       "headline": "Best RO Water Purifier Services in Bengaluru - Professional Installation & Repair",
       "description": "Expert RO water purifier services in Bengaluru including installation, repair, maintenance, and filter replacement. Same-day service, 24/7 emergency support across all areas of Bangalore.",
-      "image": "/og-image.jpg",
+      "image": "https://hydrogenro.com/og-image.jpg",
       "author": {
         "@type": "Organization",
         "name": "Hydrogen RO"
@@ -1308,7 +1323,7 @@
         "name": "Hydrogen RO",
         "logo": {
           "@type": "ImageObject",
-          "url": "/fulllogo.png"
+          "url": "https://hydrogenro.com/fulllogo.png"
         }
       },
       "datePublished": "2025-01-27",
@@ -1327,7 +1342,7 @@
       "@type": "HowTo",
       "name": "How to Book RO Water Purifier Service in Bengaluru",
       "description": "Step-by-step guide to book professional RO water purifier services in Bengaluru",
-      "image": "/og-image.jpg",
+      "image": "https://hydrogenro.com/og-image.jpg",
       "totalTime": "PT5M",
       "supply": [
         {
@@ -1361,13 +1376,20 @@
       ]
     }
     </script>
+    <script type="module" crossorigin src="/assets/index-adgs7vX2.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/react-vendor-Bf6WAMql.js">
+    <link rel="modulepreload" crossorigin href="/assets/ui-vendor-CdFCAcZ-.js">
+    <link rel="modulepreload" crossorigin href="/assets/utils-vendor-D0iNi9cv.js">
+    <link rel="modulepreload" crossorigin href="/assets/mui-vendor-CqHl_MH1.js">
+    <link rel="modulepreload" crossorigin href="/assets/supabase-vendor-p2vvFrWT.js">
+    <link rel="modulepreload" crossorigin href="/assets/router-vendor-BVm6P-If.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-D2-Qyk0T.css">
   </head>
 
   <body>
     <div id="root"></div>
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
-    <script type="module" src="/src/main.tsx"></script>
     
     <!-- COMPREHENSIVE SEO CONTENT - HIDDEN FROM USERS -->
     <div class="seo-hidden">
