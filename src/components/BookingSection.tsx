@@ -383,6 +383,12 @@ const BookingSection = () => {
           : hostname.includes('hydrogenro.com')
             ? 'hydrogenro'
             : 'unknown';
+      const websiteLeadSource =
+        bookingSource === 'elevenro'
+          ? 'Website (ElevenRO)'
+          : bookingSource === 'hydrogenro'
+            ? 'Website (HydrogenRO)'
+            : `Website (${hostname})`;
 
       // Create job record
       const jobData = {
@@ -400,7 +406,7 @@ const BookingSection = () => {
         status: 'PENDING' as const,
         priority: 'MEDIUM' as const,
         description: formData.problemDescription,
-        requirements: [{ lead_source: 'Website' }],
+        requirements: [{ lead_source: websiteLeadSource }],
         estimated_cost: 0,
         payment_status: 'PENDING' as const,
         before_photos: formData.images,

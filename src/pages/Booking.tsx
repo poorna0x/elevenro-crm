@@ -1532,6 +1532,12 @@ const Booking: React.FC = () => {
           : hostname.includes('hydrogenro.com')
             ? 'hydrogenro'
             : 'unknown';
+      const websiteLeadSource =
+        bookingSource === 'elevenro'
+          ? 'Website (ElevenRO)'
+          : bookingSource === 'hydrogenro'
+            ? 'Website (HydrogenRO)'
+            : `Website (${hostname})`;
 
       const jobData = {
         job_number: generateJobNumber(formData.serviceType),
@@ -1550,7 +1556,7 @@ const Booking: React.FC = () => {
         service_address: jobServiceAddress,
         service_location: jobServiceLocation,
         requirements: [{
-          lead_source: 'Website',
+          lead_source: websiteLeadSource,
           custom_time: formData.preferredTime === 'CUSTOM' && formData.preferredTimeCustom ? formData.preferredTimeCustom : null
         }],
         estimated_cost: 0,
