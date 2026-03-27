@@ -5,6 +5,10 @@ import { Shield, Zap } from "lucide-react";
 const HeroSection = () => {
   return (
     <section id="home" className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/hero-water.jpg')" }}
+      />
       <div className="absolute inset-0 bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70" />
       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_20%,hsl(var(--primary))_0%,transparent_45%),radial-gradient(circle_at_80%_70%,hsl(var(--accent))_0%,transparent_40%)]" />
 

@@ -13,7 +13,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   description, 
   keywords = "RO water purifier Bengaluru, RO installation Bangalore, RO repair Karnataka, water softener Bangalore, RO maintenance Bengaluru, RO service Electronic City, RO service BTM, RO service HSR Layout, RO service Whitefield, RO service Koramangala, RO service Hebbal, RO service Yelahanka, RO service Sarjapur, RO service Bellandur, RO service JP Nagar, RO service Banashankari, RO service Tumakuru, RO service Nelamangala, RO service Attibele, RO service Chandapura, RO service Devanahalli, best RO service Bangalore",
   canonical,
-  ogImage = "/og-image.jpg"
+  ogImage = "/HydrogenROSeal.webp"
 }) => {
   return (
     <>
