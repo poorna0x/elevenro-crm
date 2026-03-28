@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Shield, AlertTriangle, CheckCircle, Clock, MousePointer, Keyboard } from 'lucide-react';
 import { useSecurity } from '@/contexts/SecurityContext';
 
@@ -11,16 +11,24 @@ const SecurityStatus: React.FC<SecurityStatusProps> = ({
   showDetails = false, 
   className = '' 
 }) => {
-  const { 
-    behaviorScore, 
-    isHumanBehavior, 
-    timeOnPage, 
-    mouseMovements, 
+  const {
+    isHumanBehavior,
+    getTimeOnPage,
+    mouseMovements,
     keystrokes,
     difficultyLevel,
     isRateLimited,
-    getSecurityStatus 
+    getSecurityStatus,
   } = useSecurity();
+
+  const [displayTimeMs, setDisplayTimeMs] = useState(0);
+
+  useEffect(() => {
+    const tick = () => setDisplayTimeMs(getTimeOnPage());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [getTimeOnPage]);
 
   const securityStatus = getSecurityStatus();
 
@@ -76,7 +84,7 @@ const SecurityStatus: React.FC<SecurityStatusProps> = ({
         <div className="flex items-center gap-1">
           <Clock className="w-3 h-3 text-muted-foreground" />
           <span className="text-muted-foreground">Time:</span>
-          <span className="font-medium">{formatTime(timeOnPage)}</span>
+          <span className="font-medium">{formatTime(displayTimeMs)}</span>
         </div>
         <div className="flex items-center gap-1">
           <MousePointer className="w-3 h-3 text-muted-foreground" />

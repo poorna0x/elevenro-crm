@@ -34,16 +34,7 @@ const AltchaCaptcha: React.FC<AltchaCaptchaProps> = ({
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const workerRef = useRef<Worker | null>(null);
   
-  const {
-    difficultyLevel,
-    isRateLimited,
-    incrementAttempts,
-    timeOnPage,
-    mouseMovements,
-    keystrokes,
-    behaviorScore,
-    isHumanBehavior,
-  } = useSecurity();
+  const { difficultyLevel, isRateLimited, incrementAttempts, mouseMovements, keystrokes } = useSecurity();
   
   const [buttonReady, setButtonReady] = useState(false);
   const [pageLoadTime] = useState(Date.now());

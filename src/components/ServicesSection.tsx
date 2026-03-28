@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -237,7 +238,7 @@ const services: ServiceItem[] = [
   },
 ];
 
-const ServicesSection = () => {
+const ServicesSectionInner = () => {
   const navigate = useNavigate();
 
   const handleBookService = () => {
@@ -259,7 +260,7 @@ const ServicesSection = () => {
           {services.map((service) => (
             <Card
               key={service.title}
-              className="cosmic-card group hover:shadow-xl hover:-translate-y-1 transition-[transform,box-shadow] duration-300 border-border"
+              className="rounded-xl border border-border bg-card shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-[transform,box-shadow] duration-300"
             >
               <CardContent className="p-6 flex flex-col h-full">
                 <div className="inline-flex items-center justify-center h-12 w-12 rounded-lg bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
@@ -381,4 +382,5 @@ const ServicesSection = () => {
   );
 };
 
+const ServicesSection = memo(ServicesSectionInner);
 export default ServicesSection;
