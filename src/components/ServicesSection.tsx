@@ -256,11 +256,10 @@ const ServicesSection = () => {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((service, i) => (
+          {services.map((service) => (
             <Card
               key={service.title}
-              className="cosmic-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 opacity-0 animate-fade-up border-border"
-              style={{ animationDelay: `${i * 0.08}s` }}
+              className="cosmic-card group hover:shadow-xl hover:-translate-y-1 transition-[transform,box-shadow] duration-300 border-border"
             >
               <CardContent className="p-6 flex flex-col h-full">
                 <div className="inline-flex items-center justify-center h-12 w-12 rounded-lg bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
