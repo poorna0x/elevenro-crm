@@ -2658,8 +2658,8 @@ const Booking: React.FC = () => {
       <div className="min-h-screen flex flex-col bg-background text-foreground">
         <Header />
         
-        <main className="flex-1 bg-background">
-          <div className="container mx-auto px-4 py-6">
+        <main className="flex-1 bg-background pt-24 md:pt-28">
+          <div className="container mx-auto px-4 pb-8 md:pb-10">
             <div className="max-w-2xl mx-auto">
               {/* Success Header */}
               <div className="text-center mb-8">
@@ -2926,8 +2926,8 @@ const Booking: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Header />
       
-      <main className="flex-1 bg-background">
-        <div className="container mx-auto px-4 py-6">
+      <main className="flex-1 bg-background pt-24 md:pt-28">
+        <div className="container mx-auto px-4 pb-8 md:pb-10">
           <div className="max-w-2xl mx-auto">
             {/* Header */}
             <div className="text-center mb-8">
