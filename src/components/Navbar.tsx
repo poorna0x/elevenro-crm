@@ -51,24 +51,31 @@ const Navbar = () => {
       </div>
 
       {isOpen && (
-        <div className="md:hidden bg-background border-t border-border px-6 py-4 space-y-3 animate-fade-in">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              to={link.href}
-              className={`block text-sm font-medium transition-colors ${
-                isActive(link.href) ? "text-primary" : "text-muted-foreground hover:text-primary"
-              }`}
-              onClick={() => setIsOpen(false)}
-            >
-              {link.label}
+        <div className="md:hidden bg-background/95 backdrop-blur-md border-t border-border px-6 py-5 animate-fade-in">
+          <div className="flex flex-col">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                to={link.href}
+                className={`block py-2.5 text-[15px] font-medium tracking-tight transition-colors first:pt-0 ${
+                  isActive(link.href) ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setIsOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+          <div className="mt-6 pt-5 border-t border-border/60">
+            <Link to="/book" onClick={() => setIsOpen(false)} className="block">
+              <Button
+                variant="hero"
+                className="w-full h-11 rounded-xl text-sm font-medium shadow-sm hover:shadow-md hover:scale-100 active:scale-[0.99] transition-all duration-200"
+              >
+                Book Service
+              </Button>
             </Link>
-          ))}
-          <Link to="/book" onClick={() => setIsOpen(false)}>
-            <Button variant="hero" size="sm" className="w-full">
-              Book Service
-            </Button>
-          </Link>
+          </div>
         </div>
       )}
     </nav>

@@ -1,11 +1,18 @@
+import type { LucideIcon } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const contactInfo = [
+type ContactItem =
+  | { icon: LucideIcon; label: string; value: string; href?: string; external?: boolean }
+  | { whatsapp: true; label: string; value: string; href: string };
+
+const contactInfo: ContactItem[] = [
   { icon: Phone, label: "Phone", value: "+91 98806 93311", href: "tel:+919880693311" },
+  { whatsapp: true, label: "WhatsApp", value: "+91 98806 93311", href: "https://wa.me/919880693311" },
   { icon: Mail, label: "Email", value: "mail@elevenro.com", href: "mailto:mail@elevenro.com" },
   { icon: MapPin, label: "Address", value: "Bengaluru, Karnataka" },
   { icon: Clock, label: "Working Hours", value: "Mon - Sat, 8:00 AM - 8:00 PM" },
@@ -39,23 +46,35 @@ const ContactPage = () => {
               </div>
 
               <div className="space-y-5">
-                {contactInfo.map((item) => (
-                  <div key={item.label} className="flex items-start gap-4">
-                    <div className="flex-shrink-0 h-11 w-11 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <item.icon className="h-5 w-5 text-primary" />
+                {contactInfo.map((item) => {
+                  const isWhatsApp = "whatsapp" in item && item.whatsapp;
+                  const external = isWhatsApp || item.external;
+                  return (
+                    <div key={item.label} className="flex items-start gap-4">
+                      <div className="flex-shrink-0 h-11 w-11 rounded-lg bg-primary/10 flex items-center justify-center">
+                        {isWhatsApp ? (
+                          <WhatsAppIcon className="h-5 w-5 text-primary" />
+                        ) : (
+                          <item.icon className="h-5 w-5 text-primary" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">{item.label}</p>
+                        {item.href ? (
+                          <a
+                            href={item.href}
+                            {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                            className="font-medium text-foreground hover:text-primary transition-colors"
+                          >
+                            {item.value}
+                          </a>
+                        ) : (
+                          <p className="font-medium text-foreground">{item.value}</p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">{item.label}</p>
-                      {item.href ? (
-                        <a href={item.href} className="font-medium text-foreground hover:text-primary transition-colors">
-                          {item.value}
-                        </a>
-                      ) : (
-                        <p className="font-medium text-foreground">{item.value}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

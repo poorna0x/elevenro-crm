@@ -42,10 +42,10 @@ const services = [
   },
   {
     icon: Filter,
-    title: "Deep Cleaning & Sanitization",
+    title: "RO Membrane Replacement",
     description:
-      "Thorough cleaning of tanks, membranes, and internal components to remove biofilm, scale, and bacteria buildup.",
-    features: ["Tank sanitization", "Membrane flush", "UV chamber cleaning", "Anti-bacterial treatment"],
+      "Expert replacement of end-of-life RO membranes with genuine parts. We verify TDS, flow, and system pressure after installation.",
+    features: ["Genuine membranes", "TDS verification", "Flow & pressure check", "All major brands"],
   },
 ];
 
@@ -62,7 +62,7 @@ const ServicesPage = () => {
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Needs</span>
           </h1>
           <p className="mt-5 text-lg text-muted-foreground leading-relaxed opacity-0 animate-fade-up" style={{ animationDelay: "0.2s" }}>
-            From installation to deep cleaning, we provide end-to-end care for every water purifier brand and model.
+            From installation to repairs and replacements, we provide end-to-end care for every water purifier brand and model.
           </p>
         </div>
       </section>

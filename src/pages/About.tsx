@@ -5,10 +5,9 @@ import { Link } from "react-router-dom";
 import { Users, Target, Award, Droplets, ArrowRight } from "lucide-react";
 
 const stats = [
-  { value: "10,000+", label: "Families Served" },
+  { value: "2,500+", label: "Families Served" },
   { value: "15+", label: "Cities Covered" },
-  { value: "50+", label: "Expert Technicians" },
-  { value: "98%", label: "Customer Satisfaction" },
+  { value: "100%", label: "Customer Satisfaction" },
 ];
 
 const values = [
@@ -54,7 +53,7 @@ const AboutPage = () => {
 
       <section className="py-16 border-b border-border">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {stats.map((stat, i) => (
               <div key={stat.label} className="text-center opacity-0 animate-fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
                 <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{stat.value}</p>
@@ -74,7 +73,7 @@ const AboutPage = () => {
                 Started in 2015, ElevenRO began as a small team of passionate water purifier technicians who saw a gap in the market - reliable, transparent, and affordable water purifier servicing.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                Today, we've grown into one of the most trusted water purifier service brands, serving over 10,000 families across 15+ cities. Our team of 50+ certified technicians delivers excellence with every visit.
+                Today, we've grown into one of the most trusted water purifier service brands, serving over 2,500 families across 15+ cities. Our certified technicians deliver excellence with every visit.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 We partner with all major brands including Kent, Aquaguard, Pureit, LivPure, and more - using only genuine spare parts and filters to ensure your purifier performs at its best.
