@@ -25,6 +25,9 @@ import { useSecurity } from '@/contexts/SecurityContext';
 import DraggableMap from '@/components/DraggableMap';
 import { removePlusCode, haversineKm } from '@/lib/maps';
 
+const WEBSITE_BOOKING_SITE_KEY: 'hydrogenro' | 'elevenro' =
+  (import.meta.env.VITE_WEBSITE_BOOKING_SITE_KEY as 'hydrogenro' | 'elevenro') ?? 'elevenro';
+
 declare global {
   interface Window {
     google: typeof google;
@@ -131,6 +134,7 @@ const Booking: React.FC = () => {
     setCurrentStep(1);
     setShowConfirmation(false);
     setBookingDetails(null);
+    websiteIntentLastSentRef.current = null;
   };
 
   const [formData, setFormData] = useState<FormData>({
@@ -153,6 +157,12 @@ const Booking: React.FC = () => {
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const websiteIntentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const websiteIntentLastSentRef = useRef<{
+    full_name: string;
+    phone_normalized: string;
+    current_step: number;
+  } | null>(null);
 
   // Helper function to format time slot
   const formatTimeSlot = (timeSlot: string, customTime?: string) => {
@@ -483,6 +493,72 @@ const Booking: React.FC = () => {
     const normalized = normalizePhoneNumber(phone);
     return normalized.length === 10 && /^[6-9]\d{9}$/.test(normalized);
   };
+
+  /** Egress: 5s debounce + skip identical payloads vs last successful RPC. */
+  const WEBSITE_INTENT_DEBOUNCE_MS = 5000;
+
+  useEffect(() => {
+    if (showConfirmation || showSuccessLoader || isSubmitting) {
+      if (websiteIntentTimerRef.current) {
+        clearTimeout(websiteIntentTimerRef.current);
+        websiteIntentTimerRef.current = null;
+      }
+      return;
+    }
+    const name = formData.fullName.trim();
+    const phoneNorm = normalizePhoneNumber(formData.phone);
+    if (name.length < 2 || !/^[6-9]\d{9}$/.test(phoneNorm)) {
+      if (websiteIntentTimerRef.current) {
+        clearTimeout(websiteIntentTimerRef.current);
+        websiteIntentTimerRef.current = null;
+      }
+      return;
+    }
+
+    if (websiteIntentTimerRef.current) clearTimeout(websiteIntentTimerRef.current);
+    websiteIntentTimerRef.current = setTimeout(() => {
+      websiteIntentTimerRef.current = null;
+      const payload = {
+        full_name: name,
+        phone: formData.phone,
+        phone_normalized: phoneNorm,
+        current_step: currentStep,
+        site_key: WEBSITE_BOOKING_SITE_KEY,
+      };
+      const last = websiteIntentLastSentRef.current;
+      if (
+        last &&
+        last.full_name === payload.full_name &&
+        last.phone_normalized === payload.phone_normalized &&
+        last.current_step === payload.current_step
+      ) {
+        return;
+      }
+      void db.websiteBookingIntent.pushLive(payload).then(({ error }) => {
+        if (!error) {
+          websiteIntentLastSentRef.current = {
+            full_name: payload.full_name,
+            phone_normalized: payload.phone_normalized,
+            current_step: payload.current_step,
+          };
+        }
+      });
+    }, WEBSITE_INTENT_DEBOUNCE_MS);
+
+    return () => {
+      if (websiteIntentTimerRef.current) {
+        clearTimeout(websiteIntentTimerRef.current);
+        websiteIntentTimerRef.current = null;
+      }
+    };
+  }, [
+    formData.fullName,
+    formData.phone,
+    currentStep,
+    showConfirmation,
+    showSuccessLoader,
+    isSubmitting,
+  ]);
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     let processedValue = value;
