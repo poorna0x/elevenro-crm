@@ -2655,6 +2655,34 @@ const Booking: React.FC = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Legal consent (match HydrogenRO placement + styling) */}
+            <div className="rounded-lg border border-border p-4 space-y-2">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="booking-legal-consent"
+                  checked={acceptLegal}
+                  onCheckedChange={(c) => setAcceptLegal(c === true)}
+                  className="mt-0.5"
+                />
+                <label htmlFor="booking-legal-consent" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+                  I agree to the{' '}
+                  <Link to="/terms-of-service" className="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer">
+                    Terms of Service
+                  </Link>
+                  ,{' '}
+                  <Link to="/privacy-policy" className="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer">
+                    Privacy Policy
+                  </Link>
+                  , and{' '}
+                  <Link to="/disclaimer" className="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer">
+                    Disclaimer
+                  </Link>
+                  . I consent to ElevenRO using my contact details to arrange and perform this service, including
+                  calls, SMS, or WhatsApp where I have provided those details.
+                </label>
+              </div>
+            </div>
             
             {/* Background ALTCHA verification - runs silently in background (hidden) */}
             {currentStep === 5 && !isCaptchaVerified && !backgroundVerificationFailed && (
@@ -3135,63 +3163,20 @@ const Booking: React.FC = () => {
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
-                <div className="flex flex-col items-end gap-2">
-                  <div className="rounded-lg border border-border p-4 space-y-2 max-w-md">
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        id="booking-legal-consent"
-                        checked={acceptLegal}
-                        onCheckedChange={(c) => setAcceptLegal(c === true)}
-                        className="mt-0.5"
-                      />
-                      <label htmlFor="booking-legal-consent" className="text-sm text-muted-foreground leading-snug cursor-pointer">
-                        I agree to the{' '}
-                        <Link
-                          to="/terms-of-service"
-                          className="text-primary underline hover:no-underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Terms of Service
-                        </Link>
-                        ,{' '}
-                        <Link
-                          to="/privacy-policy"
-                          className="text-primary underline hover:no-underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Privacy Policy
-                        </Link>
-                        , and{' '}
-                        <Link
-                          to="/disclaimer"
-                          className="text-primary underline hover:no-underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Disclaimer
-                        </Link>
-                        . I consent to ElevenRO using my contact details to arrange and perform this service, including
-                        calls, SMS, or WhatsApp where I have provided those details.
-                      </label>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={!canProceed() || isSubmitting || !isCaptchaVerified}
-                    className="flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      'Submit Booking'
-                    )}
-                  </Button>
-                </div>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!canProceed() || isSubmitting || !isCaptchaVerified}
+                  className="flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Booking'
+                  )}
+                </Button>
               )}
             </div>
           </div>
