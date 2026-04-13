@@ -319,7 +319,7 @@ const AMC = () => {
         </header>
       </div>
 
-      <main className="flex-1 py-12">
+      <main className="flex-1 pt-28 pb-12">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-12">
             <h1 className="text-3xl font-light text-foreground mb-3">
