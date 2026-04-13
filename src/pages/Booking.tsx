@@ -82,6 +82,8 @@ const Booking: React.FC = () => {
   const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [showSuccessLoader, setShowSuccessLoader] = useState(false);
   const [acceptLegal, setAcceptLegal] = useState(false);
+  const [consentNudgeAt, setConsentNudgeAt] = useState(0);
+  const legalConsentRef = useRef<HTMLDivElement | null>(null);
   const [modelSuggestions, setModelSuggestions] = useState<string[]>([]);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
@@ -1287,9 +1289,20 @@ const Booking: React.FC = () => {
     }));
   };
 
+  const nudgeLegalConsent = useCallback(() => {
+    setConsentNudgeAt(Date.now());
+    // Ensure the scrollable CardContent can scroll.
+    try {
+      legalConsentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const handleSubmit = async () => {
     if (!acceptLegal) {
       toast.error('Please accept Terms of Service and Privacy Policy to submit.');
+      nudgeLegalConsent();
       return;
     }
     // Check if CAPTCHA is verified before proceeding
@@ -1297,6 +1310,7 @@ const Booking: React.FC = () => {
       // Show security step if not verified yet (fallback)
       setShowSecurityStep(true);
       toast.error('Please complete the security check before submitting your booking.');
+      nudgeLegalConsent();
       return;
     }
     
@@ -1311,6 +1325,7 @@ const Booking: React.FC = () => {
     if (isHoneypotTriggered) {
       toast.error('Please refresh the page and try again.');
       resetSecurity();
+      nudgeLegalConsent();
       return;
     }
     
@@ -2657,7 +2672,12 @@ const Booking: React.FC = () => {
             </div>
 
             {/* Legal consent (match HydrogenRO placement + styling) */}
-            <div className="rounded-lg border border-border p-4 space-y-2">
+            <div
+              ref={legalConsentRef}
+              className={`rounded-lg border border-border p-4 space-y-2 transition-colors ${
+                Date.now() - consentNudgeAt < 1500 ? 'ring-2 ring-primary/40 bg-primary/5' : ''
+              }`}
+            >
               <div className="flex items-start gap-3">
                 <Checkbox
                   id="booking-legal-consent"
@@ -3165,8 +3185,12 @@ const Booking: React.FC = () => {
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  disabled={!canProceed() || isSubmitting || !isCaptchaVerified}
-                  className="flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50"
+                  // Keep clickable so we can guide users to consent (mobile below-the-fold).
+                  disabled={isSubmitting || !isCaptchaVerified}
+                  aria-disabled={!canProceed() || !isCaptchaVerified}
+                  className={`flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
+                    (!isCaptchaVerified) ? 'opacity-50 hover:scale-100 cursor-not-allowed' : ''
+                  }`}
                 >
                   {isSubmitting ? (
                     <>
