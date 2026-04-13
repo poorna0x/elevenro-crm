@@ -3165,14 +3165,15 @@ const Booking: React.FC = () => {
                         </Link>
                         , and{' '}
                         <Link
-                          to="/refund-policy"
+                          to="/disclaimer"
                           className="text-primary underline hover:no-underline"
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          Refund Policy
+                          Disclaimer
                         </Link>
-                        .
+                        . I consent to ElevenRO using my contact details to arrange and perform this service, including
+                        calls, SMS, or WhatsApp where I have provided those details.
                       </label>
                     </div>
                   </div>
