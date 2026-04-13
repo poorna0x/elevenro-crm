@@ -81,7 +81,7 @@ const Booking: React.FC = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [showSuccessLoader, setShowSuccessLoader] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [acceptLegal, setAcceptLegal] = useState(false);
   const [modelSuggestions, setModelSuggestions] = useState<string[]>([]);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
@@ -1288,7 +1288,7 @@ const Booking: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!agreedToTerms) {
+    if (!acceptLegal) {
       toast.error('Please accept Terms of Service and Privacy Policy to submit.');
       return;
     }
@@ -2727,7 +2727,7 @@ const Booking: React.FC = () => {
       case 4:
         return formData.serviceDate && formData.preferredTime;
       case 5:
-        return true;
+        return acceptLegal;
       case 6:
         return isCaptchaVerified;
       default:
@@ -3136,22 +3136,49 @@ const Booking: React.FC = () => {
                 </Button>
               ) : (
                 <div className="flex flex-col items-end gap-2">
-                  <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 select-none">
-                    <Checkbox checked={agreedToTerms} onCheckedChange={(v) => setAgreedToTerms(v === true)} />
-                    <span>
-                      I agree to{' '}
-                      <Link to="/terms-of-service" className="underline">
-                        Terms
-                      </Link>{' '}
-                      and{' '}
-                      <Link to="/privacy-policy" className="underline">
-                        Privacy Policy
-                      </Link>
-                    </span>
-                  </label>
+                  <div className="rounded-lg border border-border p-4 space-y-2 max-w-md">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="booking-legal-consent"
+                        checked={acceptLegal}
+                        onCheckedChange={(c) => setAcceptLegal(c === true)}
+                        className="mt-0.5"
+                      />
+                      <label htmlFor="booking-legal-consent" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+                        I agree to the{' '}
+                        <Link
+                          to="/terms-of-service"
+                          className="text-primary underline hover:no-underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Terms of Service
+                        </Link>
+                        ,{' '}
+                        <Link
+                          to="/privacy-policy"
+                          className="text-primary underline hover:no-underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Privacy Policy
+                        </Link>
+                        , and{' '}
+                        <Link
+                          to="/refund-policy"
+                          className="text-primary underline hover:no-underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Refund Policy
+                        </Link>
+                        .
+                      </label>
+                    </div>
+                  </div>
                   <Button
                     onClick={handleSubmit}
-                    disabled={!canProceed() || isSubmitting || !isCaptchaVerified || !agreedToTerms}
+                    disabled={!canProceed() || isSubmitting || !isCaptchaVerified}
                     className="flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50"
                   >
                     {isSubmitting ? (
