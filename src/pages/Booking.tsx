@@ -1886,9 +1886,9 @@ const Booking: React.FC = () => {
                 <Select value={formData.service} onValueChange={(value) => handleInputChange('service', value)}>
                   <SelectTrigger className={`mt-1 ${
                     showValidation && !formData.service 
-                      ? 'border-2 border-black dark:border-white' 
+                      ? 'border-2 border-red-500' 
                       : ''
-                  }`}>
+                  }`} id="service" aria-invalid={showValidation && !formData.service}>
                     <SelectValue placeholder="Select service" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1912,9 +1912,10 @@ const Booking: React.FC = () => {
                     placeholder="Describe the specific service you need..."
                     className={`mt-1 ${
                       showValidation && formData.service === 'Other' && !formData.customService 
-                        ? 'border-2 border-black dark:border-white' 
+                        ? 'border-2 border-red-500' 
                         : ''
                     }`}
+                    aria-invalid={showValidation && formData.service === 'Other' && !formData.customService}
                   />
                 </div>
               )}
