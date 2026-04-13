@@ -24,6 +24,8 @@ import SecurityStatus from '@/components/SecurityStatus';
 import { useSecurity } from '@/contexts/SecurityContext';
 import DraggableMap from '@/components/DraggableMap';
 import { removePlusCode, haversineKm } from '@/lib/maps';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Link } from 'react-router-dom';
 
 const WEBSITE_BOOKING_SITE_KEY: 'hydrogenro' | 'elevenro' =
   (import.meta.env.VITE_WEBSITE_BOOKING_SITE_KEY as 'hydrogenro' | 'elevenro') ?? 'elevenro';
@@ -79,6 +81,7 @@ const Booking: React.FC = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [showSuccessLoader, setShowSuccessLoader] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [modelSuggestions, setModelSuggestions] = useState<string[]>([]);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
@@ -1285,6 +1288,10 @@ const Booking: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    if (!agreedToTerms) {
+      toast.error('Please accept Terms of Service and Privacy Policy to submit.');
+      return;
+    }
     // Check if CAPTCHA is verified before proceeding
     if (!isCaptchaVerified) {
       // Show security step if not verified yet (fallback)
@@ -1661,6 +1668,21 @@ const Booking: React.FC = () => {
       }
       if (jobError) {
         throw new Error(jobError.message);
+      }
+
+      // Mark "live intent" as successfully booked (best-effort; non-blocking).
+      try {
+        const phoneNorm = normalizePhoneNumber(formData.phone);
+        const jobNumber = (job as any)?.job_number || (job as any)?.jobNumber;
+        if (phoneNorm && jobNumber) {
+          void db.websiteBookingIntent.markBooked({
+            phone_normalized: phoneNorm,
+            site_key: WEBSITE_BOOKING_SITE_KEY,
+            job_number: String(jobNumber),
+          });
+        }
+      } catch {
+        // ignore
       }
 
       const displayAddress = keepPreviousLocation && customer
@@ -3113,20 +3135,35 @@ const Booking: React.FC = () => {
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!canProceed() || isSubmitting || !isCaptchaVerified}
-                  className="flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    'Submit Booking'
-                  )}
-                </Button>
+                <div className="flex flex-col items-end gap-2">
+                  <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 select-none">
+                    <Checkbox checked={agreedToTerms} onCheckedChange={(v) => setAgreedToTerms(v === true)} />
+                    <span>
+                      I agree to{' '}
+                      <Link to="/terms-of-service" className="underline">
+                        Terms
+                      </Link>{' '}
+                      and{' '}
+                      <Link to="/privacy-policy" className="underline">
+                        Privacy Policy
+                      </Link>
+                    </span>
+                  </label>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={!canProceed() || isSubmitting || !isCaptchaVerified || !agreedToTerms}
+                    className="flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      'Submit Booking'
+                    )}
+                  </Button>
+                </div>
               )}
             </div>
           </div>

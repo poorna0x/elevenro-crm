@@ -3377,11 +3377,23 @@ export const db = {
       });
       return { error };
     },
+    async markBooked(row: {
+      phone_normalized: string;
+      site_key: 'hydrogenro' | 'elevenro';
+      job_number: string;
+    }) {
+      const { error } = await supabase.rpc('mark_website_booking_intent_booked', {
+        p_phone_normalized: row.phone_normalized,
+        p_site_key: row.site_key,
+        p_job_number: row.job_number,
+      });
+      return { error };
+    },
     async listActive(limit = 10) {
       const lim = Math.min(Math.max(1, limit), 20);
       const { data, error } = await supabase
         .from('website_booking_intent')
-        .select('id,full_name,phone,current_step,updated_at,site_key')
+        .select('*')
         .is('dismissed_at', null)
         .order('updated_at', { ascending: false })
         .limit(lim);

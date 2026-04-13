@@ -17,6 +17,8 @@ import { emailService } from '@/lib/email';
 import { BookingFormData } from '@/types';
 import AltchaWidget from '@/components/AltchaWidget';
 
+const normalizePhone10 = (phone: string): string => phone.replace(/\D/g, '').slice(-10);
+
 // Validation schema
 const bookingSchema = z.object({
   // Customer Info
@@ -276,6 +278,22 @@ const EnhancedBookingForm = () => {
       
       if (jobError) {
         throw new Error(jobError.message);
+      }
+
+      // Mark website intent as booked (best-effort; no-op if no intent row exists).
+      try {
+        const phoneNorm = normalizePhone10(data.phone);
+        const siteKey = hostname.includes('elevenro.com') ? 'elevenro' : 'hydrogenro';
+        const jobNumber = (job as any)?.job_number || (job as any)?.jobNumber;
+        if (phoneNorm && jobNumber) {
+          void db.websiteBookingIntent.markBooked({
+            phone_normalized: phoneNorm,
+            site_key: siteKey,
+            job_number: String(jobNumber),
+          });
+        }
+      } catch {
+        /* ignore */
       }
 
       // Send confirmation email (non-blocking for faster response)
