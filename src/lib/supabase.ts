@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types';
 import { chromeStorage } from './storage';
+import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from './supabaseConfig';
 import { escapeForLike, normalizePhoneForSearch } from './utils';
-
-// Supabase configuration
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+import { PENDING_PAYMENT_REMINDER_TITLE } from './pendingPaymentReminder';
+import { cacheGet, cacheSet, cacheInvalidate } from './supabaseQueryCache';
+import { isMissingServiceBrandColumnError } from './amc-brand';
 
 // Debug logging in development
 if (import.meta.env.DEV) {
@@ -13,17 +13,12 @@ if (import.meta.env.DEV) {
   console.log('[Supabase Config] Anon Key:', supabaseAnonKey ? '✓ Set (' + supabaseAnonKey.substring(0, 20) + '...)' : '✗ Missing');
 }
 
-// Use placeholder values during build if env vars are missing (prevents build failures)
-// The app will fail at runtime if these are actually missing, but build will succeed
+// Placeholders only so `vite build` succeeds; real values must be set on Netlify for production.
 const buildTimeUrl = supabaseUrl || 'https://placeholder.supabase.co';
 const buildTimeKey = supabaseAnonKey || 'placeholder-key';
 
-// Runtime validation - check if env vars are actually set when app runs
-if (typeof window !== 'undefined' && (!supabaseUrl || !supabaseAnonKey)) {
-  console.error('[Supabase Config] Missing environment variables at runtime!');
-  console.error('[Supabase Config] URL:', supabaseUrl ? '✓ Set' : '✗ Missing');
-  console.error('[Supabase Config] Anon Key:', supabaseAnonKey ? '✓ Set' : '✗ Missing');
-  console.error('[Supabase Config] Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment variables.');
+if (typeof window !== 'undefined' && !isSupabaseConfigured()) {
+  console.error('[Supabase Config] Missing or placeholder Supabase env at runtime — login will fail in production.');
 }
 
 // Create a storage adapter compatible with Supabase's expected interface
@@ -81,6 +76,13 @@ export const supabase = createClient<Database>(buildTimeUrl, buildTimeKey, {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
+      if (!isSupabaseConfigured() && String(url).includes('placeholder.supabase.co')) {
+        clearTimeout(timeoutId);
+        throw new Error(
+          'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY on Netlify and redeploy.'
+        );
+      }
+
       return fetch(url, {
         ...options,
         headers: headers,
@@ -106,26 +108,404 @@ export const supabase = createClient<Database>(buildTimeUrl, buildTimeKey, {
   },
 });
 
+/** Explicit job columns for ongoing admin list + technician job list (no before/after/images — use getPhotoFieldsForJobIds). */
+const JOB_SELECT_ONGOING_AND_TECH = [
+  'id',
+  'job_number',
+  'customer_id',
+  'service_type',
+  'service_sub_type',
+  'service_brand',
+  'brand',
+  'model',
+  'status',
+  'priority',
+  'scheduled_date',
+  'scheduled_time_slot',
+  'created_at',
+  'updated_at',
+  'completed_at',
+  'end_time',
+  'denied_at',
+  'denial_reason',
+  'denied_by',
+  'assigned_technician_id',
+  'team_members',
+  'follow_up_date',
+  'follow_up_time',
+  'follow_up_notes',
+  'follow_up_scheduled_by',
+  'follow_up_scheduled_at',
+  'completed_by',
+  'payment_amount',
+  'actual_cost',
+  'estimated_cost',
+  'estimated_duration',
+  'payment_method',
+  'service_address',
+  'service_location',
+  'description',
+  'assigned_by',
+  'assigned_date',
+  'completion_notes',
+  'requirements',
+  'start_time',
+  'actual_duration',
+  'payment_status',
+  'lead_cost',
+  'parts_cost_total',
+].join(',');
+
+/** Large JSON arrays — omitted from `JOB_SELECT_ONGOING_AND_TECH`; batch-fetch when UI needs thumbnails. */
+const JOB_PHOTO_ARRAY_COLUMNS = 'before_photos,after_photos,images';
+
+function mergeJobPhotoFieldsIntoRows<T extends { id: string }>(rows: T[], photoRows: Record<string, unknown>[] | null | undefined): T[] {
+  if (!rows.length || !photoRows?.length) return rows;
+  const byId = new Map(photoRows.map((r: any) => [r.id, r]));
+  return rows.map((j) => {
+    const p = byId.get(j.id) as any;
+    if (!p) return j;
+    return {
+      ...j,
+      before_photos: p.before_photos,
+      after_photos: p.after_photos,
+      images: p.images,
+    };
+  });
+}
+
+/** Customer embed for technician job list (maps/cards); omit notes/history to cut egress vs customers(*). */
+const CUSTOMER_EMBED_FOR_TECH_JOBS = [
+  'id',
+  'customer_id',
+  'full_name',
+  'phone',
+  'alternate_phone',
+  'email',
+  'visible_address',
+  'address',
+  'location',
+  'service_type',
+  'brand',
+  'model',
+  'last_service_date',
+  'has_prefilter',
+  'has_google_review',
+  'customer_tier',
+  'raw_water_tds',
+].join(',');
+
+/** Customer embed for technician job list (low-egress). Must include address + location so maps / full-address dialog match DB (slim omit caused fallback to stale job.service_address). */
+const CUSTOMER_EMBED_FOR_TECH_JOBS_SLIM = [
+  'id',
+  'customer_id',
+  'full_name',
+  'phone',
+  'alternate_phone',
+  'visible_address',
+  'address',
+  'location',
+  'service_type',
+  'brand',
+  'model',
+  'last_service_date',
+  'has_prefilter',
+  'has_google_review',
+  'customer_tier',
+  'raw_water_tds',
+].join(',');
+
+/**
+ * Customer embed for admin ongoing + ALL-tab lists (low egress).
+ * Omits address, location, notes, etc. — same shape as completed slim embed.
+ * UI loads full row via db.customers.getById when user opens edit, address, bills, new job, reports, etc.
+ */
+const CUSTOMER_EMBED_FOR_ONGOING_ADMIN = [
+  'id',
+  'customer_id',
+  'full_name',
+  'phone',
+  'alternate_phone',
+  'email',
+  'visible_address',
+  'service_type',
+  'brand',
+  'model',
+  'last_service_date',
+  'has_prefilter',
+  'has_google_review',
+  'customer_tier',
+  'raw_water_tds',
+].join(',');
+
+/** Per-customer job lists: no before_photos/after_photos/images (large JSON). Shared by slim + report helpers. */
+const JOB_BY_CUSTOMER_SLIM_COLS = [
+  'id',
+  'job_number',
+  'customer_id',
+  'status',
+  'priority',
+  'service_type',
+  'service_sub_type',
+  'service_brand',
+  'scheduled_date',
+  'scheduled_time_slot',
+  'created_at',
+  'updated_at',
+  'completed_at',
+  'end_time',
+  'denied_at',
+  'denial_reason',
+  'assigned_technician_id',
+  'completed_by',
+  'payment_amount',
+  'actual_cost',
+  'estimated_cost',
+  'payment_method',
+  'lead_cost',
+  'parts_cost_total',
+  'requirements',
+] as const;
+
+/** Full customer row for getById / getByPhone / getByCustomerId (no `*`). */
+export const CUSTOMER_ROW_COLUMNS = [
+  'id',
+  'customer_id',
+  'full_name',
+  'phone',
+  'alternate_phone',
+  'email',
+  'address',
+  'location',
+  'visible_address',
+  'custom_time',
+  'service_type',
+  'brand',
+  'model',
+  'installation_date',
+  'warranty_expiry',
+  'status',
+  'customer_since',
+  'last_service_date',
+  'notes',
+  'preferred_time_slot',
+  'preferred_language',
+  'has_prefilter',
+  'has_google_review',
+  'customer_tier',
+  'raw_water_tds',
+  'photos',
+  'created_at',
+  'updated_at',
+].join(',');
+
+/** Assignment / map / calling: exclude INACTIVE; null treated as active (legacy rows). */
+const TECHNICIAN_ROSTER_ACTIVE_OR =
+  'account_status.is.null,account_status.eq.ACTIVE,account_status.eq.SUSPENDED';
+
+/** Technician list/detail without password / push_subscription. */
+const TECHNICIAN_ROW_COLUMNS = [
+  'id',
+  'full_name',
+  'phone',
+  'email',
+  'employee_id',
+  'skills',
+  'service_areas',
+  'status',
+  'current_location',
+  'work_schedule',
+  'performance',
+  'vehicle',
+  'salary',
+  'qr_code',
+  'photo',
+  'visible_qr_codes',
+  'common_qr_code_ids',
+  'account_status',
+  'created_at',
+  'updated_at',
+].join(',');
+
+/** Same as full row but omits `current_location` — admin dashboard initial load (live GPS loaded on demand). */
+const TECHNICIAN_DASHBOARD_COLUMNS = [
+  'id',
+  'full_name',
+  'phone',
+  'email',
+  'employee_id',
+  'skills',
+  'service_areas',
+  'status',
+  'work_schedule',
+  'performance',
+  'vehicle',
+  'salary',
+  'qr_code',
+  'photo',
+  'visible_qr_codes',
+  'common_qr_code_ids',
+  'account_status',
+  'created_at',
+  'updated_at',
+].join(',');
+
+export const REMINDER_ROW_COLUMNS = [
+  'id',
+  'entity_type',
+  'entity_id',
+  'title',
+  'notes',
+  'reminder_at',
+  'created_by',
+  'created_at',
+  'completed_at',
+  'interval_type',
+  'interval_value',
+].join(',');
+
+export const FOLLOW_UP_ROW_COLUMNS = [
+  'id',
+  'job_id',
+  'parent_follow_up_id',
+  'follow_up_date',
+  'follow_up_time',
+  'reason',
+  'notes',
+  'scheduled_by',
+  'scheduled_at',
+  'completed',
+  'completed_at',
+  'created_at',
+  'updated_at',
+].join(',');
+
+export const AMC_CONTRACT_ROW_COLUMNS = [
+  'id',
+  'customer_id',
+  'job_id',
+  'start_date',
+  'end_date',
+  'years',
+  'includes_prefilter',
+  'additional_info',
+  'status',
+  'renewed_from_amc_id',
+  'service_period_months',
+  'given_by_technician_id',
+  'created_at',
+  'updated_at',
+].join(',');
+
+const PRODUCT_QR_ROW_COLUMNS =
+  'id,name,qr_code_url,product_image_url,product_name,product_description,product_mrp,created_at,updated_at';
+
+const TECHNICIAN_EXPENSE_ROW_COLUMNS =
+  'id,technician_id,amount,description,expense_date,category,receipt_url,notes,added_by,created_at,updated_at';
+
+/** Matches `schema.sql` technician_advances (uses paid_by, not added_by). */
+const TECHNICIAN_ADVANCE_ROW_COLUMNS =
+  'id,technician_id,amount,description,advance_date,payment_method,payment_reference,notes,paid_by,created_at,updated_at';
+
+const JOB_ASSIGNMENT_REQUEST_ROW =
+  'id,job_id,technician_id,status,assigned_by,assigned_at,responded_at,response_notes,created_at,updated_at';
+
+const CALL_HISTORY_ROW_COLUMNS =
+  'id,customer_id,contact_type,contact_method,phone_number,message_sent,status,notes,contacted_at,created_at,updated_at';
+
+/** Local calendar `YYYY-MM-DD` → UTC bounds for `completed_at` / `end_time` / `denied_at` filters. */
+function jobLocalDayBounds(dateStr: string): { startISO: string; nextISO: string } {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const localStart = new Date(year, month - 1, day, 0, 0, 0, 0);
+  const localNext = new Date(year, month - 1, day + 1, 0, 0, 0, 0);
+  return { startISO: localStart.toISOString(), nextISO: localNext.toISOString() };
+}
+
+type AdminCompletedListFilters = {
+  completedByUserId?: string;
+  serviceSubTypeIn?: string[];
+  leadRequirementsContainVariants?: string[];
+};
+
+function applyAdminCompletedListFilters(query: any, listFilters?: AdminCompletedListFilters) {
+  if (!listFilters) return query;
+  if (listFilters.completedByUserId) {
+    query = query.eq('completed_by', listFilters.completedByUserId);
+  }
+  if (listFilters.serviceSubTypeIn?.length) {
+    query = query.in('service_sub_type', listFilters.serviceSubTypeIn);
+  }
+  if (listFilters.leadRequirementsContainVariants?.length) {
+    const variants = listFilters.leadRequirementsContainVariants;
+    if (variants.length === 1) {
+      query = query.contains('requirements', JSON.stringify([{ lead_source: variants[0] }]));
+    } else {
+      query = query.or(
+        variants.map((v) => `requirements.cs.${JSON.stringify([{ lead_source: v }])}`).join(',')
+      );
+    }
+  }
+  return query;
+}
+
+/** Customer columns for patching jobs missing embedded `customer` (omits `photos` json). */
+export const CUSTOMER_ADMIN_LIST_PATCH_COLUMNS = [
+  'id',
+  'customer_id',
+  'full_name',
+  'phone',
+  'alternate_phone',
+  'email',
+  'visible_address',
+  'address',
+  'location',
+  'service_type',
+  'brand',
+  'model',
+  'installation_date',
+  'warranty_expiry',
+  'status',
+  'customer_since',
+  'last_service_date',
+  'notes',
+  'preferred_time_slot',
+  'preferred_language',
+  'has_prefilter',
+  'has_google_review',
+  'customer_tier',
+  'raw_water_tds',
+  'created_at',
+  'updated_at',
+].join(',');
+
+/** True when logged-in admin may use direct customers table (not anon / technician). */
+async function hasAdminCustomerAccess(): Promise<boolean> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return false;
+  const role =
+    session.user.app_metadata?.role ?? session.user.user_metadata?.role ?? 'admin';
+  return role !== 'technician';
+}
+
 // Database helper functions
 export const db = {
   // Customer operations
   customers: {
     async create(customer: Database['public']['Tables']['customers']['Insert']) {
-      // Generate customer ID if not provided
-      if (!customer.customer_id) {
-        const { data: generatedId, error: idError } = await supabase
-          .rpc('generate_customer_id');
-        
-        if (idError) {
-          return { data: null, error: idError };
-        }
-        
-        customer.customer_id = generatedId;
+      // Public booking (anon): must use SECURITY DEFINER RPC after customers RLS lockdown
+      if (!(await hasAdminCustomerAccess())) {
+        return db.customers.createForBooking(customer as Record<string, unknown>);
+      }
+
+      // customer_id is set by DB trigger set_customer_id (generate_customer_id is not exposed to anon RPC)
+      const insertPayload = { ...customer } as Record<string, unknown>;
+      if (!insertPayload.customer_id) {
+        delete insertPayload.customer_id;
       }
 
       const { data, error } = await supabase
         .from('customers')
-        .insert(customer)
+        .insert(insertPayload as Database['public']['Tables']['customers']['Insert'])
         .select()
         .single();
       
@@ -135,7 +515,7 @@ export const db = {
     async getById(id: string) {
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select(CUSTOMER_ROW_COLUMNS)
         .eq('id', id)
         .single();
       
@@ -153,16 +533,59 @@ export const db = {
     },
     
     async getByPhone(phone: string) {
+      if (!(await hasAdminCustomerAccess())) {
+        return db.customers.getByPhoneForBooking(phone);
+      }
+
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select(CUSTOMER_ROW_COLUMNS)
         .eq('phone', phone)
         .maybeSingle();
       
       return { data, error };
     },
+
+    /** Public booking only — phone-scoped RPC; safe under locked-down customers RLS. */
+    async getByPhoneForBooking(phone: string) {
+      const { data, error } = await supabase.rpc('get_customer_by_phone_for_booking', {
+        p_phone: phone,
+      });
+      const row = Array.isArray(data) ? data[0] : data;
+      return { data: row ?? null, error };
+    },
+
+    async createForBooking(customer: Record<string, unknown>) {
+      const { createBookingCustomer } = await import('@/lib/bookingCustomer');
+      return createBookingCustomer(customer);
+    },
+
+    async updateForBooking(id: string, phone: string, updates: Record<string, unknown>) {
+      const { data, error } = await supabase.rpc('update_customer_for_booking', {
+        p_customer_id: id,
+        p_phone: phone,
+        p_updates: updates,
+      });
+      return { data: data ?? null, error };
+    },
     
     async update(id: string, updates: Database['public']['Tables']['customers']['Update']) {
+      if (!(await hasAdminCustomerAccess())) {
+        const phone =
+          (updates as { phone?: string }).phone ??
+          (updates as { phone_number?: string }).phone_number;
+        if (phone) {
+          return db.customers.updateForBooking(id, phone, updates as Record<string, unknown>);
+        }
+        return {
+          data: null,
+          error: {
+            message:
+              'Public booking must use updateForBooking(id, phone, updates) after customers RLS is enabled',
+          },
+        };
+      }
+
       const { data, error } = await supabase
         .from('customers')
         .update(updates)
@@ -181,7 +604,7 @@ export const db = {
     async getAll(limit?: number) {
       let query = supabase
         .from('customers')
-        .select('*')
+        .select(CUSTOMER_ROW_COLUMNS)
         .order('created_at', { ascending: false });
       
       // Add limit if provided to reduce data transfer
@@ -193,11 +616,92 @@ export const db = {
       return { data, error };
     },
 
+    /** Low-egress customers list for dashboards/autocomplete. */
+    async getAllSlim(limit?: number) {
+      const cols = [
+        'id',
+        'customer_id',
+        'full_name',
+        'phone',
+        'alternate_phone',
+        'email',
+        'visible_address',
+        'service_type',
+        'brand',
+        'model',
+        'last_service_date',
+        'has_prefilter',
+        'has_google_review',
+        'customer_tier',
+        'raw_water_tds',
+        'created_at',
+        'updated_at',
+      ].join(', ');
+
+      let query = supabase
+        .from('customers')
+        .select(cols)
+        .order('created_at', { ascending: false });
+
+      if (limit && limit > 0) {
+        query = query.limit(limit);
+      }
+
+      const { data, error } = await query;
+      return { data, error };
+    },
+
     async search(query: string, limit: number = 50) {
+      const trimmed = (query ?? '').trim();
+      if (!trimmed) return { data: [], error: null };
+      return this.searchSlim(trimmed, limit, { includeAddressAndLocation: true });
+    },
+
+    /** Low-egress customer search for pickers/lists. Set includeAddressAndLocation for admin map/address UI. */
+    async searchSlim(
+      query: string,
+      limit: number = 50,
+      opts?: { includeAddressAndLocation?: boolean }
+    ) {
       const trimmed = (query ?? '').trim();
       if (!trimmed) {
         return { data: [], error: null };
       }
+      const cols = [
+        'id',
+        'customer_id',
+        'full_name',
+        'phone',
+        'alternate_phone',
+        'email',
+        'visible_address',
+        'service_type',
+        'brand',
+        'model',
+        'last_service_date',
+        'has_prefilter',
+        'has_google_review',
+        'customer_tier',
+        'raw_water_tds',
+        'created_at',
+        'updated_at',
+        ...(opts?.includeAddressAndLocation
+          ? ([
+              'address',
+              'location',
+              'notes',
+              'preferred_time_slot',
+              'preferred_language',
+              'custom_time',
+              'photos',
+              'installation_date',
+              'warranty_expiry',
+              'status',
+              'customer_since',
+            ] as const)
+          : []),
+      ].join(', ');
+
       const escaped = escapeForLike(trimmed);
       const orParts: string[] = [
         `customer_id.ilike.%${escaped}%`,
@@ -215,12 +719,14 @@ export const db = {
           orParts.push(`phone.ilike.%${first4}%${last6}%`, `alternate_phone.ilike.%${first4}%${last6}%`);
         }
       }
+
       let q = supabase
         .from('customers')
-        .select('*')
+        .select(cols)
         .or(orParts.join(','))
         .order('created_at', { ascending: false });
       if (limit > 0) q = q.limit(limit);
+
       const { data, error } = await q;
       return { data, error };
     },
@@ -232,7 +738,7 @@ export const db = {
       const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select(CUSTOMER_ROW_COLUMNS)
         .gte('customer_since', start.toISOString())
         .lte('customer_since', end.toISOString())
         .order('customer_since', { ascending: false })
@@ -243,7 +749,7 @@ export const db = {
     async getByCustomerId(customerId: string) {
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select(CUSTOMER_ROW_COLUMNS)
         .eq('customer_id', customerId)
         .single();
       
@@ -260,14 +766,43 @@ export const db = {
       return { data, error };
     }
   },
-  
+
   // Job operations
   jobs: {
-    async create(job: Database['public']['Tables']['jobs']['Insert'], retryCount: number = 0) {
+    async create(
+      job: Database['public']['Tables']['jobs']['Insert'],
+      retryCount: number = 0,
+      bookingPhone?: string
+    ) {
+      // Public booking (anon): SECURITY DEFINER RPC after jobs RLS lockdown
+      if (!(await hasAdminCustomerAccess())) {
+        if (!bookingPhone?.trim()) {
+          return {
+            data: null,
+            error: { message: 'booking phone is required for public job creation', code: 'BOOKING_PHONE_REQUIRED' } as any,
+          };
+        }
+        const { createBookingJob } = await import('@/lib/bookingJob');
+        const { data: rpcJob, error: rpcError } = await createBookingJob(bookingPhone.trim(), job as Record<string, unknown>);
+        if (rpcError?.code === '23505' && rpcError.message?.includes('job_number') && retryCount < 3) {
+          const serviceType = (job as any).service_type || 'RO';
+          const prefix = serviceType === 'RO' ? 'RO' : 'WS';
+          const timestamp = Date.now().toString().slice(-6);
+          const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+          const newJobNumber = `${prefix}${timestamp}${random}`;
+          return this.create({ ...job, job_number: newJobNumber }, retryCount + 1, bookingPhone);
+        }
+        if (!rpcError) {
+          cacheInvalidate('job_counts_v1');
+        }
+        return { data: rpcJob as any, error: rpcError };
+      }
+
+      // Return same shape as getOngoing (explicit columns + customer) so UI can prepend without refetch.
       const { data, error } = await supabase
         .from('jobs')
         .insert(job)
-        .select()
+        .select(`${JOB_SELECT_ONGOING_AND_TECH},${JOB_PHOTO_ARRAY_COLUMNS},customer:customers(${CUSTOMER_EMBED_FOR_ONGOING_ADMIN})`)
         .single();
       
       // If duplicate job_number error and we haven't retried too many times, retry with new job number
@@ -280,13 +815,88 @@ export const db = {
         const newJobNumber = `${prefix}${timestamp}${random}`;
         
         // Retry with new job number
-        return this.create({ ...job, job_number: newJobNumber }, retryCount + 1);
+        return this.create({ ...job, job_number: newJobNumber }, retryCount + 1, bookingPhone);
       }
-      
+
+      if (!error) {
+        cacheInvalidate('job_counts_v1');
+        if ((job as { status?: string })?.status === 'COMPLETED') {
+          cacheInvalidate('completed_customers_map_v1');
+        }
+      }
       return { data, error };
+    },
+
+    async createForBooking(phone: string, row: Record<string, unknown>) {
+      const { createBookingJob } = await import('@/lib/bookingJob');
+      return createBookingJob(phone, row);
     },
     
     async getById(id: string) {
+      // Backward-compatible default now uses SLIM select to reduce egress.
+      // Use getByIdFull() when you explicitly need photos/address/location/etc.
+      return this.getByIdSlim(id);
+    },
+
+    /** Low-egress jobs-by-id fetch. Avoids large payload fields and customer JSON. */
+    async getByIdSlim(id: string) {
+      const jobCols = [
+        'id',
+        'job_number',
+        'customer_id',
+        'status',
+        'priority',
+        'service_type',
+        'service_sub_type',
+        'service_brand',
+        'scheduled_date',
+        'scheduled_time_slot',
+        'created_at',
+        'updated_at',
+        'completed_at',
+        'end_time',
+        'denied_at',
+        'denial_reason',
+        'assigned_technician_id',
+        'completed_by',
+        'payment_amount',
+        'actual_cost',
+        'estimated_cost',
+        'payment_method',
+        'lead_cost',
+        'parts_cost_total',
+        'requirements',
+      ].join(', ');
+
+      const customerCols = [
+        'id',
+        'customer_id',
+        'full_name',
+        'phone',
+        'alternate_phone',
+        'email',
+        'visible_address',
+        'service_type',
+        'brand',
+        'model',
+        'last_service_date',
+        'has_prefilter',
+        'has_google_review',
+        'customer_tier',
+        'raw_water_tds',
+      ].join(', ');
+
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(`${jobCols},customer:customers(${customerCols})`)
+        .eq('id', id)
+        .single();
+
+      return { data, error };
+    },
+
+    /** Full jobs-by-id fetch. Use only when explicitly requested (photos/full details). */
+    async getByIdFull(id: string) {
       const { data, error } = await supabase
         .from('jobs')
         .select(`
@@ -295,36 +905,175 @@ export const db = {
         `)
         .eq('id', id)
         .single();
-      
+
       return { data, error };
     },
     
     async getByCustomerId(customerId: string) {
+      // Backward-compatible default uses slim list; use getByCustomerIdForReport / getByCustomerIdForPhotoAggregation / getByCustomerIdFull as needed.
+      return this.getByCustomerIdSlim(customerId);
+    },
+
+    /** Low-egress jobs-by-customer list. Avoids big payload fields. */
+    async getByCustomerIdSlim(customerId: string) {
+      const cols = JOB_BY_CUSTOMER_SLIM_COLS.join(', ');
+
       const { data, error } = await supabase
         .from('jobs')
-        .select('*')
+        .select(cols)
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
-      
+
       return { data, error };
+    },
+
+    /**
+     * Customer / technician “report” UI: completed jobs only; no photo arrays (use enrichJobsWithAfterPhotosIfNeeded).
+     */
+    async getByCustomerIdForReport(customerId: string) {
+      const cols = [
+        ...JOB_BY_CUSTOMER_SLIM_COLS,
+        'brand',
+        'model',
+        'completion_notes',
+        'description',
+      ].join(', ');
+
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(cols)
+        .eq('customer_id', customerId)
+        .eq('status', 'COMPLETED')
+        .order('created_at', { ascending: false });
+
+      return { data, error };
+    },
+
+    /** Report jobs + lazy after_photos for rows missing payment/bill URLs in requirements. */
+    async getByCustomerIdForReportEnriched(customerId: string) {
+      const { data, error } = await this.getByCustomerIdForReport(customerId);
+      if (error) return { data: data || [], error };
+      if (!data?.length) return { data: data || [], error: null };
+      const { enrichJobsWithAfterPhotosIfNeeded } = await import('@/lib/jobReportPhotos');
+      const enriched = await enrichJobsWithAfterPhotosIfNeeded(data);
+      return { data: enriched, error: null };
+    },
+
+    /**
+     * Gallery / delete-photo flows: only fields used to aggregate or mutate photo URLs.
+     * Much smaller than getByCustomerIdFull (*).
+     */
+    async getByCustomerIdForPhotoAggregation(customerId: string) {
+      const cols = [
+        'id',
+        'created_at',
+        'updated_at',
+        'completed_at',
+        'end_time',
+        'before_photos',
+        'after_photos',
+        'images',
+        'requirements',
+      ].join(', ');
+
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(cols)
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+
+      return { data, error };
+    },
+
+    /**
+     * Single latest job (for merging new customer-gallery uploads into before_photos).
+     */
+    async getLatestJobForCustomerPhotoUpload(customerId: string) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('id, before_photos, created_at')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      return { data, error };
+    },
+
+    /** Full jobs-by-customer fetch: ongoing column set plus photo JSON arrays. */
+    async getByCustomerIdFull(customerId: string) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(`${JOB_SELECT_ONGOING_AND_TECH},${JOB_PHOTO_ARRAY_COLUMNS}`)
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+      return { data, error };
+    },
+
+    /** Load only photo array fields for many jobs (follows slim list query). */
+    async getPhotoFieldsForJobIds(jobIds: string[]) {
+      const ids = [...new Set(jobIds.filter(Boolean))];
+      if (ids.length === 0) {
+        return { data: [] as Record<string, unknown>[], error: null };
+      }
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(`id,${JOB_PHOTO_ARRAY_COLUMNS}`)
+        .in('id', ids);
+      return { data: data || [], error };
+    },
+
+    /**
+     * Latest COMPLETED job `service_brand` per customer (batched `.in` query).
+     * Rows are ordered by completion time desc; first row per customer_id wins.
+     */
+    async getLastServiceBrandByCustomerIds(customerIds: string[]) {
+      const ids = [...new Set(customerIds.filter(Boolean))];
+      if (ids.length === 0) {
+        return { data: {} as Record<string, string | null>, error: null };
+      }
+
+      const map: Record<string, string | null> = {};
+      const CHUNK = 80;
+
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const chunk = ids.slice(i, i + CHUNK);
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('customer_id, service_brand, completed_at, end_time, created_at')
+          .in('customer_id', chunk)
+          .eq('status', 'COMPLETED')
+          .not('service_brand', 'is', null)
+          .order('completed_at', { ascending: false, nullsFirst: false })
+          .order('end_time', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false });
+
+        if (error) return { data: map, error };
+
+        for (const row of data || []) {
+          const cid = (row as { customer_id?: string | null }).customer_id;
+          if (!cid || cid in map) continue;
+          map[cid] = (row as { service_brand?: string | null }).service_brand ?? null;
+        }
+      }
+
+      for (const id of ids) {
+        if (!(id in map)) map[id] = null;
+      }
+
+      return { data: map, error: null };
     },
     
     async getAll(limit?: number, includeCustomer?: boolean) {
-      // OPTIMIZATION: By default, don't fetch nested customer data to reduce payload size
-      // Only fetch customer data when explicitly needed
       let query;
       if (includeCustomer) {
         query = supabase
           .from('jobs')
-          .select(`
-            *,
-            customer:customers(*)
-          `);
+          .select(`${JOB_SELECT_ONGOING_AND_TECH},customer:customers(${CUSTOMER_EMBED_FOR_ONGOING_ADMIN})`);
       } else {
-        // Fetch only job data without nested customer (much smaller payload)
         query = supabase
           .from('jobs')
-          .select('*');
+          .select(JOB_SELECT_ONGOING_AND_TECH);
       }
       
       query = query.order('created_at', { ascending: false });
@@ -367,11 +1116,11 @@ export const db = {
           return { data: null, error: updateError };
         }
         
-        // Then fetch the updated row with minimal select to avoid relationship issues
+        // Re-fetch the row with the same column set as list views so merged client state shows edits without a manual refresh
         const { data, error: selectError } = await supabase
           .from('jobs')
-          .select('id, status, assigned_technician_id, completed_by, completed_at, end_time')
-        .eq('id', id)
+          .select(JOB_SELECT_ONGOING_AND_TECH)
+          .eq('id', id)
           .single();
       
         if (selectError) {
@@ -379,7 +1128,10 @@ export const db = {
             error: selectError,
             id
           });
-          // Update succeeded, but select failed - return success anyway
+          cacheInvalidate('job_counts_v1');
+          if ((updates as { status?: string }).status !== undefined) {
+            cacheInvalidate('completed_customers_map_v1');
+          }
           return { data: null, error: null };
       }
       
@@ -388,6 +1140,10 @@ export const db = {
           updatedData: data
         });
         
+        cacheInvalidate('job_counts_v1');
+        if ((updates as { status?: string }).status !== undefined) {
+          cacheInvalidate('completed_customers_map_v1');
+        }
         return { data: data || null, error: null };
       } catch (err: any) {
         console.error('❌ [db.jobs.update] Exception:', {
@@ -412,10 +1168,7 @@ export const db = {
     async getByStatus(status: string) {
       const { data, error } = await supabase
         .from('jobs')
-        .select(`
-          *,
-          customer:customers(*)
-        `)
+        .select(`${JOB_SELECT_ONGOING_AND_TECH},customer:customers(${CUSTOMER_EMBED_FOR_ONGOING_ADMIN})`)
         .eq('status', status)
         .order('created_at', { ascending: false });
       
@@ -423,26 +1176,74 @@ export const db = {
     },
     
     async getByTechnicianId(technicianId: string) {
-      // Optimized query for mobile - only fetch essential fields
-      // Include jobs where technician is assigned OR is a team member
-      const { data, error } = await supabase
+      // Explicit columns + slim customer embed; fallback if DB is missing optional columns.
+      const orFilter = `assigned_technician_id.eq.${technicianId},team_members.cs.["${technicianId}"]`;
+      const slim = await supabase
         .from('jobs')
-        .select(`
-          *,
-          customer:customers(*),
-          assigned_technician:technicians!assigned_technician_id(
-            id,
-            full_name,
-            phone,
-            email,
-            employee_id
-          )
-        `)
-        .or(`assigned_technician_id.eq.${technicianId},team_members.cs.["${technicianId}"]`)
+        .select(`${JOB_SELECT_ONGOING_AND_TECH},customer:customers(${CUSTOMER_EMBED_FOR_TECH_JOBS})`)
+        .or(orFilter)
+        // Prefer recently touched rows so auto AMC / follow-up → ongoing → reassign is not dropped behind .limit(100) by old created_at.
+        .order('updated_at', { ascending: false })
         .order('created_at', { ascending: false })
-        .limit(100); // Limit to 100 jobs for mobile performance
-      
-      return { data, error };
+        .limit(100);
+
+      let rows = slim.data || [];
+      let err = slim.error;
+
+      if (err) {
+        if (import.meta.env.DEV) {
+          console.warn('[db.jobs.getByTechnicianId] Slim select failed, using full select:', slim.error?.message);
+        }
+        const legacy = await supabase
+          .from('jobs')
+          .select(`${JOB_SELECT_ONGOING_AND_TECH},customer:customers(${CUSTOMER_EMBED_FOR_ONGOING_ADMIN})`)
+          .or(orFilter)
+          .order('updated_at', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(100);
+        rows = legacy.data || [];
+        err = legacy.error;
+      }
+
+      if (err || !rows.length) {
+        return { data: rows, error: err };
+      }
+
+      const { data: photoRows, error: photoErr } = await this.getPhotoFieldsForJobIds(rows.map((r: any) => r.id));
+      if (photoErr || !photoRows?.length) {
+        return { data: rows, error: null };
+      }
+      return { data: mergeJobPhotoFieldsIntoRows(rows, photoRows as Record<string, unknown>[]), error: null };
+    },
+
+    /** Low-egress technician job list. No photo arrays; minimal customer embed. */
+    async getByTechnicianIdSlim(technicianId: string) {
+      const orFilter = `assigned_technician_id.eq.${technicianId},team_members.cs.["${technicianId}"]`;
+      const result = await supabase
+        .from('jobs')
+        .select(`${JOB_SELECT_ONGOING_AND_TECH},customer:customers(${CUSTOMER_EMBED_FOR_TECH_JOBS_SLIM})`)
+        .or(orFilter)
+        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (!result.error) {
+        return { data: result.data || [], error: null };
+      }
+
+      if (import.meta.env.DEV) {
+        console.warn('[db.jobs.getByTechnicianIdSlim] Slim select failed, using legacy admin embed:', result.error?.message);
+      }
+
+      const legacy = await supabase
+        .from('jobs')
+        .select(`${JOB_SELECT_ONGOING_AND_TECH},customer:customers(${CUSTOMER_EMBED_FOR_ONGOING_ADMIN})`)
+        .or(orFilter)
+        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      return { data: legacy.data || [], error: legacy.error };
     },
     
     // Legacy function - keeping for backward compatibility
@@ -476,7 +1277,10 @@ export const db = {
         .from('jobs')
         .delete()
         .eq('id', id);
-      
+      if (!error) {
+        cacheInvalidate('job_counts_v1');
+        cacheInvalidate('completed_customers_map_v1');
+      }
       return { data: null, error };
     },
 
@@ -489,6 +1293,16 @@ export const db = {
         const year = today.getFullYear();
         const month = today.getMonth();
         const day = today.getDate();
+
+        const dayKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const countsCacheKey = `job_counts_v1:${dayKey}`;
+        const cached = cacheGet<{
+          ongoing: number;
+          followup: number;
+          denied: number;
+          completed: number;
+        }>(countsCacheKey);
+        if (cached) return { data: cached, error: null };
         
         // Create date objects in local timezone (start and end of today)
         // new Date(year, month, day, hour, min, sec) creates a date at that LOCAL time
@@ -529,15 +1343,19 @@ export const db = {
             .eq('status', 'COMPLETED')
             .or(`and(completed_at.gte.${todayStart},completed_at.lt.${todayStartNextDay}),and(end_time.gte.${todayStart},end_time.lt.${todayStartNextDay})`)
         ]);
-        
+
+        const countsData = {
+          ongoing: ongoingResult.count || 0,
+          followup: followupResult.count || 0,
+          denied: deniedResult.count || 0,
+          completed: completedResult.count || 0,
+        };
+        const err = ongoingResult.error || followupResult.error || deniedResult.error || completedResult.error;
+        if (!err) cacheSet(countsCacheKey, countsData, 25_000);
+
         return {
-          data: {
-            ongoing: ongoingResult.count || 0,
-            followup: followupResult.count || 0,
-            denied: deniedResult.count || 0,
-            completed: completedResult.count || 0
-          },
-          error: ongoingResult.error || followupResult.error || deniedResult.error || completedResult.error
+          data: countsData,
+          error: err,
         };
       } catch (error) {
         console.error('Error in getCounts:', error);
@@ -553,7 +1371,14 @@ export const db = {
       statuses: string[],
       page: number = 1,
       pageSize: number = 20,
-      dateFilter?: string | { startDate: string; endDate: string }
+      dateFilter?: string | { startDate: string; endDate: string },
+      listFilters?: {
+        completedByUserId?: string;
+        /** DB values for `in('service_sub_type', …)` — include casing/legacy aliases. */
+        serviceSubTypeIn?: string[];
+        /** `lead_source` values for jsonb `requirements` contains (see adminUtils). */
+        leadRequirementsContainVariants?: string[];
+      }
     ) {
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
@@ -591,13 +1416,6 @@ export const db = {
             updated_at
           )
         `, { count: 'exact' });
-      
-      const toLocalDayBounds = (dateStr: string) => {
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const localStart = new Date(year, month - 1, day, 0, 0, 0, 0);
-        const localNext = new Date(year, month - 1, day + 1, 0, 0, 0, 0);
-        return { startISO: localStart.toISOString(), nextISO: localNext.toISOString() };
-      };
 
       // If date filter is provided, filter by date based on status
       if (dateFilter) {
@@ -611,7 +1429,7 @@ export const db = {
           // Filter: DENIED jobs with denied_at in date range, OR CANCELLED jobs (show all cancelled regardless of date)
           if (statuses.includes('CANCELLED')) {
             if (singleDate) {
-              const { startISO, nextISO } = toLocalDayBounds(singleDate);
+              const { startISO, nextISO } = jobLocalDayBounds(singleDate);
               query = query.or(`and(status.eq.DENIED,denied_at.gte.${startISO},denied_at.lt.${nextISO}),status.eq.CANCELLED`);
             } else {
               query = query.in('status', statuses);
@@ -620,7 +1438,7 @@ export const db = {
             // Only DENIED jobs, filter by date
             // Use start of next day with lt (less than) for reliability
             if (singleDate) {
-              const { startISO, nextISO } = toLocalDayBounds(singleDate);
+              const { startISO, nextISO } = jobLocalDayBounds(singleDate);
               query = query
                 .eq('status', 'DENIED')
                 .gte('denied_at', startISO)
@@ -637,12 +1455,12 @@ export const db = {
           let nextDayISO: string | null = null;
 
           if (singleDate) {
-            const bounds = toLocalDayBounds(singleDate);
+            const bounds = jobLocalDayBounds(singleDate);
             startISO = bounds.startISO;
             nextDayISO = bounds.nextISO;
           } else if (rangeStartDate && rangeEndDate) {
-            const startBounds = toLocalDayBounds(rangeStartDate);
-            const endBounds = toLocalDayBounds(rangeEndDate);
+            const startBounds = jobLocalDayBounds(rangeStartDate);
+            const endBounds = jobLocalDayBounds(rangeEndDate);
             startISO = startBounds.startISO;
             nextDayISO = endBounds.nextISO;
           }
@@ -677,11 +1495,26 @@ export const db = {
         // No date filter, use normal status filter
         query = query.in('status', statuses);
       }
-      
-      const { data, error, count } = await query
-        .order('created_at', { ascending: false })
-        .range(from, to);
-      
+
+      query = applyAdminCompletedListFilters(query, listFilters);
+
+      const completedOnly = statuses.length === 1 && statuses[0] === 'COMPLETED';
+      const deniedCancelledList =
+        statuses.includes('DENIED') && statuses.includes('CANCELLED');
+      if (completedOnly) {
+        query = query
+          .order('completed_at', { ascending: false, nullsFirst: false })
+          .order('end_time', { ascending: false, nullsFirst: false });
+      } else if (deniedCancelledList) {
+        query = query
+          .order('denied_at', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const { data, error, count } = await query.range(from, to);
+
       return { 
         data: data || [], 
         error, 
@@ -689,6 +1522,210 @@ export const db = {
         page,
         pageSize,
         totalPages: count ? Math.ceil(count / pageSize) : 0
+      };
+    },
+
+    /**
+     * Slim paginated jobs list (low-egress).
+     * - Avoids `jobs.*` (which includes photo arrays / large payload fields)
+     * - Avoids customer `address/location/notes` JSON
+     * Use this for list views like Admin COMPLETED/CANCELLED where full detail isn't needed.
+     */
+    async getByStatusPaginatedSlim(
+      statuses: string[],
+      page: number = 1,
+      pageSize: number = 20,
+      dateFilter?: string | { startDate: string; endDate: string },
+      opts?: {
+        includePhotoFields?: boolean;
+        completedByUserId?: string;
+        serviceSubTypeIn?: string[];
+        leadRequirementsContainVariants?: string[];
+        /** When true, drop `requirements` jsonb from rows (admin “minimal” list; details on demand). */
+        omitRequirements?: boolean;
+        /** Prefer Postgres `estimated` count for faster pagination metadata (slight variance vs `exact` on huge tables). */
+        countMode?: 'exact' | 'estimated' | 'planned';
+      }
+    ) {
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const isCompletedOnly = statuses.length === 1 && statuses[0] === 'COMPLETED';
+      const needsDenialCols = statuses.includes('DENIED') || statuses.includes('CANCELLED');
+      const countPref = opts?.countMode ?? 'estimated';
+
+      const jobColList: string[] = [
+        'id',
+        'job_number',
+        'customer_id',
+        'status',
+        'priority',
+        'service_type',
+        'service_sub_type',
+        'service_brand',
+        'scheduled_date',
+        'scheduled_time_slot',
+        'created_at',
+        'updated_at',
+        'completed_at',
+        'end_time',
+        'assigned_technician_id',
+        'completed_by',
+        'payment_amount',
+        'actual_cost',
+        'estimated_cost',
+        'lead_cost',
+        'parts_cost_total',
+        'payment_method',
+        'service_address',
+        'service_location',
+        'assigned_by',
+        'assigned_date',
+        'completion_notes',
+      ];
+
+      if (!isCompletedOnly) {
+        jobColList.push(
+          'team_members',
+          'follow_up_date',
+          'follow_up_time',
+          'follow_up_notes',
+          'follow_up_scheduled_by',
+          'follow_up_scheduled_at'
+        );
+      }
+      if (needsDenialCols) {
+        jobColList.push('denied_at', 'denial_reason');
+      }
+      if (!isCompletedOnly || !opts?.omitRequirements) {
+        jobColList.push('description');
+      }
+      if (!opts?.omitRequirements) {
+        jobColList.push('requirements');
+      }
+      if (opts?.includePhotoFields) {
+        jobColList.push('before_photos', 'after_photos', 'images');
+      }
+      // Completed list: photos via enrichJobsWithAfterPhotosIfNeeded / loadCompletedJobDetails (not paginated rows).
+      const jobCols = jobColList.join(',');
+
+      const customerColsSlim = [
+        'id',
+        'customer_id',
+        'full_name',
+        'phone',
+        'alternate_phone',
+        'email',
+        'visible_address',
+        'service_type',
+        'brand',
+        'model',
+        'last_service_date',
+        'has_prefilter',
+        'has_google_review',
+        'customer_tier',
+        'raw_water_tds',
+      ];
+      const customerColsFat = [
+        ...customerColsSlim,
+        'address',
+        'location',
+        'notes',
+        'installation_date',
+        'warranty_expiry',
+        'status',
+        'customer_since',
+        'preferred_time_slot',
+        'preferred_language',
+        'created_at',
+        'updated_at',
+      ];
+      const customerCols = (opts?.includePhotoFields ? customerColsFat : customerColsSlim).join(',');
+
+      let query = supabase
+        .from('jobs')
+        .select(`${jobCols},customer:customers(${customerCols})`, { count: countPref });
+
+      if (dateFilter) {
+        const hasRangeObject = typeof dateFilter === 'object' && !!(dateFilter as any).startDate && !!(dateFilter as any).endDate;
+        const singleDate = typeof dateFilter === 'string' ? dateFilter : undefined;
+        const rangeStartDate = hasRangeObject ? (dateFilter as any).startDate : undefined;
+        const rangeEndDate = hasRangeObject ? (dateFilter as any).endDate : undefined;
+
+        if (statuses.includes('DENIED')) {
+          if (statuses.includes('CANCELLED')) {
+            if (singleDate) {
+              const { startISO, nextISO } = jobLocalDayBounds(singleDate);
+              query = query.or(`and(status.eq.DENIED,denied_at.gte.${startISO},denied_at.lt.${nextISO}),status.eq.CANCELLED`);
+            } else {
+              query = query.in('status', statuses);
+            }
+          } else {
+            if (singleDate) {
+              const { startISO, nextISO } = jobLocalDayBounds(singleDate);
+              query = query.eq('status', 'DENIED').gte('denied_at', startISO).lt('denied_at', nextISO);
+            } else {
+              query = query.eq('status', 'DENIED');
+            }
+          }
+        } else if (statuses.includes('COMPLETED')) {
+          let startISO: string | null = null;
+          let nextDayISO: string | null = null;
+
+          if (singleDate) {
+            const bounds = jobLocalDayBounds(singleDate);
+            startISO = bounds.startISO;
+            nextDayISO = bounds.nextISO;
+          } else if (rangeStartDate && rangeEndDate) {
+            const startBounds = jobLocalDayBounds(rangeStartDate);
+            const endBounds = jobLocalDayBounds(rangeEndDate);
+            startISO = startBounds.startISO;
+            nextDayISO = endBounds.nextISO;
+          }
+
+          if (startISO && nextDayISO) {
+            query = query
+              .eq('status', 'COMPLETED')
+              .or(`and(completed_at.gte.${startISO},completed_at.lt.${nextDayISO}),and(end_time.gte.${startISO},end_time.lt.${nextDayISO})`);
+          } else {
+            query = query.eq('status', 'COMPLETED');
+          }
+        } else {
+          query = query.in('status', statuses);
+        }
+      } else {
+        query = query.in('status', statuses);
+      }
+
+      query = applyAdminCompletedListFilters(query, {
+        completedByUserId: opts?.completedByUserId,
+        serviceSubTypeIn: opts?.serviceSubTypeIn,
+        leadRequirementsContainVariants: opts?.leadRequirementsContainVariants,
+      });
+
+      const deniedCancelledList =
+        statuses.includes('DENIED') && statuses.includes('CANCELLED');
+      if (isCompletedOnly) {
+        query = query
+          .order('completed_at', { ascending: false, nullsFirst: false })
+          .order('end_time', { ascending: false, nullsFirst: false });
+      } else if (deniedCancelledList) {
+        query = query
+          .order('denied_at', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const { data, error, count } = await query.range(from, to);
+
+      return {
+        data: data || [],
+        error,
+        count: count || 0,
+        page,
+        pageSize,
+        totalPages: count ? Math.ceil(count / pageSize) : 0,
       };
     },
 
@@ -709,6 +1746,7 @@ export const db = {
     },
 
     /** Analytics only: selective columns (no before_photos, after_photos, service_address, etc.). Same aggregates, lower egress. */
+    /** `limit` caps egress; use a higher value for attribution chains (e.g. Direct/Website conversion analysis). */
     async getForAnalytics(limit: number = 5000) {
       const cols = [
         'id', 'customer_id', 'status', 'created_at', 'completed_at', 'end_time', 'requirements',
@@ -719,7 +1757,7 @@ export const db = {
         .from('jobs')
         .select(cols)
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .limit(Math.min(Math.max(1, limit), 15000));
       return { data: data || [], error };
     },
 
@@ -764,6 +1802,127 @@ export const db = {
         return bAt.localeCompare(aAt);
       });
       return { data: combined, error: null };
+    },
+
+    /**
+     * Same date logic as `getForAnalyticsInRange`, but only columns needed for Direct/Website conversion attribution (smaller egress).
+     */
+    async getForConversionAnalyticsInRange(startDate: Date, endDate: Date) {
+      const cols = [
+        'id',
+        'customer_id',
+        'status',
+        'created_at',
+        'completed_at',
+        'end_time',
+        'requirements',
+        'assigned_by',
+        'assigned_technician_id',
+        'payment_amount',
+        'actual_cost',
+        'service_sub_type'
+      ].join(', ');
+      const startISO = startDate.toISOString();
+      const endISO = endDate.toISOString();
+
+      const [completedRes, otherRes] = await Promise.all([
+        supabase
+          .from('jobs')
+          .select(cols)
+          .eq('status', 'COMPLETED')
+          .or(
+            `and(end_time.gte.${startISO},end_time.lte.${endISO}),and(end_time.is.null,completed_at.gte.${startISO},completed_at.lte.${endISO})`
+          )
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('jobs')
+          .select(cols)
+          .neq('status', 'COMPLETED')
+          .gte('created_at', startISO)
+          .lte('created_at', endISO)
+          .order('created_at', { ascending: false })
+      ]);
+
+      if (completedRes.error) return { data: [], error: completedRes.error };
+      if (otherRes.error) return { data: [], error: otherRes.error };
+
+      const completed = completedRes.data || [];
+      const other = otherRes.data || [];
+      const combined = [...completed, ...other].sort((a: any, b: any) => {
+        const aAt = a.created_at || '';
+        const bAt = b.created_at || '';
+        return bAt.localeCompare(aAt);
+      });
+      return { data: combined, error: null };
+    },
+
+    /**
+     * Jobs strictly before `beforeDate` for attribution (first-touch before period). No payment columns — minimal egress.
+     * Merge client-side with `getForConversionAnalyticsInRange` by job `id`.
+     */
+    async getPriorJobsForConversionSlim(customerIds: string[], beforeDate: Date) {
+      const cols = [
+        'id',
+        'customer_id',
+        'status',
+        'created_at',
+        'completed_at',
+        'end_time',
+        'requirements',
+        'assigned_by',
+        'assigned_technician_id',
+        'service_sub_type'
+      ].join(', ');
+      const unique = [...new Set((customerIds || []).filter(Boolean))];
+      if (unique.length === 0) return { data: [], error: null };
+
+      const beforeISO = beforeDate.toISOString();
+      const chunkSize = 100;
+      const chunks: string[][] = [];
+      for (let i = 0; i < unique.length; i += chunkSize) {
+        chunks.push(unique.slice(i, i + chunkSize));
+      }
+      const byId = new Map<string, Record<string, unknown>>();
+      const chunkResults = await Promise.all(
+        chunks.map((chunk) =>
+          supabase.from('jobs').select(cols).in('customer_id', chunk).lt('created_at', beforeISO)
+        )
+      );
+      for (const { data, error } of chunkResults) {
+        if (error) return { data: [], error };
+        for (const row of data || []) {
+          const r = row as Record<string, unknown>;
+          const id = r.id as string | undefined;
+          if (id) byId.set(id, r);
+        }
+      }
+      return { data: [...byId.values()], error: null };
+    },
+
+    /**
+     * Recent jobs with conversion-only columns (all-time conversion report). Much smaller than `getForAnalytics`.
+     */
+    async getForConversionAnalyticsRecent(limit: number = 5000) {
+      const cols = [
+        'id',
+        'customer_id',
+        'status',
+        'created_at',
+        'completed_at',
+        'end_time',
+        'requirements',
+        'assigned_by',
+        'assigned_technician_id',
+        'payment_amount',
+        'actual_cost',
+        'service_sub_type'
+      ].join(', ');
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(cols)
+        .order('created_at', { ascending: false })
+        .limit(Math.min(Math.max(1, limit), 15000));
+      return { data: data || [], error };
     },
 
     /**
@@ -836,7 +1995,56 @@ export const db = {
         if (otherRes.error) return { data: [], error: otherRes.error };
         const completed = completedRes.data || [];
         const other = otherRes.data || [];
-        const combined = [...completed, ...other].sort((a: any, b: any) => {
+        const combined = [...completed, ...other].sort((a: { created_at?: string | null }, b: { created_at?: string | null }) => {
+          const aAt = a.created_at || '';
+          const bAt = b.created_at || '';
+          return bAt.localeCompare(aAt);
+        });
+        return { data: combined, error: null };
+      }
+
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(select)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      return { data: data || [], error };
+    },
+
+    /**
+     * Jobs in range (or all) with customer/job brand for Analytics "Top brands".
+     * Same date logic as getForAnalyticsInRange when startDate/endDate provided; when omitted, returns up to 5000 jobs.
+     */
+    async getJobsWithCustomerBrandInRange(startDate?: Date, endDate?: Date) {
+      const cols = 'id,customer_id,status,created_at,completed_at,end_time,service_sub_type,payment_amount,actual_cost,brand,job_number';
+      const select = `${cols},customer:customers(brand)`;
+      const limit = 5000;
+
+      if (startDate && endDate) {
+        const startISO = startDate.toISOString();
+        const endISO = endDate.toISOString();
+        const [completedRes, otherRes] = await Promise.all([
+          supabase
+            .from('jobs')
+            .select(select)
+            .eq('status', 'COMPLETED')
+            .or(`and(end_time.gte.${startISO},end_time.lte.${endISO}),and(end_time.is.null,completed_at.gte.${startISO},completed_at.lte.${endISO})`)
+            .order('created_at', { ascending: false })
+            .limit(limit),
+          supabase
+            .from('jobs')
+            .select(select)
+            .neq('status', 'COMPLETED')
+            .gte('created_at', startISO)
+            .lte('created_at', endISO)
+            .order('created_at', { ascending: false })
+            .limit(limit)
+        ]);
+        if (completedRes.error) return { data: [], error: completedRes.error };
+        if (otherRes.error) return { data: [], error: otherRes.error };
+        const completed = completedRes.data || [];
+        const other = otherRes.data || [];
+        const combined = [...completed, ...other].sort((a: { created_at?: string | null }, b: { created_at?: string | null }) => {
           const aAt = a.created_at || '';
           const bAt = b.created_at || '';
           return bAt.localeCompare(aAt);
@@ -871,30 +2079,24 @@ export const db = {
       dateFilter?: string | { startDate: string; endDate: string },
       limit: number = 5000
     ) {
-      const toLocalDayBounds = (dateStr: string) => {
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const localStart = new Date(year, month - 1, day, 0, 0, 0, 0);
-        const localNext = new Date(year, month - 1, day + 1, 0, 0, 0, 0);
-        return { startISO: localStart.toISOString(), nextISO: localNext.toISOString() };
-      };
-
       let query = supabase
         .from('jobs')
-        .select('id,requirements,service_sub_type,completed_by,completed_by_name,completed_at,end_time')
+        .select('id,requirements,service_sub_type,completed_by,completed_at,end_time')
         .eq('status', 'COMPLETED')
-        .order('created_at', { ascending: false })
+        .order('completed_at', { ascending: false, nullsFirst: false })
+        .order('end_time', { ascending: false, nullsFirst: false })
         .limit(limit);
 
       if (dateFilter) {
         let startISO: string | null = null;
         let nextDayISO: string | null = null;
         if (typeof dateFilter === 'string') {
-          const bounds = toLocalDayBounds(dateFilter);
+          const bounds = jobLocalDayBounds(dateFilter);
           startISO = bounds.startISO;
           nextDayISO = bounds.nextISO;
         } else if (dateFilter.startDate && dateFilter.endDate) {
-          const startBounds = toLocalDayBounds(dateFilter.startDate);
-          const endBounds = toLocalDayBounds(dateFilter.endDate);
+          const startBounds = jobLocalDayBounds(dateFilter.startDate);
+          const endBounds = jobLocalDayBounds(dateFilter.endDate);
           startISO = startBounds.startISO;
           nextDayISO = endBounds.nextISO;
         }
@@ -909,54 +2111,50 @@ export const db = {
 
     // Get ongoing jobs (PENDING, ASSIGNED, IN_PROGRESS). Limit 100 to cap egress if count grows.
     async getOngoing(limit: number = 100) {
-      const { data, error } = await supabase
+      const slim = await supabase
         .from('jobs')
-        .select(`
-          *,
-          customer:customers(
-            id,
-            customer_id,
-            full_name,
-            phone,
-            email,
-            alternate_phone,
-            visible_address,
-            address,
-            location,
-            service_type,
-            brand,
-            model,
-            installation_date,
-            warranty_expiry,
-            status,
-            customer_since,
-            last_service_date,
-            notes,
-            preferred_time_slot,
-            preferred_language,
-            has_prefilter,
-            has_google_review,
-            customer_tier,
-            raw_water_tds,
-            created_at,
-            updated_at
-          )
-        `)
+        .select(`${JOB_SELECT_ONGOING_AND_TECH},customer:customers(${CUSTOMER_EMBED_FOR_ONGOING_ADMIN})`)
         .in('status', ['PENDING', 'ASSIGNED', 'EN_ROUTE', 'IN_PROGRESS'])
         .order('created_at', { ascending: false })
         .limit(limit);
-      
-      return { data: data || [], error };
+
+      let rows = slim.data || [];
+      let err = slim.error;
+
+      if (err) {
+        if (import.meta.env.DEV) {
+          console.warn('[db.jobs.getOngoing] Slim select failed, using full select:', slim.error?.message);
+        }
+        const legacy = await supabase
+          .from('jobs')
+          .select(`${JOB_SELECT_ONGOING_AND_TECH},customer:customers(${CUSTOMER_EMBED_FOR_ONGOING_ADMIN})`)
+          .in('status', ['PENDING', 'ASSIGNED', 'EN_ROUTE', 'IN_PROGRESS'])
+          .order('created_at', { ascending: false })
+          .limit(limit);
+        rows = legacy.data || [];
+        err = legacy.error;
+      }
+
+      if (err || !rows.length) {
+        return { data: rows, error: err };
+      }
+
+      const { data: photoRows, error: photoErr } = await this.getPhotoFieldsForJobIds(rows.map((r: any) => r.id));
+      if (photoErr || !photoRows?.length) {
+        return { data: rows, error: null };
+      }
+      return { data: mergeJobPhotoFieldsIntoRows(rows, photoRows as Record<string, unknown>[]), error: null };
     }
   },
   
   // Technician operations
   technicians: {
     async create(technician: Database['public']['Tables']['technicians']['Insert']) {
+      const { password: _password, ...row } = technician as Record<string, unknown>;
       const { data, error } = await supabase
         .from('technicians')
-        .insert(technician)
-        .select()
+        .insert(row)
+        .select(TECHNICIAN_ROW_COLUMNS)
         .single();
       
       return { data, error };
@@ -965,34 +2163,62 @@ export const db = {
     async getById(id: string) {
       const { data, error } = await supabase
         .from('technicians')
-        .select('*')
+        .select(TECHNICIAN_ROW_COLUMNS)
         .eq('id', id)
         .single();
       
       return { data, error };
     },
     
-    async getAll(limit?: number) {
+    /**
+     * @param activeRosterOnly When true, excludes INACTIVE (map / assignment lists). When false or omitted, returns everyone (Settings, analytics, salary name lookup, duplicate checks).
+     */
+    async getAll(limit?: number, options?: { activeRosterOnly?: boolean }) {
+      const activeOnly = options?.activeRosterOnly === true;
       let query = supabase
         .from('technicians')
-        .select('*')
+        .select(TECHNICIAN_ROW_COLUMNS)
         .order('created_at', { ascending: false });
-      
-      // Add limit if provided to reduce data transfer
+      if (activeOnly) {
+        query = query.or(TECHNICIAN_ROSTER_ACTIVE_OR);
+      }
       if (limit && limit > 0) {
         query = query.limit(limit);
       }
-      
       const { data, error } = await query;
       return { data, error };
     },
 
-    /** Slim list for dropdowns: id, full_name, phone, employee_id, status only (no *). */
-    async getList(limit?: number) {
+    /** Admin list without live GPS blob — use `getById` / `reload` / measure-distance refresh for `current_location`. */
+    async getAllForDashboard(limit?: number, options?: { activeRosterOnly?: boolean }) {
+      const activeOnly = options?.activeRosterOnly !== false;
       let query = supabase
         .from('technicians')
-        .select('id, full_name, phone, employee_id, status')
+        .select(TECHNICIAN_DASHBOARD_COLUMNS)
         .order('created_at', { ascending: false });
+      if (activeOnly) {
+        query = query.or(TECHNICIAN_ROSTER_ACTIVE_OR);
+      }
+      if (limit && limit > 0) {
+        query = query.limit(limit);
+      }
+      const { data, error } = await query;
+      return { data, error };
+    },
+
+    /**
+     * Slim list for dropdowns.
+     * @param activeRosterOnly When true (default), excludes INACTIVE. Set false for payments/reports that must list former technicians.
+     */
+    async getList(limit?: number, options?: { activeRosterOnly?: boolean }) {
+      const activeOnly = options?.activeRosterOnly !== false;
+      let query = supabase
+        .from('technicians')
+        .select('id, full_name, phone, employee_id, status, account_status')
+        .order('created_at', { ascending: false });
+      if (activeOnly) {
+        query = query.or(TECHNICIAN_ROSTER_ACTIVE_OR);
+      }
       if (limit && limit > 0) {
         query = query.limit(limit);
       }
@@ -1003,19 +2229,21 @@ export const db = {
     async getAvailable() {
       const { data, error } = await supabase
         .from('technicians')
-        .select('*')
+        .select(TECHNICIAN_ROW_COLUMNS)
         .eq('status', 'AVAILABLE')
+        .or(TECHNICIAN_ROSTER_ACTIVE_OR)
         .order('created_at', { ascending: false });
       
       return { data, error };
     },
     
     async update(id: string, updates: Database['public']['Tables']['technicians']['Update']) {
+      const { password: _password, ...row } = updates as Record<string, unknown>;
       const { data, error } = await supabase
         .from('technicians')
-        .update(updates)
+        .update(row)
         .eq('id', id)
-        .select();
+        .select(TECHNICIAN_ROW_COLUMNS);
       
       if (error) {
         return { data: null, error };
@@ -1060,7 +2288,7 @@ export const db = {
       const { data, error } = await supabase
         .from('job_assignment_requests')
         .select(`
-          *,
+          ${JOB_ASSIGNMENT_REQUEST_ROW},
           job:jobs(
             id,
             job_number,
@@ -1103,7 +2331,7 @@ export const db = {
       const { data, error } = await supabase
         .from('job_assignment_requests')
         .select(`
-          *,
+          ${JOB_ASSIGNMENT_REQUEST_ROW},
           technician:technicians(
             id,
             full_name,
@@ -1123,7 +2351,7 @@ export const db = {
       const { data, error } = await supabase
         .from('job_assignment_requests')
         .select(`
-          *,
+          ${JOB_ASSIGNMENT_REQUEST_ROW},
           job:jobs(
             id,
             job_number,
@@ -1158,7 +2386,7 @@ export const db = {
       const { data, error } = await supabase
         .from('job_assignment_requests')
         .select(`
-          *,
+          ${JOB_ASSIGNMENT_REQUEST_ROW},
           job:jobs(
             id,
             job_number,
@@ -1416,7 +2644,7 @@ export const db = {
     async getById(id: string) {
       const { data, error } = await supabase
         .from('product_qr_codes')
-        .select('*')
+        .select(PRODUCT_QR_ROW_COLUMNS)
         .eq('id', id)
         .single();
       
@@ -1464,9 +2692,11 @@ export const db = {
           customer_gstin: invoice.customer_gstin,
           company_info: invoice.company_info,
           items: invoice.items,
-          place_of_supply: invoice.place_of_supply,
-          place_of_supply_code: invoice.place_of_supply_code,
-          is_intra_state: invoice.is_intra_state,
+          place_of_supply: invoice.place_of_supply?.trim() || null,
+          place_of_supply_code: invoice.place_of_supply_code
+            ? String(invoice.place_of_supply_code).padStart(2, '0').slice(-2)
+            : null,
+          is_intra_state: Boolean(invoice.is_intra_state),
           reverse_charge: invoice.reverse_charge || false,
           e_way_bill_no: invoice.e_way_bill_no,
           transport_mode: invoice.transport_mode,
@@ -1608,12 +2838,28 @@ export const db = {
     },
     
     async delete(id: string) {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('tax_invoices')
         .delete()
-        .eq('id', id);
-      
-      return { error };
+        .eq('id', id)
+        .select('id');
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      if (!data?.length) {
+        return {
+          data: null,
+          error: {
+            message:
+              'Invoice was not deleted. Database permission may be blocking delete — run scripts/secure-tax-invoices-rls.sql in Supabase (admin login required).',
+            code: 'DELETE_NOT_APPLIED',
+          } as { message: string; code: string },
+        };
+      }
+
+      return { data, error: null };
     },
     
     async checkInvoiceNumberExists(invoiceNumber: string, excludeId?: string) {
@@ -1719,6 +2965,8 @@ export const db = {
       includes_prefilter: boolean;
       additional_info?: string | null;
       service_period_months?: number | null;
+      given_by_technician_id?: string | null;
+      service_brand?: 'hydrogenro' | 'elevenro' | null;
     }) {
       // First, mark any existing active AMC for this customer as RENEWED or EXPIRED
       const { data: existingAMCs } = await supabase
@@ -1745,30 +2993,39 @@ export const db = {
         }
       }
 
-      // Create new AMC contract
-      const { data, error } = await supabase
+      const insertBase = {
+        customer_id: amc.customer_id,
+        job_id: amc.job_id || null,
+        start_date: amc.start_date,
+        end_date: amc.end_date,
+        years: amc.years,
+        includes_prefilter: amc.includes_prefilter,
+        additional_info: amc.additional_info || null,
+        service_period_months: amc.service_period_months ?? null,
+        given_by_technician_id: amc.given_by_technician_id || null,
+        status: 'ACTIVE' as const,
+      };
+
+      let result = await supabase
         .from('amc_contracts')
         .insert({
-          customer_id: amc.customer_id,
-          job_id: amc.job_id || null,
-          start_date: amc.start_date,
-          end_date: amc.end_date,
-          years: amc.years,
-          includes_prefilter: amc.includes_prefilter,
-          additional_info: amc.additional_info || null,
-          service_period_months: amc.service_period_months ?? null,
-          status: 'ACTIVE'
+          ...insertBase,
+          ...(amc.service_brand ? { service_brand: amc.service_brand } : {}),
         })
         .select()
         .single();
-      
-      return { data, error };
+
+      if (result.error && amc.service_brand && isMissingServiceBrandColumnError(result.error)) {
+        result = await supabase.from('amc_contracts').insert(insertBase).select().single();
+      }
+
+      return { data: result.data, error: result.error };
     },
 
     async getByCustomerId(customerId: string) {
       const { data, error } = await supabase
         .from('amc_contracts')
-        .select('*')
+        .select(AMC_CONTRACT_ROW_COLUMNS)
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
       
@@ -1778,7 +3035,7 @@ export const db = {
     async getActiveByCustomerId(customerId: string) {
       const { data, error } = await supabase
         .from('amc_contracts')
-        .select('*')
+        .select(AMC_CONTRACT_ROW_COLUMNS)
         .eq('customer_id', customerId)
         .eq('status', 'ACTIVE')
         .single();
@@ -1789,7 +3046,7 @@ export const db = {
     async getAll(limit: number = 100, offset: number = 0) {
       let query = supabase
         .from('amc_contracts')
-        .select('*, customers(id, full_name, phone, email, customer_id, brand, model)', { count: 'exact' })
+        .select(`${AMC_CONTRACT_ROW_COLUMNS},customers(id, full_name, phone, email, customer_id, service_type, brand, model, last_service_date, visible_address, address)`, { count: 'exact' })
         .order('created_at', { ascending: false });
 
       if (limit > 0 && limit < 100000) {
@@ -1805,7 +3062,7 @@ export const db = {
     async getById(id: string) {
       const { data, error } = await supabase
         .from('amc_contracts')
-        .select('*, customers(id, full_name, phone, email, customer_id, brand, model)')
+        .select(`${AMC_CONTRACT_ROW_COLUMNS},customers(id, full_name, phone, email, customer_id, service_type, brand, model, last_service_date, visible_address, address)`)
         .eq('id', id)
         .single();
       
@@ -1819,6 +3076,7 @@ export const db = {
       includes_prefilter?: boolean;
       additional_info?: string | null;
       service_period_months?: number | null;
+      given_by_technician_id?: string | null;
       status?: 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'RENEWED';
     }) {
       const { data, error } = await supabase
@@ -1847,7 +3105,7 @@ export const db = {
       
       const { data, error } = await supabase
         .from('amc_contracts')
-        .select('*, customers(full_name, phone, email, customer_id)')
+        .select(`${AMC_CONTRACT_ROW_COLUMNS},customers(full_name, phone, email, customer_id)`)
         .eq('status', 'ACTIVE')
         .gte('end_date', today.toISOString().split('T')[0])
         .lte('end_date', futureDate.toISOString().split('T')[0])
@@ -1896,12 +3154,16 @@ export const db = {
         if (isDev) console.warn('AMC job creation: not authenticated', authError);
         return { data: null, error: authError || new Error('Not authenticated'), created: 0 };
       }
-      
-      // Try with RLS bypass or check if we can access the table
+
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+
+      // Only contracts still in force: ACTIVE and not past end_date (avoids jobs if status was never flipped to EXPIRED)
       const { data: activeAMCsRaw, error: amcError } = await supabase
         .from('amc_contracts')
-        .select('*')
-        .eq('status', 'ACTIVE');
+        .select(AMC_CONTRACT_ROW_COLUMNS)
+        .eq('status', 'ACTIVE')
+        .gte('end_date', todayStr);
 
       if (amcError) {
         console.error('❌ Error fetching AMC contracts:', amcError);
@@ -1935,9 +3197,6 @@ export const db = {
         ...amc,
         customers: customersData?.find(c => c.id === amc.customer_id) || null
       }));
-
-      const today = new Date();
-      const todayStr = today.toISOString().split('T')[0];
 
       // Default AMC service period from settings (localStorage); only in browser
       const getDefaultServicePeriodMonths = (): number => {
@@ -2173,7 +3432,7 @@ export const db = {
         const { data: createdJobsData, error: createError } = await supabase
           .from('jobs')
           .insert(jobsToCreate)
-          .select();
+          .select('id,job_number,customer_id,status,service_sub_type,created_at');
 
         if (createError) {
           console.error('❌ Error creating jobs:', createError);
@@ -2182,6 +3441,10 @@ export const db = {
 
         createdCount = createdJobsData?.length || 0;
         if (isDev) console.log(`✅ Successfully created ${createdCount} AMC service jobs`);
+        if (createdCount > 0) {
+          // Batch insert bypasses db.jobs.create — keep dashboard count cache in sync
+          cacheInvalidate('job_counts_v1');
+        }
         if (typeof window !== 'undefined') window.localStorage.setItem('amc_service_jobs_last_run', String(Date.now()));
         return { data: createdJobsData, error: null, created: createdCount };
       }
@@ -2198,7 +3461,7 @@ export const db = {
     async getAll(technicianId?: string, startDate?: string, endDate?: string) {
       let query = supabase
         .from('technician_expenses')
-        .select('*')
+        .select(TECHNICIAN_EXPENSE_ROW_COLUMNS)
         .order('expense_date', { ascending: false });
       
       if (technicianId) {
@@ -2252,7 +3515,7 @@ export const db = {
     async getAll(technicianId?: string, startDate?: string, endDate?: string) {
       let query = supabase
         .from('technician_advances')
-        .select('*')
+        .select(TECHNICIAN_ADVANCE_ROW_COLUMNS)
         .order('advance_date', { ascending: false });
       
       if (technicianId) {
@@ -2360,7 +3623,7 @@ export const db = {
     async getAll(technicianId?: string, startDate?: string, endDate?: string) {
       let query = supabase
         .from('technician_holidays')
-        .select('*')
+        .select('id,technician_id,holiday_date,is_manual,reason,notes,added_by,created_at,updated_at')
         .order('holiday_date', { ascending: false });
       
       if (technicianId) {
@@ -2415,7 +3678,7 @@ export const db = {
     async getAll(startDate?: string, endDate?: string) {
       let query = supabase
         .from('business_expenses')
-        .select('*')
+        .select('id,amount,description,expense_date,category,receipt_url,notes,added_by,created_at,updated_at')
         .order('expense_date', { ascending: false });
       
       if (startDate) {
@@ -2466,7 +3729,7 @@ export const db = {
     async getAll(startDate?: string, endDate?: string) {
       let query = supabase
         .from('other_expenses')
-        .select('*')
+        .select('id,amount,description,expense_date,category,receipt_url,notes,added_by,created_at,updated_at')
         .order('expense_date', { ascending: false });
 
       if (startDate) {
@@ -2776,7 +4039,7 @@ export const db = {
     async getByCustomerId(customerId: string) {
       const { data, error } = await supabase
         .from('call_history')
-        .select('*')
+        .select(CALL_HISTORY_ROW_COLUMNS)
         .eq('customer_id', customerId)
         .order('contacted_at', { ascending: false });
       
@@ -2789,7 +4052,7 @@ export const db = {
       
       const { data, error } = await supabase
         .from('call_history')
-        .select('*')
+        .select(CALL_HISTORY_ROW_COLUMNS)
         .gte('contacted_at', cutoffDate.toISOString())
         .order('contacted_at', { ascending: false });
       
@@ -2799,7 +4062,7 @@ export const db = {
     async getAll() {
       const { data, error } = await supabase
         .from('call_history')
-        .select('*')
+        .select(CALL_HISTORY_ROW_COLUMNS)
         .order('contacted_at', { ascending: false });
       
       return { data, error };
@@ -2853,7 +4116,7 @@ export const db = {
     async getById(id: string) {
       const { data, error } = await supabase
         .from('inventory')
-        .select('*')
+        .select('id, product_name, code, price, quantity, created_at, updated_at')
         .eq('id', id)
         .single();
       
@@ -2884,6 +4147,24 @@ export const db = {
         .single();
       
       return { data, error };
+    },
+
+    /** Batch update main stock quantities — no returning rows (low egress). */
+    async bulkUpdateQuantities(updates: Array<{ id: string; quantity: number }>) {
+      if (updates.length === 0) return { error: null };
+      // Partial upsert fails (400): inventory requires product_name/price on insert.
+      const PARALLEL_CHUNK = 25;
+      for (let i = 0; i < updates.length; i += PARALLEL_CHUNK) {
+        const chunk = updates.slice(i, i + PARALLEL_CHUNK);
+        const results = await Promise.all(
+          chunk.map(({ id, quantity }) =>
+            supabase.from('inventory').update({ quantity }).eq('id', id)
+          )
+        );
+        const failed = results.find((r) => r.error);
+        if (failed?.error) return { error: failed.error };
+      }
+      return { error: null };
     },
 
     async delete(id: string) {
@@ -3128,7 +4409,43 @@ export const db = {
         .single();
       
       return { data, error };
-    }
+    },
+
+    /** Minimal rows for assign flows — no joins (low egress). */
+    async getAssignmentKeys(technicianIds: string[], inventoryIds: string[]) {
+      if (technicianIds.length === 0 || inventoryIds.length === 0) {
+        return { data: [] as Array<{ id: string; technician_id: string; inventory_id: string; quantity: number }>, error: null };
+      }
+      const IN_CHUNK = 150;
+      const rows: Array<{ id: string; technician_id: string; inventory_id: string; quantity: number }> = [];
+      for (let i = 0; i < inventoryIds.length; i += IN_CHUNK) {
+        const invChunk = inventoryIds.slice(i, i + IN_CHUNK);
+        const { data, error } = await supabase
+          .from('technician_inventory')
+          .select('id, technician_id, inventory_id, quantity')
+          .in('technician_id', technicianIds)
+          .in('inventory_id', invChunk);
+        if (error) return { data: null, error };
+        if (data?.length) rows.push(...data);
+      }
+      return { data: rows, error: null };
+    },
+
+    /** Batch upsert assignments — no returning rows (low egress). */
+    async bulkUpsertAssignments(
+      items: Array<{ technician_id: string; inventory_id: string; quantity: number }>
+    ) {
+      if (items.length === 0) return { error: null };
+      const UPSERT_CHUNK = 500;
+      for (let i = 0; i < items.length; i += UPSERT_CHUNK) {
+        const chunk = items.slice(i, i + UPSERT_CHUNK);
+        const { error } = await supabase
+          .from('technician_inventory')
+          .upsert(chunk, { onConflict: 'technician_id,inventory_id' });
+        if (error) return { error };
+      }
+      return { error: null };
+    },
   },
 
   // Job Parts Used operations
@@ -3213,7 +4530,26 @@ export const db = {
           inventory:inventory(id, product_name, code)
         `)
         .single();
-      
+
+      // UNIQUE(job_id, inventory_id): merge quantity when insert races or bundle lists same part twice
+      const isUniqueViolation =
+        error &&
+        (error.code === '23505' ||
+          (typeof error.message === 'string' &&
+            (error.message.includes('job_parts_used_job_id_inventory_id_key') ||
+              error.message.includes('duplicate key'))));
+      if (isUniqueViolation) {
+        const { data: existing, error: fetchErr } = await supabase
+          .from('job_parts_used')
+          .select('id, quantity_used')
+          .eq('job_id', part.job_id)
+          .eq('inventory_id', part.inventory_id)
+          .maybeSingle();
+        if (fetchErr || !existing) return { data: null, error: error };
+        const mergedQty = Number(existing.quantity_used) + Number(part.quantity_used);
+        return this.update(existing.id, { quantity_used: mergedQty });
+      }
+
       return { data, error };
     },
 
@@ -3302,7 +4638,7 @@ export const db = {
       const tomorrow = `${tomorrowDate.getFullYear()}-${String(tomorrowDate.getMonth() + 1).padStart(2, '0')}-${String(tomorrowDate.getDate()).padStart(2, '0')}`;
       const { data, error } = await supabase
         .from('reminders')
-        .select('*')
+        .select(REMINDER_ROW_COLUMNS)
         .in('reminder_at', [today, tomorrow])
         .is('completed_at', null)
         .order('reminder_at', { ascending: true })
@@ -3312,7 +4648,7 @@ export const db = {
     async getAll(includeCompleted = false, limitCount = 1000) {
       let query = supabase
         .from('reminders')
-        .select('*')
+        .select(REMINDER_ROW_COLUMNS)
         .order('reminder_at', { ascending: true })
         .order('created_at', { ascending: false })
         .limit(Math.min(limitCount, 2000));
@@ -3326,7 +4662,7 @@ export const db = {
       if (!entityId) return { data: [], error: null };
       let query = supabase
         .from('reminders')
-        .select('*')
+        .select(REMINDER_ROW_COLUMNS)
         .eq('entity_type', entityType)
         .eq('entity_id', entityId)
         .order('reminder_at', { ascending: true })
@@ -3355,6 +4691,143 @@ export const db = {
     },
     async delete(id: string) {
       const { error } = await supabase.from('reminders').delete().eq('id', id);
+      return { error };
+    },
+  },
+
+  /**
+   * Admin header bell: three `head: true` count queries only (minimal egress). All buckets are **today only** (local calendar day).
+   * - General reminders: incomplete, not pending-payment title, `reminder_at` = today.
+   * - Customer pending payments: incomplete, pending-payment title, `reminder_at` = today.
+   * - AMC contracts: `created_at` within today (local).
+   */
+  adminNotifications: {
+    async getCounts(): Promise<{
+      generalReminders: number;
+      pendingCustomerPayments: number;
+      recentAmcContracts: number;
+      error?: string;
+    }> {
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      const startISO = startOfDay.toISOString();
+      const endISO = endOfDay.toISOString();
+
+      const [gr, pp, amc] = await Promise.all([
+        supabase
+          .from('reminders')
+          .select('id', { count: 'exact', head: true })
+          .is('completed_at', null)
+          .eq('reminder_at', today)
+          .neq('title', PENDING_PAYMENT_REMINDER_TITLE),
+        supabase
+          .from('reminders')
+          .select('id', { count: 'exact', head: true })
+          .is('completed_at', null)
+          .eq('title', PENDING_PAYMENT_REMINDER_TITLE)
+          .eq('reminder_at', today),
+        supabase
+          .from('amc_contracts')
+          .select('id', { count: 'exact', head: true })
+          .gte('created_at', startISO)
+          .lte('created_at', endISO),
+      ]);
+
+      const firstErr = gr.error || pp.error || amc.error;
+      return {
+        generalReminders: gr.count ?? 0,
+        pendingCustomerPayments: pp.count ?? 0,
+        recentAmcContracts: amc.count ?? 0,
+        error: firstErr ? firstErr.message : undefined,
+      };
+    },
+  },
+
+  /**
+   * Website booking funnel: record name + phone when user leaves mid-flow (anon insert).
+   * Admin: slim `select` + dismiss update. Poll interval should stay ≥ 60s to limit egress.
+   */
+  bookingAbandonments: {
+    async upsertFromPublicPage(row: {
+      full_name: string;
+      phone: string;
+      phone_normalized: string;
+      step_reached: number;
+      bucket_date: string;
+    }) {
+      const { error } = await supabase.from('booking_abandonments').upsert(
+        {
+          full_name: row.full_name.trim(),
+          phone: row.phone,
+          phone_normalized: row.phone_normalized,
+          step_reached: row.step_reached,
+          bucket_date: row.bucket_date,
+          dismissed_at: null,
+        },
+        { onConflict: 'phone_normalized,bucket_date' }
+      );
+      return { error };
+    },
+
+    /** For `pagehide` / tab close: browser may cancel ordinary fetch; keepalive improves delivery. */
+    async upsertFromPublicPageKeepalive(row: {
+      full_name: string;
+      phone: string;
+      phone_normalized: string;
+      step_reached: number;
+      bucket_date: string;
+    }): Promise<{ ok: boolean }> {
+      if (typeof fetch === 'undefined') return { ok: false };
+      const key = buildTimeKey;
+      const base = buildTimeUrl.replace(/\/$/, '');
+      try {
+        const res = await fetch(
+          `${base}/rest/v1/booking_abandonments?on_conflict=phone_normalized,bucket_date`,
+          {
+            method: 'POST',
+            headers: {
+              apikey: key,
+              Authorization: `Bearer ${key}`,
+              'Content-Type': 'application/json',
+              Prefer: 'resolution=merge-duplicates,return=minimal',
+            },
+            body: JSON.stringify([
+              {
+                full_name: row.full_name.trim(),
+                phone: row.phone,
+                phone_normalized: row.phone_normalized,
+                step_reached: row.step_reached,
+                bucket_date: row.bucket_date,
+                dismissed_at: null,
+              },
+            ]),
+            keepalive: true,
+          }
+        );
+        return { ok: res.ok };
+      } catch {
+        return { ok: false };
+      }
+    },
+
+    async listActivePending(limit = 12) {
+      const lim = Math.min(Math.max(1, limit), 50);
+      // Egress guard: only fetch recent rows (abandonments are only useful short-term).
+      const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('booking_abandonments')
+        .select('id,full_name,phone,step_reached,created_at')
+        .is('dismissed_at', null)
+        .gte('created_at', cutoff)
+        .order('created_at', { ascending: false })
+        .limit(lim);
+      return { data: data || [], error };
+    },
+
+    async dismiss(id: string) {
+      const { error } = await supabase.from('booking_abandonments').delete().eq('id', id);
       return { error };
     },
   },
@@ -3391,23 +4864,39 @@ export const db = {
     },
     async listActive(limit = 10) {
       const lim = Math.min(Math.max(1, limit), 20);
+      // Egress guard: only fetch recent rows (live intent banner is only useful short-term).
+      const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('website_booking_intent')
+        // Use '*' so this query stays compatible even if optional columns
+        // (e.g. booked_at/booked_job_number) haven't been migrated yet.
         .select('*')
         .is('dismissed_at', null)
+        .gte('updated_at', cutoff)
         .order('updated_at', { ascending: false })
         .limit(lim);
       return { data: data || [], error };
     },
     async dismiss(id: string) {
-      const { error } = await supabase
-        .from('website_booking_intent')
-        .update({ dismissed_at: new Date().toISOString() })
-        .eq('id', id);
+      const { error } = await supabase.from('website_booking_intent').delete().eq('id', id);
       return { error };
     },
   },
 };
+
+/** Calendar date in Asia/Kolkata (for dedupe bucket with `phone_normalized`). */
+export function getBookingAbandonBucketDateIST(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const y = parts.find((p) => p.type === 'year')?.value;
+  const m = parts.find((p) => p.type === 'month')?.value;
+  const d = parts.find((p) => p.type === 'day')?.value;
+  return `${y}-${m}-${d}`;
+}
 
 // Utility functions
 export const generateJobNumber = (serviceType: string, year: number = new Date().getFullYear()) => {
@@ -3423,10 +4912,59 @@ export const validatePincode = async (pincode: string): Promise<boolean> => {
   return pincode.length === 6 && /^\d+$/.test(pincode);
 };
 
-/** Customer UUID → true if they have at least one COMPLETED job (returning / prior service). Paginates past default row limits. */
-export async function fetchCustomerIdsWithCompletedJobsMap(): Promise<Record<string, boolean>> {
+function isRpcNotFoundError(error: unknown): boolean {
+  const e = error as { code?: string; message?: string };
+  if (e?.code === 'PGRST202') return true;
+  const msg = typeof e?.message === 'string' ? e.message : '';
+  return msg.includes('Could not find the function') || msg.includes('does not exist');
+}
+
+function mapFromCustomerIdRows(rows: { customer_id?: string | null }[] | null): Record<string, boolean> {
   const map: Record<string, boolean> = {};
-  const pageSize = 1000;
+  for (const row of rows || []) {
+    if (row.customer_id) map[row.customer_id] = true;
+  }
+  return map;
+}
+
+/** Customer UUID → true if they have at least one COMPLETED job (returning / prior service). */
+export async function fetchCustomerIdsWithCompletedJobsMap(): Promise<Record<string, boolean>> {
+  const cacheKey = 'completed_customers_map_v1';
+  const hit = cacheGet<Record<string, boolean>>(cacheKey);
+  if (hit) return hit;
+
+  // Prefer DISTINCT in Postgres (one row per customer) vs paginating every completed job.
+  const { data: distinctRows, error: distinctError } = await supabase.rpc(
+    'get_distinct_completed_customer_ids'
+  );
+
+  if (!distinctError && distinctRows) {
+    const map = mapFromCustomerIdRows(distinctRows as { customer_id: string }[]);
+    cacheSet(cacheKey, map, 120_000);
+    return map;
+  }
+
+  if (distinctError && !isRpcNotFoundError(distinctError)) {
+    console.warn('[fetchCustomerIdsWithCompletedJobsMap] distinct RPC failed:', distinctError);
+  }
+
+  // Calling page RPC: still one row per customer (more columns, less egress than full job scan).
+  if (!distinctError || isRpcNotFoundError(distinctError)) {
+    const { data: lastPerCustomer, error: lastError } = await supabase.rpc(
+      'get_last_completed_job_per_customer'
+    );
+    if (!lastError && lastPerCustomer) {
+      const map = mapFromCustomerIdRows(lastPerCustomer as { customer_id: string }[]);
+      cacheSet(cacheKey, map, 120_000);
+      return map;
+    }
+    if (lastError && !isRpcNotFoundError(lastError) && import.meta.env.DEV) {
+      console.warn('[fetchCustomerIdsWithCompletedJobsMap] last-job RPC failed:', lastError);
+    }
+  }
+
+  const map: Record<string, boolean> = {};
+  const pageSize = 2500;
   let from = 0;
   for (;;) {
     const { data, error } = await supabase
@@ -3437,16 +4975,15 @@ export async function fetchCustomerIdsWithCompletedJobsMap(): Promise<Record<str
       .range(from, from + pageSize - 1);
 
     if (error) {
-      console.warn('[fetchCustomerIdsWithCompletedJobsMap]', error);
+      console.warn('[fetchCustomerIdsWithCompletedJobsMap] paginated fallback failed:', error);
       break;
     }
     if (!data?.length) break;
 
-    for (const row of data as { customer_id: string | null }[]) {
-      if (row.customer_id) map[row.customer_id] = true;
-    }
+    Object.assign(map, mapFromCustomerIdRows(data as { customer_id: string | null }[]));
     if (data.length < pageSize) break;
     from += pageSize;
   }
+  cacheSet(cacheKey, map, 120_000);
   return map;
 }

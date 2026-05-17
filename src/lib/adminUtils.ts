@@ -1,0 +1,806 @@
+// Admin Dashboard Utility Functions
+
+// Generate job number utility
+export const generateJobNumber = (serviceType: 'RO' | 'SOFTENER'): string => {
+  const prefix = serviceType === 'RO' ? 'RO' : 'WS';
+  const timestamp = Date.now().toString().slice(-6);
+  const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+  return `${prefix}${timestamp}${random}`;
+};
+
+// Helper function to format preferred time slot with custom time
+export const formatPreferredTimeSlot = (timeSlot: string | undefined, customTime: string | null | undefined): string => {
+  if (!timeSlot) return 'Not specified';
+  
+  if (timeSlot === 'CUSTOM' && customTime) {
+    // Format custom time (HH:MM) to readable format (e.g., "2:30 PM")
+    const [hours, minutes] = customTime.split(':');
+    const hour24 = parseInt(hours);
+    const hour12 = hour24 > 12 ? hour24 - 12 : (hour24 === 0 ? 12 : hour24);
+    const ampm = hour24 >= 12 ? 'PM' : 'AM';
+    return `Custom: ${hour12}:${minutes} ${ampm}`;
+  }
+  
+  const timeSlotMap: { [key: string]: string } = {
+    'MORNING': 'Morning (9 AM - 1 PM)',
+    'AFTERNOON': 'Afternoon (1 PM - 6 PM)',
+    'EVENING': 'Evening (6 PM - 9 PM)',
+    'CUSTOM': 'Custom Time'
+  };
+  
+  return timeSlotMap[timeSlot] || timeSlot;
+};
+
+// Map service types array to database service_type value
+export const mapServiceTypesToDbValue = (serviceTypes: string[]): string => {
+  if (serviceTypes.length === 0) return 'RO'; // Default
+  
+  const sortedTypes = [...serviceTypes].sort();
+  const hasRO = sortedTypes.includes('RO');
+  const hasSOFTENER = sortedTypes.includes('SOFTENER');
+  const hasAC = sortedTypes.includes('AC');
+  const hasAPPLIANCE = sortedTypes.includes('APPLIANCE');
+  
+  // Check for ALL_SERVICES (RO, SOFTENER, AC)
+  if (hasRO && hasSOFTENER && hasAC && sortedTypes.length === 3) {
+    return 'ALL_SERVICES';
+  }
+  
+  // Check for RO_SOFTENER
+  if (hasRO && hasSOFTENER && sortedTypes.length === 2) {
+    return 'RO_SOFTENER';
+  }
+  
+  // Check for RO_AC
+  if (hasRO && hasAC && sortedTypes.length === 2) {
+    return 'RO_AC';
+  }
+  
+  // Check for SOFTENER_AC
+  if (hasSOFTENER && hasAC && sortedTypes.length === 2) {
+    return 'SOFTENER_AC';
+  }
+  
+  // Single service types
+  if (sortedTypes.length === 1) {
+    return sortedTypes[0];
+  }
+  
+  // Fallback: if multiple types not matching above, use first one
+  return sortedTypes[0] || 'RO';
+};
+
+// Calculate Levenshtein distance for fuzzy matching (handles typos)
+export const levenshteinDistance = (str1: string, str2: string): number => {
+  const s1 = str1.toLowerCase();
+  const s2 = str2.toLowerCase();
+  const matrix: number[][] = [];
+
+  for (let i = 0; i <= s2.length; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= s1.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= s2.length; i++) {
+    for (let j = 1; j <= s1.length; j++) {
+      if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        );
+      }
+    }
+  }
+
+  return matrix[s2.length][s1.length];
+};
+
+// Calculate similarity score (0-1, where 1 is perfect match)
+export const calculateSimilarity = (str1: string, str2: string): number => {
+  const maxLen = Math.max(str1.length, str2.length);
+  if (maxLen === 0) return 1;
+  const distance = levenshteinDistance(str1, str2);
+  return 1 - (distance / maxLen);
+};
+
+// Bangalore areas list for address autocomplete
+// Include spelling variations (K.R Puram / KR Puram / Krishnarajapuram, J.P Nagar / JP Nagar) so suggestions match
+export const bangaloreAreas = [
+  // Name variations (same place, different spellings – so autocomplete finds them)
+  'Krishnarajapuram', 'K.R Puram', 'K R Puram', 'K.R. Puram', 'KR Puram',
+  'J.P Nagar', 'J P Nagar', 'J.P. Nagar', 'JP Nagar',
+  'R.T Nagar', 'R T Nagar', 'RT Nagar',
+  'H.S.R Layout', 'H S R Layout', 'HSR Layout', 'HSR',
+  'B.T.M Layout', 'B T M Layout', 'BTM Layout', 'BTM',
+  'C.V Raman Nagar', 'CV Raman Nagar',
+  'G.B Palya', 'G.B. Palya', 'GB Palya', 'GB palya',
+  'R.R Nagar', 'R R Nagar', 'RR Nagar',
+  // Popular Areas
+  'Bansawadi', 'Koramangala', 'Whitefield', 'Indiranagar', 'HSR', 'BTM', 'JP Nagar',
+  'Malleshwaram', 'Rajajinagar', 'Vijayanagar', 'Basavanagudi', 'Banashankari', 'Jayanagar',
+  'Yelahanka', 'Hebbal', 'RT Nagar', 'Vasanthnagar', 'Cunningham', 'Frazer Town', 'Marathahalli',
+  'Bellandur', 'Electronic City', 'Bommanahalli', 'Bommasandra', 'Kadubeesanahalli', 'Mahadevapura',
+  'KR Puram', 'HAL', 'Domlur', 'Ulsoor', 'Richmond', 'Shivajinagar', 'Cox Town', 'Cooke Town',
+  'Austin Town', 'Richards Town', 'Murphy Town', 'Benson Town', 'HBR Layout', 'Kalyan Nagar',
+  'Sahakara Nagar', 'Mathikere', 'Yeshwanthpur', 'Peenya', 'Chamrajpet', 'Chickpet', 'Gandhinagar',
+  'Majestic', 'City Market', 'KR Market', 'Lalbagh', 'BTM Layout', 'Hosur Road', 'Bannerghatta',
+  'Jigani', 'Anekal', 'Varthur', 'Sarjapur', 'Hoodi', 'Kundalahalli', 'Brookefield', 'Kaggadasapura',
+  'Nagavara', 'Thanisandra', 'Hennur', 'Horamavu', 'Kothanur', 'Ramamurthy Nagar', 'Banaswadi',
+  'CV Raman Nagar', 'Murugeshpalya', 'Adugodi', 'Wilson Garden', 'Richmond Town', 'Shanti Nagar',
+  'Ashok Nagar', 'MG Road', 'Brigade Road', 'Commercial Street', 'Residency Road', 'Cubbon Park',
+  'Vidhana Soudha', 'Cantonment', 'Bowring', 'Richmond Circle', 'Lavelle Road', 'St Marks Road',
+  'Kasturba Road', 'Nrupathunga Road', 'Hudson Circle', 'Kempegowda', 'Majestic Bus Stand',
+  // Additional North Bangalore
+  'Sanjay Nagar', 'Gokula', 'Attiguppe', 'Vijaya Nagar', 'Nagarbhavi', 'Kengeri', 'Rajajinagar Extension',
+  'Basaveshwara Nagar', 'Vijayanagar Extension', 'Yeshwanthpur Industrial', 'Nelamangala', 'Doddaballapur',
+  'Devanahalli', 'Yelahanka New Town', 'Jakkur', 'Bagalur', 'Vidyaranyapura', 'MS Palya', 'Byatarayanapura',
+  // Additional South Bangalore
+  'BTM 2nd Stage', 'BTM 1st Stage', 'Uttarahalli', 'Girinagar',
+  'JP Nagar 1st Phase', 'JP Nagar 2nd Phase', 'JP Nagar 3rd Phase', 'JP Nagar 4th Phase', 'JP Nagar 5th Phase',
+  'JP Nagar 6th Phase', 'JP Nagar 7th Phase', 'JP Nagar 8th Phase', 'JP Nagar 9th Phase', 'Bannerghatta Road',
+  'Arekere', 'Hulimavu', 'Begur', 'HSR Sector 1', 'HSR Sector 2', 'HSR Sector 3', 'HSR Sector 4',
+  'HSR Sector 5', 'HSR Sector 6', 'HSR Sector 7', 'Arakere Mico Layout', 'Bommanahalli', 'Singasandra',
+  'Hosa Road', 'Konanakunte', 'Doddakallasandra', 'Vijaya Bank Layout', 'Padmanabhanagar', 'Hosur',
+  // Additional East Bangalore
+  'Whitefield Main Road', 'ITPL', 'Kadugodi', 'Varthur Kodi', 'Panathur', 'Kundalahalli Gate',
+  'AECS Layout', 'Doddanekundi', 'Marathahalli Bridge', 'Varthur Road', 'Whitefield Road', 'Hope Farm',
+  'Budigere', 'Avalahalli', 'Bidrahalli', 'Kannamangala', 'Vaddarahalli', 'Chikkajala', 'Bagalur',
+  'KR Puram Railway Station', 'Baiyappanahalli', 'Hennur Main Road', 'Kalyan Nagar Main Road',
+  // Additional West Bangalore
+  'Rajajinagar Industrial', 'Peenya Industrial', 'Jalahalli', 'Dasarahalli', 'Nagasandra', 'Tumkur Road',
+  'Nelamangala Road', 'Magadi Road', 'Mysore Road', 'Kengeri Satellite Town', 'Rajarajeshwari Nagar',
+  'Kumbalgodu', 'Anjanapura', 'Nayandahalli', 'Kengeri', 'Uttarahalli Hobli', 'Bidadi', 'Ramanagara',
+  // Additional Central Bangalore
+  'MG Road', 'Brigade Road', 'Commercial Street', 'Residency Road', 'Cubbon Park', 'Vidhana Soudha',
+  'Cantonment', 'Bowring', 'Richmond Circle', 'Lavelle Road', 'St Marks Road', 'Kasturba Road',
+  'Nrupathunga Road', 'Hudson Circle', 'Kempegowda Bus Stand', 'Shivajinagar Bus Stand', 'Russell Market',
+  'Church Street', 'Rest House Road', 'Cunningham Road', 'Miller Road', 'Palace Road',
+  'Kempegowda', 'Majestic Bus Stand', 'City Railway Station',
+  // Outer Areas
+  'Nelamangala', 'Doddaballapur', 'Devanahalli', 'Hoskote', 'Anekal', 'Jigani', 'Bidadi', 'Ramanagara', 'Ramanagaram',
+  'Magadi', 'Tumkur', 'Tumkuru', 'Kolar', 'Kolar City', 'Chikkaballapur',
+  // Additional Areas - Kaknpura side and nearby
+  'Adda', 'Kaknpura', 'Kakanpura', 'Kaknepura', 'Kaknepura Side', 'Kaknpura Side',
+  'Ttible', 'Ttibble', 'Tibble', 'Tibble Side',
+  // Layouts and Extensions
+  'HBR Layout', 'HRBR Layout', 'KHB Layout', 'ARE Layout', 'BEML Layout', 'BEL Layout', 'ISRO Layout',
+  'BDA Layout', 'BDA Complex', 'NRI Layout', 'Prestige Layout', 'Prestige Shantiniketan',
+  // Generic Types (removed - these are not location names)
+  // 'Home', 'Office', 'Shop', 'Factory', 'Warehouse', 'Residence', 'Apartment', 'Villa', 'House',
+  // 'Showroom', 'Workshop', 'Store', 'Building', 'Complex', 'Tower', 'Plaza', 'Mall',
+  // More Areas - Extended Coverage
+  'Agara', 'Akshayanagar', 'Amruthahalli', 'Anandnagar', 'Ananthapura', 'Anjanapura', 'Arakere',
+  'Arekere', 'Avalahalli', 'Bagalur', 'Baiyappanahalli', 'Banaswadi', 'Bannerghatta', 'Basapura',
+  'G.B palya', 'GB palya', 'GB Palya', 'Hongasandra', 'Mico Layout', 'Arakere Mico Layout',
+  'HSR Layout', 'Somasandrapalya', 'ITI Layout',
+  'Basavanagudi', 'Basaveshwara Nagar', 'Begur', 'Bellandur', 'BEML Layout', 'Benson Town',
+  'Bhairava Nagar', 'Bidadi', 'Bidrahalli', 'Bommanahalli', 'Bommasandra', 'Brigade Road',
+  'Brookefield', 'BTM', 'BTM Layout', 'Budigere', 'Byatarayanapura', 'Chamrajpet', 'Chickpet',
+  'Chikkaballapur', 'Chikkajala', 'Church Street', 'City Market', 'Commercial Street', 'Cooke Town',
+  'Cox Town', 'Cubbon Park', 'Cunningham', 'CV Raman Nagar', 'Dasarahalli', 'Devanahalli',
+  'Doddaballapur', 'Doddakallasandra', 'Doddanekundi', 'Domlur', 'Electronic City', 'Frazer Town',
+  'Gandhinagar', 'Girinagar', 'Gokula', 'HAL', 'Hebbal', 'Hennur', 'Hennur Main Road', 'Hoodi',
+  'Hope Farm', 'Horamavu', 'Hosa Road', 'Hoskote', 'Hosur', 'Hosur Road', 'HSR', 'HSR Sector 1',
+  'HSR Sector 2', 'HSR Sector 3', 'HSR Sector 4', 'HSR Sector 5', 'HSR Sector 6', 'HSR Sector 7',
+  'Hudson Circle', 'Hulimavu', 'Indiranagar', 'ITPL', 'Jakkur', 'Jalahalli', 'Jayanagar', 'Jigani',
+  'JP Nagar', 'JP Nagar 1st Phase', 'JP Nagar 2nd Phase', 'JP Nagar 3rd Phase', 'JP Nagar 4th Phase',
+  'JP Nagar 5th Phase', 'JP Nagar 6th Phase', 'JP Nagar 7th Phase', 'JP Nagar 8th Phase', 'JP Nagar 9th Phase',
+  'Kadubeesanahalli', 'Kadugodi', 'Kaggadasapura', 'Kallahalli', 'Kalyan Nagar', 'Kalyan Nagar Main Road',
+  'Kannamangala', 'Kasturba Road', 'Kempegowda', 'Kempegowda Bus Stand', 'Kengeri', 'Kengeri Satellite Town',
+  'Konanakunte', 'Koramangala', 'Kothanur', 'KR Market', 'KR Puram', 'KR Puram Railway Station',
+  'Kumbalgodu', 'Kundalahalli', 'Kundalahalli Gate', 'Lalbagh', 'Lavelle Road', 'Magadi', 'Magadi Road',
+  'Mahadevapura', 'Majestic', 'Majestic Bus Stand', 'Marathahalli', 'Marathahalli Bridge', 'Mathikere',
+  'MG Road', 'Miller Road', 'MS Palya', 'Murphy Town', 'Murugeshpalya', 'Mysore Road', 'Nagarbhavi',
+  'Nagasandra', 'Nagavara', 'Nayandahalli', 'Nelamangala', 'Nelamangala Road', 'NRI Layout',
+  'Nrupathunga Road', 'Padmanabhanagar', 'Palace Road', 'Panathur', 'Peenya', 'Peenya Industrial',
+  'Prestige Layout', 'Prestige Shantiniketan', 'Rajarajeshwari Nagar', 'Rajajinagar', 'Rajajinagar Extension',
+  'Rajajinagar Industrial', 'Ramamurthy Nagar', 'Ramanagara', 'Ramanagaram', 'Residency Road', 'Rest House Road',
+  'Richmond', 'Richmond Circle', 'Richmond Town', 'RT Nagar', 'Russell Market', 'Sahakara Nagar',
+  'Sanjay Nagar', 'Sarjapur', 'Shanti Nagar', 'Shivajinagar', 'Shivajinagar Bus Stand', 'Singasandra', 'Seshadripuram',
+  'St Marks Road', 'Thanisandra', 'Tumkur', 'Tumkuru', 'Tumkur Road', 'Ulsoor', 'Uttarahalli', 'Uttarahalli Hobli',
+  'Vaddarahalli', 'Varthur', 'Varthur Kodi', 'Varthur Road', 'Vasanthnagar', 'Vidhana Soudha',
+  'Vidyaranyapura', 'Vijaya Bank Layout', 'Vijaya Nagar', 'Vijayanagar', 'Vijayanagar Extension',
+  'Whitefield', 'Whitefield Main Road', 'Whitefield Road', 'Wilson Garden', 'Yelahanka', 'Yelahanka New Town',
+  'Yeshwanthpur', 'Yeshwanthpur Industrial',
+  // Additional Areas - Kaknpura side, Ramanagara, Kolar, Tumkur
+  'Adda', 'Kaknpura', 'Kakanpura', 'Kaknepura', 'Kaknepura Side', 'Kaknpura Side',
+  'Ttible', 'Ttibble', 'Tibble', 'Tibble Side',
+  'Ramanagaram', 'Kolar City', 'Tumkuru',
+  // Additional Popular Areas
+  'Adugodi', 'AECS Layout', 'Anekal', 'Anjanapura', 'Arakere Mico Layout', 'Arekere', 'Ashok Nagar',
+  'Attiguppe', 'Austin Town', 'Avalahalli', 'Baiyappanahalli', 'Banaswadi', 'Bannerghatta Road',
+  'Basapura', 'Basaveshwara Nagar', 'BEML Layout', 'Bhairava Nagar', 'Bidrahalli', 'Bommanahalli',
+  'Bommasandra', 'Brigade Road', 'Brookefield', 'BTM 1st Stage', 'BTM 2nd Stage', 'Budigere',
+  'Byatarayanapura', 'Chikkajala', 'City Railway Station', 'Commercial Street', 'Cooke Town',
+  'Cox Town', 'Cunningham Road', 'CV Raman Nagar', 'Dasarahalli', 'Devanahalli', 'Doddaballapur',
+  'Doddakallasandra', 'Doddanekundi', 'Domlur', 'Electronic City', 'Frazer Town', 'Gandhinagar',
+  'Girinagar', 'Gokula', 'HAL', 'Hebbal', 'Hennur', 'Hennur Main Road', 'Hoodi', 'Hope Farm',
+  'Horamavu', 'Hosa Road', 'Hoskote', 'Hosur', 'Hosur Road', 'HSR Sector 1', 'HSR Sector 2',
+  'HSR Sector 3', 'HSR Sector 4', 'HSR Sector 5', 'HSR Sector 6', 'HSR Sector 7', 'Hudson Circle',
+  'Hulimavu', 'Indiranagar', 'ITPL', 'Jakkur', 'Jalahalli', 'Jayanagar', 'Jigani', 'JP Nagar 1st Phase',
+  'JP Nagar 2nd Phase', 'JP Nagar 3rd Phase', 'JP Nagar 4th Phase', 'JP Nagar 5th Phase',
+  'JP Nagar 6th Phase', 'JP Nagar 7th Phase', 'JP Nagar 8th Phase', 'JP Nagar 9th Phase',
+  'Kadubeesanahalli', 'Kadugodi', 'Kaggadasapura', 'Kalyan Nagar', 'Kalyan Nagar Main Road',
+  'Kannamangala', 'Kasturba Road', 'Kempegowda', 'Kempegowda Bus Stand', 'Kengeri',
+  'Kengeri Satellite Town', 'Konanakunte', 'Koramangala', 'Kothanur', 'KR Market', 'KR Puram',
+  'KR Puram Railway Station', 'Kumbalgodu', 'Kundalahalli', 'Kundalahalli Gate', 'Lalbagh',
+  'Lavelle Road', 'Magadi', 'Magadi Road', 'Mahadevapura', 'Majestic', 'Majestic Bus Stand',
+  'Marathahalli', 'Marathahalli Bridge', 'Mathikere', 'MG Road', 'Miller Road', 'MS Palya',
+  'Murphy Town', 'Murugeshpalya', 'Mysore Road', 'Nagarbhavi', 'Nagasandra', 'Nagavara',
+  'Nayandahalli', 'Nelamangala', 'Nelamangala Road', 'NRI Layout', 'Nrupathunga Road',
+  'Padmanabhanagar', 'Palace Road', 'Panathur', 'Peenya', 'Peenya Industrial', 'Prestige Layout',
+  'Prestige Shantiniketan', 'Rajarajeshwari Nagar', 'Rajajinagar', 'Rajajinagar Extension',
+  'Rajajinagar Industrial', 'Ramamurthy Nagar', 'Ramanagara', 'Residency Road', 'Rest House Road',
+  'Richmond', 'Richmond Circle', 'Richmond Town', 'RT Nagar', 'Russell Market', 'Sahakara Nagar',
+  'Sanjay Nagar', 'Sarjapur', 'Shanti Nagar', 'Shivajinagar', 'Shivajinagar Bus Stand', 'Singasandra', 'Seshadripuram',
+  'St Marks Road', 'Thanisandra', 'Tumkur', 'Tumkur Road', 'Ulsoor', 'Uttarahalli',
+  'Uttarahalli Hobli', 'Vaddarahalli', 'Varthur', 'Varthur Kodi', 'Varthur Road', 'Vasanthnagar',
+  'Vidhana Soudha', 'Vidyaranyapura', 'Vijaya Bank Layout', 'Vijaya Nagar', 'Vijayanagar',
+  'Vijayanagar Extension', 'Whitefield', 'Whitefield Main Road', 'Whitefield Road', 'Wilson Garden',
+  'Yelahanka', 'Yelahanka New Town', 'Yeshwanthpur', 'Yeshwanthpur Industrial',
+  // Additional popular single-word areas
+  'Adugodi', 'Akshayanagar', 'Amruthahalli', 'Anandnagar', 'Ananthapura', 'Arakere',
+  'Arekere', 'Avalahalli', 'Bagalur', 'Baiyappanahalli', 'Banaswadi', 'Bannerghatta',
+  'Basapura', 'Basaveshwara Nagar', 'Begur', 'Bellandur', 'Benson Town',
+  'Bhairava Nagar', 'Bidadi', 'Bidrahalli', 'Bommanahalli', 'Bommasandra',
+  'Budigere', 'Byatarayanapura', 'Chikkaballapur', 'Chikkajala', 'Dasarahalli',
+  'Doddaballapur', 'Doddakallasandra', 'Doddanekundi', 'Domlur', 'Electronic City',
+  'Gandhinagar', 'Girinagar', 'Gokula', 'HAL', 'Hebbal', 'Hennur', 'Hoodi',
+  'Hope Farm', 'Horamavu', 'Hosa Road', 'Hoskote', 'Hosur', 'Hulimavu',
+  'ITPL', 'Jakkur', 'Jalahalli', 'Jigani', 'Kadubeesanahalli', 'Kadugodi',
+  'Kaggadasapura', 'Kannamangala', 'Kengeri', 'Konanakunte', 'Kothanur',
+  'Kumbalgodu', 'Kundalahalli', 'Mathikere', 'Nagarbhavi', 'Nagasandra',
+  'Nagavara', 'Nayandahalli', 'Nelamangala', 'Padmanabhanagar', 'Panathur',
+  'Peenya', 'Ramamurthy Nagar', 'Ramanagara', 'Ramanagaram', 'Seshadripuram',
+  'Singasandra', 'Thanisandra', 'Tumkur', 'Tumkuru', 'Uttarahalli', 'Vaddarahalli',
+  'Varthur', 'Vidyaranyapura', 'Vijaya Nagar', 'Vijayanagar',
+  // More areas - Additional coverage
+  'Acharya Layout', 'AECS Layout', 'Agara', 'Akshaya Nagar', 'Ambedkar Nagar', 'Anjanapura',
+  'Anugraha Layout', 'Arakere', 'Ashwath Nagar', 'Attiguppe', 'Austin Town',
+  'Baiyappanahalli', 'Banaswadi', 'Banashankari', 'Bannerghatta', 'Basavanagudi',
+  'Basaveshwara Nagar', 'BEML Layout', 'Benson Town', 'Bhairava Nagar', 'Bidadi',
+  'Bidrahalli', 'Bommanahalli', 'Bommasandra', 'Brigade Road', 'Brookefield',
+  'BTM', 'BTM Layout', 'Budigere', 'Byatarayanapura', 'Chamrajpet', 'Chickpet',
+  'Chikkaballapur', 'Chikkajala', 'Church Street', 'City Market', 'Commercial Street',
+  'Cooke Town', 'Cox Town', 'Cubbon Park', 'Cunningham', 'CV Raman Nagar',
+  'Dasarahalli', 'Devanahalli', 'Doddaballapur', 'Doddakallasandra', 'Doddanekundi',
+  'Domlur', 'Electronic City', 'Frazer Town', 'Gandhinagar', 'Girinagar',
+  'Gokula', 'HAL', 'Hebbal', 'Hennur', 'Hennur Main Road', 'Hoodi', 'Hope Farm',
+  'Horamavu', 'Hosa Road', 'Hoskote', 'Hosur', 'Hosur Road', 'HSR', 'HSR Sector 1',
+  'HSR Sector 2', 'HSR Sector 3', 'HSR Sector 4', 'HSR Sector 5', 'HSR Sector 6',
+  'HSR Sector 7', 'Hudson Circle', 'Hulimavu', 'Indiranagar', 'ITPL', 'Jakkur',
+  'Jalahalli', 'Jayanagar', 'Jigani', 'Kadubeesanahalli', 'Kadugodi', 'Kaggadasapura',
+  'Kalyan Nagar', 'Kalyan Nagar Main Road', 'Kannamangala', 'Kasturba Road',
+  'Kempegowda', 'Kempegowda Bus Stand', 'Kengeri', 'Kengeri Satellite Town',
+  'Konanakunte', 'Koramangala', 'Kothanur', 'KR Market', 'KR Puram',
+  'KR Puram Railway Station', 'Kumbalgodu', 'Kundalahalli', 'Kundalahalli Gate',
+  'Lalbagh', 'Lavelle Road', 'Magadi', 'Magadi Road', 'Mahadevapura', 'Majestic',
+  'Majestic Bus Stand', 'Marathahalli', 'Marathahalli Bridge', 'Mathikere',
+  'MG Road', 'Miller Road', 'MS Palya', 'Murphy Town', 'Murugeshpalya', 'Mysore Road',
+  'Nagarbhavi', 'Nagasandra', 'Nagavara', 'Nayandahalli', 'Nelamangala',
+  'Nelamangala Road', 'NRI Layout', 'Nrupathunga Road', 'Padmanabhanagar',
+  'Palace Road', 'Panathur', 'Peenya', 'Peenya Industrial', 'Prestige Layout',
+  'Prestige Shantiniketan', 'Rajarajeshwari Nagar', 'Rajajinagar', 'Rajajinagar Extension',
+  'Rajajinagar Industrial', 'Ramamurthy Nagar', 'Ramanagara', 'Ramanagaram',
+  'Residency Road', 'Rest House Road', 'Richmond', 'Richmond Circle', 'Richmond Town',
+  'RT Nagar', 'Russell Market', 'Sahakara Nagar', 'Sanjay Nagar', 'Sarjapur',
+  'Shanti Nagar', 'Shivajinagar', 'Shivajinagar Bus Stand', 'Singasandra',
+  'Seshadripuram', 'St Marks Road', 'Thanisandra', 'Tumkur', 'Tumkur Road',
+  'Tumkuru', 'Ulsoor', 'Uttarahalli', 'Uttarahalli Hobli', 'Vaddarahalli', 'Varthur',
+  'Varthur Kodi', 'Varthur Road', 'Vasanthnagar', 'Vidhana Soudha', 'Vidyaranyapura',
+  'Vijaya Bank Layout', 'Vijaya Nagar', 'Vijayanagar', 'Vijayanagar Extension',
+  'Whitefield', 'Whitefield Main Road', 'Whitefield Road', 'Wilson Garden',
+  'Yelahanka', 'Yelahanka New Town', 'Yeshwanthpur', 'Yeshwanthpur Industrial',
+  // More common Bengaluru names (variations and frequently used)
+  'Jayanagar 4th Block', 'Jayanagar 3rd Block', 'Jayanagar 1st Block', 'Jayanagar 9th Block',
+  'Koramangala 1st Block', 'Koramangala 4th Block', 'Koramangala 5th Block', 'Koramangala 6th Block',
+  'Indiranagar 1st Stage', 'Indiranagar 2nd Stage', 'Indiranagar 12th Main',
+  'HSR Layout Sector 1', 'HSR Layout Sector 2', 'HSR Layout Sector 3', 'HSR Layout Sector 4',
+  'HSR Layout Sector 5', 'HSR Layout Sector 6', 'HSR Layout Sector 7',
+  'Bannerghatta', 'Bannerghatta Road', 'Jigani', 'Anekal', 'Hulimavu', 'Arekere', 'Begur',
+  'Kaikondrahalli', 'Kasavanahalli', 'Somasundarapalya', 'Madivala', 'Madiwala',
+  'Srinagar', 'Padmanabhanagar', 'Uttarahalli', 'Girinagar', 'Kumaraswamy Layout',
+  'Tavarekere', 'Hosa Road', 'Singasandra', 'Bommasandra Industrial', 'Electronic City Phase 1',
+  'Electronic City Phase 2', 'Konanakunte', 'Doddakallasandra', 'Lakkasandra', 'Ejipura',
+  'Koramangala Inner Ring Road', 'Silk Board', 'Central Silk Board', 'BTM Ring Road',
+  'Sarjapur Road', 'Outer Ring Road', 'ORR', 'Bellandur Outer Ring Road',
+  'Kadugodi', 'Whitefield Road', 'ITPL Road', 'Varthur Road', 'Sarjapur',
+  'Hoodi Circle', 'Hope Farm Junction', 'Kundalahalli Gate', 'Marathahalli Bridge',
+  'Tin Factory', 'Baiyappanahalli', 'Benniganahalli', 'K R Puram Railway Station',
+  'Kasturi Nagar', 'Ramamurthy Nagar', 'Banaswadi', 'HBR Layout', 'Kalyan Nagar',
+  'Sahakara Nagar', 'Mathikere', 'Yeshwanthpur', 'Peenya', 'Rajajinagar', 'Malleshwaram',
+  'Seshadripuram', 'Chamrajpet', 'Chickpet', 'Gandhinagar', 'Majestic', 'City Market',
+  'Shivajinagar', 'Frazer Town', 'Cox Town', 'Cooke Town', 'Austin Town', 'Richards Town',
+  'Murphy Town', 'Benson Town', 'Cunningham Road', 'Lavelle Road', 'Residency Road',
+  'MG Road', 'Brigade Road', 'Commercial Street', 'Church Street', 'St Marks Road',
+  'Jeevan Bheema Nagar', 'Jeevan Bima Nagar', 'Pulikeshi Nagar', 'Kammanahalli',
+  'Bharathi Nagar', 'Bharath Nagar', 'Thippasandra', 'Murugeshpalya', 'Adugodi',
+  'Ashok Nagar', 'Shanti Nagar', 'Wilson Garden', 'Richmond Town', 'Cubbon Park',
+  'Vidhana Soudha', 'Cantonment', 'Ulsoor', 'Domlur', 'HAL 2nd Stage', 'HAL 3rd Stage',
+  'Nagavara', 'Thanisandra', 'Hennur', 'Horamavu', 'Kothanur', 'Bagalur', 'Jakkur',
+  'Vidyaranyapura', 'MS Palya', 'Byatarayanapura', 'Doddaballapur', 'Chikkaballapur',
+  'Devanahalli', 'Hoskote', 'Hosur', 'Nelamangala', 'Tumkur', 'Tumkuru', 'Ramanagara',
+  'Ramanagaram', 'Magadi', 'Bidadi', 'Kolar', 'Channasandra', 'Raghavendra Nagar',
+  'Shakambari Nagar', 'Nandini Layout', 'Mahalakshmi Layout', 'Kengeri', 'Rajarajeshwari Nagar',
+  'Nayandahalli', 'Kumbalgodu', 'Uttarahalli Hobli', 'Jalahalli', 'Dasarahalli',
+  'Nagasandra', 'Peenya Industrial', 'Rajajinagar Industrial', 'Basaveshwara Nagar',
+  'Vijayanagar Extension', 'Attiguppe', 'Gokula', 'Sanjay Nagar', 'Nagarbhavi',
+  'Vidyaranyapura', 'Yelahanka New Town', 'Jakkur', 'Sahakar Nagar'
+];
+
+/** Single photo entry from DB / JSON (string, Cloudinary object, etc.) → usable https URL or null. */
+export const normalizePhotoUrl = (input: unknown): string | null => {
+  if (input == null) return null;
+  if (typeof input === 'string') {
+    const s = input.trim();
+    if (!s) return null;
+    if (
+      s.startsWith('http://') ||
+      s.startsWith('https://') ||
+      s.startsWith('blob:') ||
+      s.startsWith('data:image/')
+    ) {
+      return s;
+    }
+    return null;
+  }
+  if (typeof input === 'object') {
+    const o = input as Record<string, unknown>;
+    const raw =
+      (typeof o.secure_url === 'string' && o.secure_url.trim()) ||
+      (typeof o.url === 'string' && o.url.trim()) ||
+      '';
+    const s = String(raw).trim();
+    if (
+      s.startsWith('http://') ||
+      s.startsWith('https://') ||
+      s.startsWith('blob:') ||
+      s.startsWith('data:image/')
+    ) {
+      return s;
+    }
+  }
+  return null;
+};
+
+// Extract photo URLs from various formats
+export const extractPhotoUrls = (photos: any[]): string[] => {
+  if (!Array.isArray(photos)) return [];
+  return photos.map((p) => normalizePhotoUrl(p)).filter((url): url is string => url !== null);
+};
+
+// Parse job requirements - handles string, array, or object formats
+export const parseJobRequirements = (reqData: any): any[] => {
+  let requirements: any[] = [];
+  try {
+    if (typeof reqData === 'string') {
+      requirements = JSON.parse(reqData);
+    } else if (Array.isArray(reqData)) {
+      requirements = reqData;
+    } else if (reqData && typeof reqData === 'object') {
+      requirements = [reqData];
+    }
+  } catch (e) {
+    requirements = [];
+  }
+  return requirements;
+};
+
+// Format time string to 12-hour format
+export const formatTimeTo12Hour = (timeString: string | null): string | null => {
+  if (!timeString) return null;
+  const [hours, minutes] = String(timeString).split(':');
+  if (!hours || !minutes) {
+    return timeString;
+  }
+  const hourNum = parseInt(hours, 10);
+  if (Number.isNaN(hourNum)) {
+    return timeString;
+  }
+  const normalizedHour = ((hourNum % 12) + 12) % 12 || 12;
+  const suffix = hourNum >= 12 ? 'PM' : 'AM';
+  return `${normalizedHour}:${minutes.padEnd(2, '0')} ${suffix}`;
+};
+
+// Get formatted time slot from job requirements
+export const getFormattedTimeSlot = (job: any, requirements: any[]): string => {
+  // Check if there's a custom time in requirements
+  const customTime = requirements.find((r: any) => r?.custom_time)?.custom_time;
+  
+  if (customTime) {
+    return formatTimeTo12Hour(customTime) || customTime;
+  }
+  
+  // Check for flexible time
+  const isFlexible = requirements.find((r: any) => r?.flexible_time)?.flexible_time;
+  if (isFlexible) {
+    return 'Flexible';
+  }
+  
+  // Otherwise show the time slot
+  const timeSlot = job.scheduled_time_slot || job.scheduledTimeSlot || 'Time not specified';
+  const timeSlotMap: { [key: string]: string } = {
+    'MORNING': 'Morning (9 AM - 1 PM)',
+    'AFTERNOON': 'Afternoon (1 PM - 6 PM)',
+    'EVENING': 'Evening (6 PM - 9 PM)'
+  };
+  return timeSlotMap[timeSlot] || timeSlot;
+};
+
+// Find lead source in requirements
+export const findLeadSource = (requirements: any[]): string | null => {
+  let leadSource: string | null = null;
+  
+  // Try to find lead_source in the array
+  for (const req of requirements) {
+    if (req && typeof req === 'object') {
+      if (req.lead_source) {
+        leadSource = req.lead_source;
+        break;
+      }
+    }
+  }
+  
+  // If still no lead_source found, check if requirements array has objects with nested properties
+  if (!leadSource && requirements.length > 0) {
+    const flatReq = requirements.flat();
+    for (const req of flatReq) {
+      if (req && typeof req === 'object' && req.lead_source) {
+        leadSource = req.lead_source;
+        break;
+      }
+    }
+  }
+  
+  return leadSource;
+};
+
+const isMeaningfulEquipmentValue = (val: unknown): val is string => {
+  if (typeof val !== 'string') return false;
+  const t = val.trim();
+  return t !== '' && t.toLowerCase() !== 'not specified' && t.toLowerCase() !== 'n/a';
+};
+
+/** Label for job equipment row in customer report (RO vs softener). */
+export function getEquipmentModelLabel(serviceType: string | undefined): string {
+  const st = (serviceType || '').toUpperCase();
+  if (st === 'SOFTENER') return 'Softener Model';
+  return 'Purifier Model';
+}
+
+/** Resolve brand/model for a job, with customer fallback (incl. comma-separated multi-service). */
+export function getJobEquipmentDisplay(
+  job: Record<string, unknown>,
+  customer?: Record<string, unknown> | null
+): { label: string; value: string } | null {
+  const jobServiceType = String(job.service_type ?? job.serviceType ?? '').toUpperCase();
+  const jobBrand = String(job.brand ?? '');
+  const jobModel = String(job.model ?? '');
+  const customerBrand = String(customer?.brand ?? '');
+  const customerModel = String(customer?.model ?? '');
+
+  let brand = isMeaningfulEquipmentValue(jobBrand) ? jobBrand.trim() : '';
+  let model = isMeaningfulEquipmentValue(jobModel) ? jobModel.trim() : '';
+
+  if (!brand || !model) {
+    if (customerBrand.includes(',')) {
+      const brands = customerBrand.split(',').map((b) => b.trim());
+      const models = customerModel ? customerModel.split(',').map((m) => m.trim()) : [];
+      if (jobServiceType === 'RO' || jobServiceType === '') {
+        if (!brand) brand = brands[0] || '';
+        if (!model) model = models[0] || '';
+      } else if (jobServiceType === 'SOFTENER' && brands.length > 1) {
+        if (!brand) brand = brands[1] || brands[0] || '';
+        if (!model) model = models[1] || models[0] || '';
+      } else {
+        if (!brand) brand = brands[0] || '';
+        if (!model) model = models[0] || '';
+      }
+    } else {
+      if (!brand && isMeaningfulEquipmentValue(customerBrand)) brand = customerBrand.trim();
+      if (!model && isMeaningfulEquipmentValue(customerModel)) model = customerModel.trim();
+    }
+  }
+
+  const validBrand = isMeaningfulEquipmentValue(brand) ? brand : '';
+  const validModel = isMeaningfulEquipmentValue(model) ? model : '';
+  if (!validBrand && !validModel) return null;
+
+  const value =
+    validBrand && validModel ? `${validBrand} - ${validModel}` : validBrand || validModel;
+
+  return { label: getEquipmentModelLabel(jobServiceType), value };
+}
+
+const SERVICE_SUB_TYPE_NORMALIZE_MAP: Record<string, string> = {
+  service: 'Service',
+  installation: 'Installation',
+  reinstallation: 'Reinstallation',
+  'return complaint': 'Return Complaint',
+  amcservice: 'AMC Service',
+  'amc service': 'AMC Service',
+  'new purifier installation': 'New Purifier Installation',
+  'un-installation': 'Un-Installation',
+  uninstallation: 'Un-Installation',
+  repair: 'Repair',
+  maintenance: 'Maintenance',
+  replacement: 'Replacement',
+  inspection: 'Inspection',
+  other: 'Other',
+};
+
+const LEAD_TYPE_NORMALIZE_MAP: Record<string, string> = {
+  website: 'Website',
+  directcall: 'Direct call',
+  googleleads: 'Google-Leads',
+  rocareindia: 'RO care india',
+  hometriangle: 'Home Triangle',
+  hometrianglesrujan: 'Home Triangle-Srujan',
+  localramu: 'Local Ramu',
+  other: 'Other',
+};
+
+/** Same canonical labels as the admin completed-jobs list (picker + client filter). */
+export function normalizeServiceSubType(value: string): string {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  const lower = raw.toLowerCase();
+  const compact = lower.replace(/[\s_-]+/g, '');
+  return (
+    SERVICE_SUB_TYPE_NORMALIZE_MAP[lower] ||
+    SERVICE_SUB_TYPE_NORMALIZE_MAP[compact] ||
+    raw
+  );
+}
+
+export function normalizeLeadType(value: string): string {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  const key = raw.toLowerCase().replace(/[\s_-]+/g, '');
+  return LEAD_TYPE_NORMALIZE_MAP[key] || raw;
+}
+
+/** Technician row shape from admin dashboard / API (camelCase or snake_case). */
+export type CompletedJobTechnicianLike = {
+  id?: string;
+  fullName?: string;
+  full_name?: string;
+  employee_id?: string;
+  employeeId?: string;
+};
+
+/** Resolve “completed by” to a display name using the technician list (same rules as admin list filters). */
+export function getCompletedJobTechnicianDisplayName(
+  job: Record<string, unknown> | null | undefined,
+  technicians: CompletedJobTechnicianLike[]
+): string {
+  const technicianNameByIdLower = new Map<string, string>();
+  const technicianNameByNameLower = new Map<string, string>();
+  technicians.forEach((t) => {
+    if (t.id) technicianNameByIdLower.set(String(t.id).toLowerCase(), (t.fullName || t.full_name || '').trim());
+    const name = (t.fullName || t.full_name || '').trim();
+    if (name) technicianNameByNameLower.set(name.toLowerCase(), name);
+  });
+  const completedByIdOrName = (job?.completed_by ?? job?.completedBy ?? '').toString().trim();
+  const completedByName = (job?.completed_by_name ?? '').toString().trim();
+  if (completedByIdOrName) {
+    const key = completedByIdOrName.toLowerCase();
+    if (technicianNameByIdLower.has(key)) return technicianNameByIdLower.get(key)!;
+    if (technicianNameByNameLower.has(key)) return technicianNameByNameLower.get(key)!;
+  }
+  if (completedByName) {
+    const key = completedByName.toLowerCase();
+    if (technicianNameByNameLower.has(key)) return technicianNameByNameLower.get(key)!;
+  }
+  return '';
+}
+
+export type CompletedDashboardClientFilters = {
+  leadType: string;
+  serviceSubType: string;
+  completedBy: string;
+};
+
+/**
+ * Client-side filters for the admin “Completed” tab (lead / service sub-type / completed-by).
+ * Must stay in sync with the dashboard list; used for batch pagination when filters are active.
+ */
+export function completedJobMatchesDashboardClientFilters(
+  job: Record<string, unknown> | null | undefined,
+  filters: CompletedDashboardClientFilters,
+  technicians: CompletedJobTechnicianLike[]
+): boolean {
+  if (!job) return false;
+  if (filters.leadType !== 'all') {
+    const lead = (findLeadSource(parseJobRequirements(job.requirements)) || 'Direct call').trim();
+    if (normalizeLeadType(lead) !== normalizeLeadType(filters.leadType)) return false;
+  }
+  if (filters.serviceSubType !== 'all') {
+    const st = normalizeServiceSubType(
+      String(job.service_sub_type ?? job.serviceSubType ?? '').trim()
+    );
+    if (st !== normalizeServiceSubType(filters.serviceSubType)) return false;
+  }
+  if (filters.completedBy !== 'all') {
+    const name = getCompletedJobTechnicianDisplayName(job, technicians);
+    if (name.toLowerCase() !== filters.completedBy.trim().toLowerCase()) return false;
+  }
+  return true;
+}
+
+/**
+ * Values for PostgREST `in('service_sub_type', …)` so DB casing / legacy labels still match
+ * the same normalization used client-side in `doesCompletedJobMatchFilters`.
+ */
+export function serviceSubTypeDbMatchValues(uiFilterChoice: string): string[] {
+  const trimmed = (uiFilterChoice || '').trim();
+  if (!trimmed) return [];
+  const canon = normalizeServiceSubType(trimmed);
+  const out = new Set<string>();
+  out.add(trimmed);
+  if (canon) out.add(canon);
+  const lower = trimmed.toLowerCase();
+  if (lower) out.add(lower);
+  if (canon && canon.toLowerCase() !== lower) out.add(canon.toLowerCase());
+  for (const [k, v] of Object.entries(SERVICE_SUB_TYPE_NORMALIZE_MAP)) {
+    if (v === canon) {
+      out.add(k);
+      if (k.includes('-')) out.add(k.replace(/-/g, ' '));
+    }
+  }
+  return [...out].filter(Boolean);
+}
+
+/**
+ * `lead_source` strings to use with PostgREST `requirements` `cs` (jsonb contains) so pagination
+ * matches the lead filter. Array containment treats `[{"lead_source":"X"}]` as a subset of rows
+ * whose requirements array has an object that includes that key/value (extra keys OK).
+ */
+export function completedJobLeadSourceContainVariants(uiFilterChoice: string): string[] {
+  const trimmed = (uiFilterChoice || '').trim();
+  if (!trimmed) return [];
+
+  const canon = normalizeLeadType(trimmed);
+  const vals = new Set<string>();
+  vals.add(canon);
+  if (trimmed !== canon) vals.add(trimmed);
+
+  const tl = trimmed.toLowerCase();
+  const cl = canon.toLowerCase();
+  if (tl !== cl) vals.add(tl);
+
+  for (const [k, v] of Object.entries(LEAD_TYPE_NORMALIZE_MAP)) {
+    if (v === canon && k !== cl && k !== tl) vals.add(k);
+  }
+  return [...vals];
+}
+
+// Normalize string for comparison - handles variations like "J.P Nagar" vs "JP Nagar" (exported for Analytics location grouping)
+export const normalizeForComparison = (str: string): string => {
+  return str
+    .toLowerCase()
+    .replace(/\./g, '') // Remove dots (J.P -> JP)
+    .replace(/\s+/g, '') // Remove all spaces (J P -> JP)
+    .trim();
+};
+
+// Reusable function to extract location from any address string
+// Only returns a match if it's confident - otherwise returns null
+export const extractLocationFromAddressString = (completeAddress: string): string | null => {
+  if (!completeAddress || completeAddress.trim().length === 0) {
+    return null;
+  }
+
+  // Remove duplicates from bangaloreAreas
+  const uniqueAreas = [...new Set(bangaloreAreas)];
+  
+  // Split address by common delimiters and extract potential location keywords
+  const addressParts = completeAddress
+    .split(/[,\s]+/)
+    .map(part => part.trim())
+    .filter(part => part.length > 2); // Filter out very short parts
+
+  // First, try exact matches (highest priority - most confident)
+  for (const part of addressParts) {
+    const partLower = part.toLowerCase();
+    const exactMatch = uniqueAreas.find(area => 
+      area.toLowerCase() === partLower
+    );
+    if (exactMatch) {
+      return exactMatch;
+    }
+  }
+
+  // Second, try normalized exact matches (handles "J.P Nagar" vs "JP Nagar")
+  for (const part of addressParts) {
+    const normalizedPart = normalizeForComparison(part);
+    const normalizedMatch = uniqueAreas.find(area => {
+      const normalizedArea = normalizeForComparison(area);
+      return normalizedArea === normalizedPart;
+    });
+    if (normalizedMatch) {
+      return normalizedMatch;
+    }
+  }
+
+  // Third, try multi-word exact matches (e.g., "G.B palya" should match "G.B palya")
+  // This is more confident than partial matches
+  for (let i = 0; i < addressParts.length - 1; i++) {
+    const twoWordPart = `${addressParts[i]} ${addressParts[i + 1]}`.toLowerCase();
+    const multiWordMatch = uniqueAreas.find(area => 
+      area.toLowerCase() === twoWordPart
+    );
+    if (multiWordMatch) {
+      return multiWordMatch;
+    }
+  }
+
+  // Fourth, try normalized multi-word matches (handles "J.P Nagar" vs "JP Nagar")
+  for (let i = 0; i < addressParts.length - 1; i++) {
+    const twoWordPart = `${addressParts[i]} ${addressParts[i + 1]}`;
+    const normalizedTwoWord = normalizeForComparison(twoWordPart);
+    const normalizedMultiWordMatch = uniqueAreas.find(area => {
+      const normalizedArea = normalizeForComparison(area);
+      return normalizedArea === normalizedTwoWord;
+    });
+    if (normalizedMultiWordMatch) {
+      return normalizedMultiWordMatch;
+    }
+  }
+
+  // Third, try strict partial matches (only if part is significant length and match is substantial)
+  // Only match if the part is at least 5 characters and the match covers at least 70% of the shorter string
+  for (const part of addressParts) {
+    if (part.length < 5) continue; // Require at least 5 characters for partial match
+    const partLower = part.toLowerCase();
+    const partialMatch = uniqueAreas.find(area => {
+      const areaLower = area.toLowerCase();
+      // Only match if one contains the other AND the overlap is substantial
+      if (areaLower.includes(partLower)) {
+        // Part must be at least 70% of the area name
+        return partLower.length >= areaLower.length * 0.7;
+      }
+      if (partLower.includes(areaLower)) {
+        // Area must be at least 70% of the part
+        return areaLower.length >= partLower.length * 0.7;
+      }
+      return false;
+    });
+    if (partialMatch) {
+      return partialMatch;
+    }
+  }
+
+  // Last resort: fuzzy matching for typos (very strict - only for longer parts with high similarity)
+  let bestMatch: string | null = null;
+  let bestScore = 0.85; // Very high threshold (85%) to avoid false matches
+
+  for (const part of addressParts) {
+    if (part.length < 6) continue; // Require at least 6 characters for fuzzy matching
+
+    for (const area of uniqueAreas) {
+      // Skip if lengths are too different (more than 30% difference - very strict)
+      const lengthDiff = Math.abs(area.length - part.length) / Math.max(area.length, part.length);
+      if (lengthDiff > 0.3) continue;
+
+      // Calculate similarity
+      const similarity = calculateSimilarity(part, area);
+      
+      // Only use fuzzy match if similarity is very high
+      if (similarity > bestScore) {
+        bestScore = similarity;
+        bestMatch = area;
+      }
+    }
+  }
+
+  // Only return match if we found a confident one, otherwise return null
+  return bestMatch;
+};
+

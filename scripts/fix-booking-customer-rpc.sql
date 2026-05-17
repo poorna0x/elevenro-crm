@@ -1,0 +1,2 @@
+-- DEPRECATED: Use scripts/secure-rpc-grants.sql (customer_id + RPC lockdown).
+-- Kept for reference only.

@@ -9,8 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Phone, MessageCircle, MapPin, User, Clock, ChevronLeft, ChevronRight, Check, Settings, Filter, Upload, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db, generateJobNumber } from '@/lib/supabase';
+import { createBookingCustomer } from '@/lib/bookingCustomer';
 import { emailService } from '@/lib/email';
 import ImageUpload from './ImageUpload';
+
+const normalizePhone10 = (phone: string): string => phone.replace(/\D/g, '').slice(-10);
 
 const BookingSection = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -370,7 +373,7 @@ const BookingSection = () => {
         preferred_language: 'ENGLISH' as const,
       };
 
-      const { data: customer, error: customerError } = await db.customers.create(customerData);
+      const { data: customer, error: customerError } = await createBookingCustomer(customerData);
       
       if (customerError) {
         throw new Error(customerError.message);
@@ -414,10 +417,25 @@ const BookingSection = () => {
         booking_domain: hostname,
       };
 
-      const { data: job, error: jobError } = await db.jobs.create(jobData);
+      const { data: job, error: jobError } = await db.jobs.create(jobData, 0, formData.phone);
       
       if (jobError) {
         throw new Error(jobError.message);
+      }
+
+      // Mark website intent as booked (best-effort; no-op if no intent row exists).
+      try {
+        const phoneNorm = normalizePhone10(formData.phone);
+        const siteKey = hostname.includes('elevenro.com') ? 'elevenro' : 'hydrogenro';
+        if (phoneNorm && job?.job_number) {
+          void db.websiteBookingIntent.markBooked({
+            phone_normalized: phoneNorm,
+            site_key: siteKey,
+            job_number: String(job.job_number),
+          });
+        }
+      } catch {
+        /* ignore */
       }
 
       // Send confirmation email (non-blocking for faster response)
@@ -641,7 +659,7 @@ const BookingSection = () => {
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
-                            placeholder="+91-9880693311"
+                            placeholder="+91-8884944288"
                             className="force-visible-border focus:border-primary focus:ring-2 focus:ring-primary p-3 shadow-sm mx-1"
                         required
                       />

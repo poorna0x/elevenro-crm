@@ -1,0 +1,2 @@
+-- DEPRECATED: Do not run. This file previously added USING (true) delete policies.
+-- Use scripts/secure-tax-invoices-rls.sql instead (admin-only CRUD, safe to re-run).

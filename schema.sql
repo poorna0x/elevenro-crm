@@ -641,6 +641,7 @@ CREATE TABLE public.amc_contracts (
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     service_period_months integer,
+    given_by_technician_id uuid,
     CONSTRAINT amc_contracts_status_check CHECK (((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'EXPIRED'::character varying, 'CANCELLED'::character varying, 'RENEWED'::character varying])::text[])))
 );
 
@@ -1845,6 +1846,13 @@ CREATE INDEX idx_amc_contracts_end_date ON public.amc_contracts USING btree (end
 
 
 --
+-- Name: idx_amc_contracts_given_by_technician_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_amc_contracts_given_by_technician_id ON public.amc_contracts USING btree (given_by_technician_id);
+
+
+--
 -- Name: idx_amc_contracts_job_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2602,6 +2610,14 @@ ALTER TABLE ONLY public.amc_contracts
 
 
 --
+-- Name: amc_contracts amc_contracts_given_by_technician_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.amc_contracts
+    ADD CONSTRAINT amc_contracts_given_by_technician_id_fkey FOREIGN KEY (given_by_technician_id) REFERENCES public.technicians(id) ON DELETE SET NULL;
+
+
+--
 -- Name: amc_contracts amc_contracts_job_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3098,9 +3114,6 @@ CREATE POLICY "Allow anon update reminders" ON public.reminders FOR UPDATE TO an
 -- Name: customers Allow anonymous to insert customers; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Allow anonymous to insert customers" ON public.customers FOR INSERT TO authenticated, anon WITH CHECK (true);
-
-
 --
 -- Name: reminders Allow authenticated delete reminders; Type: POLICY; Schema: public; Owner: -
 --
@@ -3139,9 +3152,6 @@ CREATE POLICY "Allow all to delete amc_contracts" ON public.amc_contracts FOR DE
 --
 -- Name: customers Allow authenticated users to delete customers; Type: POLICY; Schema: public; Owner: -
 --
-
-CREATE POLICY "Allow authenticated users to delete customers" ON public.customers FOR DELETE USING (true);
-
 
 --
 -- Name: tax_invoices Allow authenticated users to delete tax invoices; Type: POLICY; Schema: public; Owner: -
@@ -3399,14 +3409,28 @@ ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
 -- Name: customers customers_select; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY customers_select ON public.customers FOR SELECT USING (true);
+CREATE POLICY customers_select_authenticated ON public.customers FOR SELECT TO authenticated USING ((public.is_admin_user() OR public.is_technician_assigned_to_customer(id)));
 
 
 --
--- Name: customers customers_update; Type: POLICY; Schema: public; Owner: -
+-- Name: customers customers_insert_admin; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY customers_update ON public.customers FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY customers_insert_admin ON public.customers FOR INSERT TO authenticated WITH CHECK (public.is_admin_user());
+
+
+--
+-- Name: customers customers_update_authenticated; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY customers_update_authenticated ON public.customers FOR UPDATE TO authenticated USING ((public.is_admin_user() OR public.is_technician_assigned_to_customer(id))) WITH CHECK ((public.is_admin_user() OR public.is_technician_assigned_to_customer(id)));
+
+
+--
+-- Name: customers customers_delete_admin; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY customers_delete_admin ON public.customers FOR DELETE TO authenticated USING (public.is_admin_user());
 
 
 --

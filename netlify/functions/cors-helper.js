@@ -5,17 +5,10 @@
 const DEFAULT_ORIGINS = [
   'http://localhost:8080',           // Vite dev server (HTTP)
   'https://localhost:8080',          // Vite dev server (HTTPS)
+  'http://localhost:8081',           // Vite when 8080 is in use
   'http://localhost:5173',            // Vite default dev port
   'http://localhost:3000',           // Alternative dev port
   'http://localhost:8888',           // Netlify functions dev server
-];
-
-// Trusted production domains that should always be allowed
-const TRUSTED_PRODUCTION_ORIGINS = [
-  'https://hydrogenro.com',
-  'https://www.hydrogenro.com',
-  'https://elevenro.com',
-  'https://www.elevenro.com',
 ];
 
 // Detect if we're in production
@@ -32,17 +25,36 @@ function getAllowedOrigins() {
   // Read from environment variable (comma-separated list)
   const envOrigins = process.env.ALLOWED_ORIGINS;
   const inProduction = isProduction();
-  const baseOrigins = inProduction ? TRUSTED_PRODUCTION_ORIGINS : [...DEFAULT_ORIGINS, ...TRUSTED_PRODUCTION_ORIGINS];
   
   if (envOrigins) {
     // Parse comma-separated origins from environment variable
     const origins = envOrigins.split(',').map(origin => origin.trim()).filter(Boolean);
-
-    // Always include trusted domains and merge env values
-    return [...new Set([...baseOrigins, ...origins])];
+    
+    // In production, only use env origins (no localhost)
+    if (inProduction) {
+      return origins;
+    }
+    
+    // In development, combine with localhost origins
+    return [...DEFAULT_ORIGINS, ...origins];
   }
   
-  return baseOrigins;
+  // Fallback: production domains
+  if (inProduction) {
+    return [
+      'https://hydrogenro.com',
+      'https://www.hydrogenro.com',
+      'https://elevenro.com',
+      'https://www.elevenro.com',
+    ];
+  }
+  
+  // Development fallback: include localhost
+  return [
+    ...DEFAULT_ORIGINS,
+    'https://hydrogenro.com',           // Production domain (for testing)
+    'https://www.hydrogenro.com',       // Production domain with www
+  ];
 }
 
 const ALLOWED_ORIGINS = getAllowedOrigins();

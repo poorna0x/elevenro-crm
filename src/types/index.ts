@@ -161,6 +161,7 @@ export interface Job {
   completionNotes?: string;
   completedBy?: string;
   completedAt?: string;
+  service_brand?: 'elevenro' | 'hydrogenro' | string;
 
   // Timestamps
   createdAt: string;
@@ -190,6 +191,9 @@ export interface Technician {
     maxDistance: number; // in km
   };
   
+  // Account: INACTIVE = removed from roster; row kept for history (jobs, payments, analytics).
+  account_status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+
   // Current Status
   status: 'AVAILABLE' | 'BUSY' | 'OFFLINE' | 'ON_BREAK';
   currentLocation?: {
@@ -230,6 +234,10 @@ export interface Technician {
     baseSalary: number;
     commissionPerJob: number;
     commissionPercentage: number;
+    history?: Array<{
+      amount: number;
+      effectiveFrom: string;
+    }>;
   };
   
   // QR Code Visibility
@@ -495,6 +503,31 @@ export interface Database {
           text: string;
         }>;
       };
+      booking_abandonments: {
+        Row: {
+          id: string;
+          full_name: string;
+          phone: string;
+          phone_normalized: string;
+          step_reached: number;
+          bucket_date: string;
+          created_at: string;
+          dismissed_at: string | null;
+        };
+        Insert: {
+          full_name: string;
+          phone: string;
+          phone_normalized: string;
+          step_reached: number;
+          bucket_date: string;
+          dismissed_at?: string | null;
+        };
+        Update: Partial<{
+          full_name: string;
+          phone: string;
+          dismissed_at: string | null;
+        }>;
+      };
       reminders: {
         Row: {
           id: string;
@@ -571,6 +604,22 @@ export interface Database {
           p_job_number: string;
         };
         Returns: undefined;
+      };
+      get_customer_by_phone_for_booking: {
+        Args: { p_phone: string };
+        Returns: Database['public']['Tables']['customers']['Row'][];
+      };
+      create_customer_for_booking: {
+        Args: { p_row: Record<string, unknown> };
+        Returns: Database['public']['Tables']['customers']['Row'];
+      };
+      update_customer_for_booking: {
+        Args: {
+          p_customer_id: string;
+          p_phone: string;
+          p_updates: Record<string, unknown>;
+        };
+        Returns: Database['public']['Tables']['customers']['Row'];
       };
     };
   };

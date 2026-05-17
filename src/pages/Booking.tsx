@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +15,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, MapPin, Camera, Upload, Check, Phone, Mail, User, Home, Clock, Wrench, Loader2, Search, Navigation, X, ExternalLink } from 'lucide-react';
 import { db } from '@/lib/supabase';
+import {
+  createBookingCustomer,
+  getBookingCustomerByPhone,
+  updateBookingCustomer,
+} from '@/lib/bookingCustomer';
 import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { emailService } from '@/lib/email';
 import { isIOS, isPWA, shouldUseFileInputFallback, requestCameraAccess, createVideoElement } from '@/lib/cameraUtils';
@@ -24,11 +31,9 @@ import SecurityStatus from '@/components/SecurityStatus';
 import { useSecurity } from '@/contexts/SecurityContext';
 import DraggableMap from '@/components/DraggableMap';
 import { removePlusCode, haversineKm } from '@/lib/maps';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Link } from 'react-router-dom';
 
 const WEBSITE_BOOKING_SITE_KEY: 'hydrogenro' | 'elevenro' =
-  (import.meta.env.VITE_WEBSITE_BOOKING_SITE_KEY as 'hydrogenro' | 'elevenro') ?? 'elevenro';
+  (import.meta.env.VITE_WEBSITE_BOOKING_SITE_KEY as 'hydrogenro' | 'elevenro') ?? 'hydrogenro';
 
 declare global {
   interface Window {
@@ -79,11 +84,11 @@ const Booking: React.FC = () => {
   const loadingRef = useRef(false);
   const [brandSuggestions, setBrandSuggestions] = useState<string[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [bookingDetails, setBookingDetails] = useState<any>(null);
-  const [showSuccessLoader, setShowSuccessLoader] = useState(false);
   const [acceptLegal, setAcceptLegal] = useState(false);
   const [consentNudgeAt, setConsentNudgeAt] = useState(0);
   const legalConsentRef = useRef<HTMLDivElement | null>(null);
+  const [bookingDetails, setBookingDetails] = useState<any>(null);
+  const [showSuccessLoader, setShowSuccessLoader] = useState(false);
   const [modelSuggestions, setModelSuggestions] = useState<string[]>([]);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
@@ -108,6 +113,13 @@ const Booking: React.FC = () => {
   const [currentLocationLoading, setCurrentLocationLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 12.9716, lng: 77.5946 });
   const [mapZoom, setMapZoom] = useState<number>(15);
+
+  const websiteIntentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const websiteIntentLastSentRef = useRef<{
+    full_name: string;
+    phone_normalized: string;
+    current_step: number;
+  } | null>(null);
 
   // Get tomorrow's date
   const getTomorrowDate = () => {
@@ -139,6 +151,7 @@ const Booking: React.FC = () => {
     setCurrentStep(1);
     setShowConfirmation(false);
     setBookingDetails(null);
+    bookingSucceededRef.current = false;
     websiteIntentLastSentRef.current = null;
   };
 
@@ -162,12 +175,7 @@ const Booking: React.FC = () => {
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const websiteIntentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const websiteIntentLastSentRef = useRef<{
-    full_name: string;
-    phone_normalized: string;
-    current_step: number;
-  } | null>(null);
+  const bookingSucceededRef = useRef(false);
 
   // Helper function to format time slot
   const formatTimeSlot = (timeSlot: string, customTime?: string) => {
@@ -500,7 +508,7 @@ const Booking: React.FC = () => {
   };
 
   /** Egress: 5s debounce + skip identical payloads vs last successful RPC. */
-  const WEBSITE_INTENT_DEBOUNCE_MS = 5000;
+  const WEBSITE_INTENT_DEBOUNCE_MS = 1500;
 
   useEffect(() => {
     if (showConfirmation || showSuccessLoader || isSubmitting) {
@@ -1291,7 +1299,6 @@ const Booking: React.FC = () => {
 
   const nudgeLegalConsent = useCallback(() => {
     setConsentNudgeAt(Date.now());
-    // Ensure the scrollable CardContent can scroll.
     try {
       legalConsentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch {
@@ -1301,10 +1308,11 @@ const Booking: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!acceptLegal) {
-      toast.error('Please accept Terms of Service and Privacy Policy to submit.');
+      toast.error('Please accept Terms of Service, Privacy Policy, and Disclaimer to submit.');
       nudgeLegalConsent();
       return;
     }
+
     // Check if CAPTCHA is verified before proceeding
     if (!isCaptchaVerified) {
       // Show security step if not verified yet (fallback)
@@ -1353,7 +1361,7 @@ const Booking: React.FC = () => {
       let findError = null;
       
       try {
-        const result = await db.customers.getByPhone(formData.phone);
+        const result = await getBookingCustomerByPhone(formData.phone);
         existingCustomer = result.data;
         findError = result.error;
       } catch (networkError: any) {
@@ -1444,7 +1452,11 @@ const Booking: React.FC = () => {
         let updateError = null;
 
         try {
-          const result = await db.customers.update((existingCustomer as any).id, updateData);
+          const result = await updateBookingCustomer(
+            (existingCustomer as any).id,
+            formData.phone,
+            updateData
+          );
           updatedCustomer = result.data;
           updateError = result.error;
         } catch (networkError: any) {
@@ -1534,7 +1546,7 @@ const Booking: React.FC = () => {
         let customerError = null;
         
         try {
-          const result = await db.customers.create(customerData);
+          const result = await createBookingCustomer(customerData);
           newCustomer = result.data;
           customerError = result.error;
         } catch (networkError: any) {
@@ -1671,7 +1683,7 @@ const Booking: React.FC = () => {
       let job: any = null;
       let jobError: any = null;
       for (let attempt = 0; attempt < 2; attempt++) {
-        const result = await db.jobs.create(jobData as any);
+        const result = await db.jobs.create(jobData as any, 0, formData.phone);
         job = result.data;
         jobError = result.error;
         if (!jobError) break;
@@ -1684,6 +1696,8 @@ const Booking: React.FC = () => {
       if (jobError) {
         throw new Error(jobError.message);
       }
+
+      bookingSucceededRef.current = true;
 
       // Mark "live intent" as successfully booked (best-effort; non-blocking).
       try {
@@ -2671,7 +2685,6 @@ const Booking: React.FC = () => {
               </Card>
             </div>
 
-            {/* Legal consent (match HydrogenRO placement + styling) */}
             <div
               ref={legalConsentRef}
               className={`rounded-lg border border-border p-4 space-y-2 transition-colors ${
@@ -2698,7 +2711,7 @@ const Booking: React.FC = () => {
                   <Link to="/disclaimer" className="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer">
                     Disclaimer
                   </Link>
-                  . I consent to ElevenRO using my contact details to arrange and perform this service, including
+                  . I consent to Hydrogen RO using my contact details to arrange and perform this service, including
                   calls, SMS, or WhatsApp where I have provided those details.
                 </label>
               </div>
@@ -2805,8 +2818,8 @@ const Booking: React.FC = () => {
       <div className="min-h-screen flex flex-col bg-background text-foreground">
         <Header />
         
-        <main className="flex-1 bg-background pt-24 md:pt-28">
-          <div className="container mx-auto px-4 pb-8 md:pb-10">
+        <main className="flex-1 bg-background">
+          <div className="container mx-auto px-4 py-6">
             <div className="max-w-2xl mx-auto">
               {/* Success Header */}
               <div className="text-center mb-8">
@@ -3024,14 +3037,14 @@ const Booking: React.FC = () => {
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 justify-center items-center">
                       <Button 
-                        onClick={() => window.open('tel:+919880693311', '_self')}
+                        onClick={() => window.open('tel:+918884944288', '_self')}
                         className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"
                       >
                         <Phone className="w-4 h-4" />
-                        Call: +91-9880693311
+                        Call: +91-8884944288
                       </Button>
                       <Button 
-                        onClick={() => window.open('https://wa.me/919880693311', '_blank', 'noopener,noreferrer')}
+                        onClick={() => window.open('https://wa.me/918884944288', '_blank', 'noopener,noreferrer')}
                         className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"
                       >
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -3040,7 +3053,7 @@ const Booking: React.FC = () => {
                         WhatsApp
                       </Button>
                       <Button 
-                        onClick={() => window.open('mailto:mail@elevenro.com', '_self')}
+                        onClick={() => window.open('mailto:mail@hydrogenro.com', '_self')}
                         className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"
                       >
                         <Mail className="w-4 h-4" />
@@ -3073,8 +3086,8 @@ const Booking: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Header />
       
-      <main className="flex-1 bg-background pt-24 md:pt-28">
-        <div className="container mx-auto px-4 pb-8 md:pb-10">
+      <main className="flex-1 bg-background">
+        <div className="container mx-auto px-4 py-6">
           <div className="max-w-2xl mx-auto">
             {/* Header */}
             <div className="text-center mb-8">
@@ -3185,7 +3198,6 @@ const Booking: React.FC = () => {
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  // Keep clickable so we can guide users to consent (mobile below-the-fold).
                   disabled={isSubmitting || !isCaptchaVerified}
                   aria-disabled={!canProceed() || !isCaptchaVerified}
                   className={`flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${

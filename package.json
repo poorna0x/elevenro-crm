@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:vite\"",
+    "dev": "npm run dev:kill-stale && concurrently \"npm run dev:server\" \"npm run dev:vite\"",
+    "dev:kill-stale": "lsof -ti:8888 | xargs kill -9 2>/dev/null || true",
     "dev:server": "node netlify/functions/dev-server.cjs",
     "dev:vite": "vite",
     "build": "vite build",
@@ -68,6 +69,7 @@
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "nodemailer": "^7.0.6",
+    "qr-code-styling": "^1.9.2",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
