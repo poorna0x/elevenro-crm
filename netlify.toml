@@ -61,6 +61,42 @@
   to = "/robots.txt"
   status = 200
 
+# CRM lives on hydrogenro.com — not deployed on elevenro.com
+[[redirects]]
+  from = "/admin"
+  to = "https://hydrogenro.com/admin"
+  status = 302
+
+[[redirects]]
+  from = "/admin/*"
+  to = "https://hydrogenro.com/admin"
+  status = 302
+
+[[redirects]]
+  from = "/technician/*"
+  to = "https://hydrogenro.com/technician/login"
+  status = 302
+
+[[redirects]]
+  from = "/settings"
+  to = "https://hydrogenro.com/settings"
+  status = 302
+
+[[redirects]]
+  from = "/settings/*"
+  to = "https://hydrogenro.com/settings"
+  status = 302
+
+[[redirects]]
+  from = "/calling"
+  to = "https://hydrogenro.com/calling"
+  status = 302
+
+[[redirects]]
+  from = "/calling/*"
+  to = "https://hydrogenro.com/calling"
+  status = 302
+
 # Handle SPA routing - redirect all non-API requests to index.html
 [[redirects]]
   from = "/*"
