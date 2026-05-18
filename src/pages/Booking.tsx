@@ -14,23 +14,28 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, MapPin, Camera, Upload, Check, Phone, Mail, User, Home, Clock, Wrench, Loader2, Search, Navigation, X, ExternalLink } from 'lucide-react';
-import { db } from '@/lib/supabase';
 import {
   createBookingCustomer,
   getBookingCustomerByPhone,
   updateBookingCustomer,
+  type BookingAltchaContext,
 } from '@/lib/bookingCustomer';
+import {
+  pushWebsiteBookingIntent,
+  markWebsiteBookingIntentBooked,
+} from '@/lib/bookingIntent';
+import { createBookingJob } from '@/lib/bookingJob';
 import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { emailService } from '@/lib/email';
 import { isIOS, isPWA, shouldUseFileInputFallback, requestCameraAccess, createVideoElement } from '@/lib/cameraUtils';
-import { generateJobNumber } from '@/lib/supabase';
+import { generateJobNumber } from '@/lib/jobNumber';
 import AltchaWidget from '@/components/AltchaWidget';
 import HoneypotField from '@/components/HoneypotField';
 import BehavioralTracker from '@/components/BehavioralTracker';
 import SecurityStatus from '@/components/SecurityStatus';
 import { useSecurity } from '@/contexts/SecurityContext';
 import DraggableMap from '@/components/DraggableMap';
-import { removePlusCode, haversineKm } from '@/lib/maps';
+import { removePlusCode } from '@/lib/maps';
 
 const WEBSITE_BOOKING_SITE_KEY: 'hydrogenro' | 'elevenro' =
   (import.meta.env.VITE_WEBSITE_BOOKING_SITE_KEY as 'hydrogenro' | 'elevenro') ?? 'elevenro';
@@ -94,6 +99,8 @@ const Booking: React.FC = () => {
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+  const [altchaLoginToken, setAltchaLoginToken] = useState('');
+  const [altchaPayload, setAltchaPayload] = useState('');
   const [showSecurityStep, setShowSecurityStep] = useState(false);
   const [captchaStartTime] = useState(Date.now());
   const [backgroundVerificationFailed, setBackgroundVerificationFailed] = useState(false);
@@ -520,7 +527,7 @@ const Booking: React.FC = () => {
     }
     const name = formData.fullName.trim();
     const phoneNorm = normalizePhoneNumber(formData.phone);
-    if (name.length < 2 || !/^[6-9]\d{9}$/.test(phoneNorm)) {
+    if (name.length < 2 || !/^[6-9]\d{9}$/.test(phoneNorm) || !altchaLoginToken) {
       if (websiteIntentTimerRef.current) {
         clearTimeout(websiteIntentTimerRef.current);
         websiteIntentTimerRef.current = null;
@@ -547,7 +554,11 @@ const Booking: React.FC = () => {
       ) {
         return;
       }
-      void db.websiteBookingIntent.pushLive(payload).then(({ error }) => {
+      const altchaCtx: BookingAltchaContext = {
+        altchaLoginToken,
+        altchaPayload: altchaPayload || undefined,
+      };
+      void pushWebsiteBookingIntent(payload, altchaCtx).then(({ error }) => {
         if (!error) {
           websiteIntentLastSentRef.current = {
             full_name: payload.full_name,
@@ -571,6 +582,8 @@ const Booking: React.FC = () => {
     showConfirmation,
     showSuccessLoader,
     isSubmitting,
+    altchaLoginToken,
+    altchaPayload,
   ]);
 
   const handleInputChange = (field: keyof FormData, value: any) => {
@@ -1359,9 +1372,22 @@ const Booking: React.FC = () => {
 
       let existingCustomer = null;
       let findError = null;
+
+      if (!altchaLoginToken) {
+        throw new Error('Security verification expired. Please complete the check on step 5 and try again.');
+      }
+
+      const altchaCtx: BookingAltchaContext = {
+        altchaLoginToken,
+        altchaPayload: altchaPayload || undefined,
+      };
       
       try {
-        const result = await getBookingCustomerByPhone(formData.phone);
+        const result = await getBookingCustomerByPhone(formData.phone, {
+          ...altchaCtx,
+          lat: formData.coordinates?.lat,
+          lng: formData.coordinates?.lng,
+        });
         existingCustomer = result.data;
         findError = result.error;
       } catch (networkError: any) {
@@ -1387,24 +1413,10 @@ const Booking: React.FC = () => {
         // Customer exists — update their information
         isExistingCustomer = true;
 
-        // Same or within 2 km: keep previous address/location (don't overwrite)
-        const existingLoc = (existingCustomer as any).location;
-        const existingLat = existingLoc?.latitude ?? existingLoc?.lat;
-        const existingLng = existingLoc?.longitude ?? existingLoc?.lng;
-        const newLat = formData.coordinates?.lat ?? 0;
-        const newLng = formData.coordinates?.lng ?? 0;
-        const hasExistingCoords =
-          typeof existingLat === 'number' &&
-          typeof existingLng === 'number' &&
-          (existingLat !== 0 || existingLng !== 0);
-        const hasNewCoords =
-          typeof newLat === 'number' &&
-          typeof newLng === 'number' &&
-          (newLat !== 0 || newLng !== 0);
+        // Same or within 2 km: keep previous address/location (server-computed when possible)
         const keepPreviousLocationValue =
-          hasExistingCoords &&
-          hasNewCoords &&
-          haversineKm(existingLat, existingLng, newLat, newLng) <= 2;
+          (existingCustomer as { keepPreviousLocation?: boolean }).keepPreviousLocation ===
+          true;
         keepPreviousLocation = keepPreviousLocationValue;
 
         const updateData: Record<string, unknown> = {
@@ -1455,7 +1467,8 @@ const Booking: React.FC = () => {
           const result = await updateBookingCustomer(
             (existingCustomer as any).id,
             formData.phone,
-            updateData
+            updateData,
+            altchaCtx
           );
           updatedCustomer = result.data;
           updateError = result.error;
@@ -1546,7 +1559,7 @@ const Booking: React.FC = () => {
         let customerError = null;
         
         try {
-          const result = await createBookingCustomer(customerData);
+          const result = await createBookingCustomer(customerData, altchaCtx);
           newCustomer = result.data;
           customerError = result.error;
         } catch (networkError: any) {
@@ -1683,7 +1696,12 @@ const Booking: React.FC = () => {
       let job: any = null;
       let jobError: any = null;
       for (let attempt = 0; attempt < 2; attempt++) {
-        const result = await db.jobs.create(jobData as any, 0, formData.phone);
+        const result = await createBookingJob(
+          formData.phone,
+          jobData as Record<string, unknown>,
+          altchaCtx,
+          { consumeToken: false }
+        );
         job = result.data;
         jobError = result.error;
         if (!jobError) break;
@@ -1704,11 +1722,18 @@ const Booking: React.FC = () => {
         const phoneNorm = normalizePhoneNumber(formData.phone);
         const jobNumber = (job as any)?.job_number || (job as any)?.jobNumber;
         if (phoneNorm && jobNumber) {
-          void db.websiteBookingIntent.markBooked({
-            phone_normalized: phoneNorm,
-            site_key: WEBSITE_BOOKING_SITE_KEY,
-            job_number: String(jobNumber),
-          });
+          void markWebsiteBookingIntentBooked(
+            {
+              phone_normalized: phoneNorm,
+              site_key: WEBSITE_BOOKING_SITE_KEY,
+              job_number: String(jobNumber),
+              phone: formData.phone,
+            },
+            {
+              altchaLoginToken,
+              altchaPayload: altchaPayload || undefined,
+            }
+          );
         }
       } catch {
         // ignore
@@ -1722,19 +1747,27 @@ const Booking: React.FC = () => {
         : formData.googleMapsLink;
 
       // Send confirmation email (non-blocking for faster response)
-      emailService.sendBookingConfirmation({
-          customerName: formData.fullName,
-          email: formData.email,
-          jobNumber: (job as any)?.job_number || (job as any)?.jobNumber || 'N/A',
-          serviceType: formData.serviceType,
-          serviceSubType: formData.service === 'Other' ? formData.customService : formData.service,
-          brand: formData.brandName || 'Not specified',
-          model: formData.modelName || 'Not specified',
-          scheduledDate: formData.serviceDate ? formData.serviceDate : new Date().toISOString().split('T')[0],
-          scheduledTimeSlot: formData.preferredTime,
-          serviceAddress: displayAddress,
-          phone: formData.phone,
-      }).catch(error => {
+      emailService
+        .sendBookingConfirmation(
+          {
+            customerName: formData.fullName,
+            email: formData.email,
+            jobNumber: (job as any)?.job_number || (job as any)?.jobNumber || 'N/A',
+            serviceType: formData.serviceType,
+            serviceSubType: formData.service === 'Other' ? formData.customService : formData.service,
+            brand: formData.brandName || 'Not specified',
+            model: formData.modelName || 'Not specified',
+            scheduledDate: formData.serviceDate
+              ? formData.serviceDate
+              : new Date().toISOString().split('T')[0],
+            scheduledTimeSlot: formData.preferredTime,
+            serviceAddress: displayAddress,
+            phone: formData.phone,
+          },
+          altchaCtx,
+          formData.phone
+        )
+        .catch(error => {
         console.error('Email sending failed:', error);
       });
 
@@ -2717,16 +2750,24 @@ const Booking: React.FC = () => {
               </div>
             </div>
             
-            {/* Background ALTCHA verification - runs silently in background (hidden) */}
-            {currentStep === 5 && !isCaptchaVerified && !backgroundVerificationFailed && (
-              <AltchaWidget 
-                onVerify={(verified) => {
+            {/* Background ALTCHA — starts once name+phone are valid (live intent + submit) */}
+            {!showConfirmation &&
+              !showSuccessLoader &&
+              !isSubmitting &&
+              formData.fullName.trim().length >= 2 &&
+              /^[6-9]\d{9}$/.test(normalizePhoneNumber(formData.phone)) &&
+              !isCaptchaVerified &&
+              !backgroundVerificationFailed && (
+              <AltchaWidget
+                tokenPurpose="booking"
+                onVerify={(verified, payload, loginToken) => {
                   setIsCaptchaVerified(verified);
+                  if (payload) setAltchaPayload(payload);
+                  if (loginToken) setAltchaLoginToken(loginToken);
                   if (verified) {
                     setShowSecurityStep(false);
                     setBackgroundVerificationFailed(false);
-                  } else {
-                    // Background verification failed, show manual widget
+                  } else if (currentStep === 5) {
                     setBackgroundVerificationFailed(true);
                     setShowSecurityStep(true);
                   }
@@ -2744,9 +2785,12 @@ const Booking: React.FC = () => {
                   <p className="text-sm text-muted-foreground">Please complete the security check to submit your booking</p>
                 </div>
                 <div className="max-w-md mx-auto">
-                  <AltchaWidget 
-                    onVerify={(verified) => {
+                  <AltchaWidget
+                    tokenPurpose="booking"
+                    onVerify={(verified, payload, loginToken) => {
                       setIsCaptchaVerified(verified);
+                      if (payload) setAltchaPayload(payload);
+                      if (loginToken) setAltchaLoginToken(loginToken);
                       if (verified) {
                         setShowSecurityStep(false);
                         setBackgroundVerificationFailed(false);

@@ -55,8 +55,14 @@ async function bookingFetch(
 /** Public /book — ALTCHA-gated proxy; never calls Supabase RPC with anon key. */
 export async function getBookingCustomerByPhone(
   phone: string,
-  options: BookingCustomerLookupOptions
+  options?: BookingCustomerLookupOptions
 ) {
+  if (!options?.altchaLoginToken) {
+    return {
+      data: null,
+      error: { message: 'Security verification required. Please complete the security check and try again.' },
+    };
+  }
   const res = await bookingFetch('booking-customer-lookup', {
     phone,
     altchaLoginToken: options.altchaLoginToken,
@@ -81,8 +87,14 @@ export async function getBookingCustomerByPhone(
 
 export async function createBookingCustomer(
   row: Record<string, unknown>,
-  ctx: BookingAltchaContext
+  ctx?: BookingAltchaContext
 ) {
+  if (!ctx?.altchaLoginToken) {
+    return {
+      data: null,
+      error: { message: 'Security verification required. Please complete the security check and try again.' },
+    };
+  }
   return bookingFetch('booking-customer-mutate', {
     action: 'create',
     phone: row.phone,
@@ -96,8 +108,14 @@ export async function updateBookingCustomer(
   customerId: string,
   phone: string,
   updates: Record<string, unknown>,
-  ctx: BookingAltchaContext
+  ctx?: BookingAltchaContext
 ) {
+  if (!ctx?.altchaLoginToken) {
+    return {
+      data: null,
+      error: { message: 'Security verification required. Please complete the security check and try again.' },
+    };
+  }
   return bookingFetch('booking-customer-mutate', {
     action: 'update',
     phone,
