@@ -121,6 +121,11 @@ const Booking: React.FC = () => {
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 12.9716, lng: 77.5946 });
   const [mapZoom, setMapZoom] = useState<number>(15);
 
+  // Fixed Navbar overlaps content without top padding; reset scroll on /book load.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  }, []);
+
   const websiteIntentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const websiteIntentLastSentRef = useRef<{
     full_name: string;
@@ -1019,7 +1024,7 @@ const Booking: React.FC = () => {
           setTimeout(() => {
             const element = document.getElementById(firstMissingField);
             if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
               element.focus();
             }
           }, 100);
@@ -1313,7 +1318,7 @@ const Booking: React.FC = () => {
   const nudgeLegalConsent = useCallback(() => {
     setConsentNudgeAt(Date.now());
     try {
-      legalConsentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      legalConsentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch {
       /* ignore */
     }
@@ -2862,8 +2867,8 @@ const Booking: React.FC = () => {
       <div className="min-h-screen flex flex-col bg-background text-foreground">
         <Header />
         
-        <main className="flex-1 bg-background">
-          <div className="container mx-auto px-4 py-6">
+        <main className="flex-1 bg-background pt-24 md:pt-28">
+          <div className="container mx-auto px-4 pb-6">
             <div className="max-w-2xl mx-auto">
               {/* Success Header */}
               <div className="text-center mb-8">
@@ -3130,11 +3135,11 @@ const Booking: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Header />
       
-      <main className="flex-1 bg-background">
-        <div className="container mx-auto px-4 py-6">
+      <main className="flex-1 bg-background pt-24 md:pt-28">
+        <div className="container mx-auto px-4 pb-6">
           <div className="max-w-2xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 scroll-mt-28" id="booking-page-top">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Book Your Service
               </h1>
