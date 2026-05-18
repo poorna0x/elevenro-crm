@@ -27,12 +27,14 @@ declare global {
 /* eslint-enable @typescript-eslint/no-namespace */
 
 interface AltchaWidgetProps {
-  onVerify: (isValid: boolean, payload?: string) => void;
+  onVerify: (isValid: boolean, payload?: string, loginToken?: string) => void;
   onAutoSubmit?: () => void;
   className?: string;
   autoStart?: boolean; // If false, requires manual activation
   buttonText?: string; // For backward compatibility (not used with official widget)
   hidden?: boolean; // Run in background
+  /** Longer-lived login token for multi-step public booking flows */
+  tokenPurpose?: 'booking' | 'login';
 }
 
 const AltchaWidget: React.FC<AltchaWidgetProps> = ({
@@ -41,6 +43,7 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
   className = '',
   autoStart = true,
   hidden = false,
+  tokenPurpose = 'login',
 }) => {
   const widgetRef = useRef<HTMLElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,23 +81,9 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
       return;
     }
 
-    // Configure the widget
-    // In development, use hostname if accessed from local network, otherwise localhost
-    let apiUrl: string;
-    if (import.meta.env.DEV) {
-      // Check if we're accessing from a local network IP (not localhost)
-      const isLocalNetwork = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(window.location.hostname);
-      if (isLocalNetwork) {
-        // Use the current hostname and port for local network access
-        const port = window.location.port || '8080';
-        apiUrl = `http://${window.location.hostname}:8888/.netlify/functions/altcha-verify`;
-      } else {
-        // Use localhost for local machine access
-        apiUrl = 'http://localhost:8888/.netlify/functions/altcha-verify';
-      }
-    } else {
-      apiUrl = '/.netlify/functions/altcha-verify';
-    }
+    // Same-origin path: Vite dev server proxies /.netlify/functions in development only.
+    // Direct http://…:8888 breaks when only Vite runs, or from LAN when :8888 isn’t reachable.
+    const apiUrl = '/.netlify/functions/altcha-verify';
 
     const widgetElement = widget as any; // Type assertion for web component
 
@@ -124,7 +113,7 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
             hidefooter: false, // Show footer with custom text
             hidelogo: false, // Show ALTCHA logo
             strings: {
-              footer: 'Protected by ElevenRO' // Customize footer text
+              footer: 'Protected by HydrogenRO' // Customize footer text
             }
           });
           console.log('[ALTCHA] Widget configured successfully');
@@ -148,7 +137,7 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
         const shadowRoot = widgetElement.shadowRoot;
         const root = shadowRoot || widgetElement;
         
-        // Function to replace "Protected by ALTCHA" text with "Protected by ElevenRO"
+        // Function to replace "Protected by ALTCHA" text with "Protected by HydrogenRO"
         const replaceFooterText = (element: Node) => {
           // Walk through all text nodes
           const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
@@ -157,8 +146,8 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
             if (node.textContent) {
               // Replace various forms of "Protected by ALTCHA"
               const newText = node.textContent
-                .replace(/Protected by ALTCHA/gi, 'Protected by ElevenRO')
-                .replace(/Protected by altcha/gi, 'Protected by ElevenRO');
+                .replace(/Protected by ALTCHA/gi, 'Protected by HydrogenRO')
+                .replace(/Protected by altcha/gi, 'Protected by HydrogenRO');
               if (newText !== node.textContent) {
                 node.textContent = newText;
               }
@@ -255,7 +244,10 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
           response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ payload }),
+            body: JSON.stringify({
+              payload,
+              ...(tokenPurpose === 'booking' ? { purpose: 'booking' } : {}),
+            }),
             signal: controller.signal,
           });
           clearTimeout(timeoutId);
@@ -263,6 +255,11 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
           clearTimeout(timeoutId);
           if (fetchError.name === 'AbortError') {
             throw new Error('Verification timeout - please check your connection and try again');
+          }
+          if (import.meta.env.DEV && (fetchError?.message === 'Failed to fetch' || fetchError?.name === 'TypeError')) {
+            throw new Error(
+              'Cannot reach ALTCHA API. Run `npm run dev` (Vite + functions on :8888) or `npm run dev:server` with Vite.'
+            );
           }
           throw fetchError;
         }
@@ -296,7 +293,7 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
           console.log('[ALTCHA] ✅ Server verification successful!');
           setIsLoading(false);
           setError(null);
-          onVerifyRef.current(true, payload);
+          onVerifyRef.current(true, payload, result.loginToken);
           // Auto-submit if callback provided
           if (onAutoSubmitRef.current) {
             setTimeout(() => {
@@ -436,13 +433,14 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
     };
   }, [autoStart, difficultyLevel]); // Removed onVerify and onAutoSubmit from dependencies
 
+  // display:none breaks many web components; keep off-screen with real dimensions for PoW.
   if (hidden) {
     return (
-      <div className="hidden">
-        <altcha-widget
-          ref={widgetRef}
-          id="altcha-widget-hidden"
-        />
+      <div
+        className="fixed top-0 left-0 w-[min(100vw,420px)] h-[160px] opacity-0 pointer-events-none -z-[1] overflow-hidden"
+        aria-hidden="true"
+      >
+        <altcha-widget ref={widgetRef} id="altcha-widget-hidden" />
       </div>
     );
   }

@@ -50,6 +50,7 @@ const challengeStore = new Map();
 const { getCorsHeaders, isOriginAllowed } = require('./cors-helper');
 const { rateLimiters } = require('./rate-limiter');
 const { addSecurityHeaders } = require('./security-headers');
+const { createLoginToken, isPlaceholderKey: altchaIsPlaceholder } = require('./altcha-guard');
 
 // GET request: Generate challenge using official altcha-lib
 async function handleGet(event, corsHeaders) {
@@ -132,12 +133,14 @@ async function handlePost(event, corsHeaders) {
   try {
     // Parse request body
     let payload;
+    let tokenPurpose;
     const rawBody = event.body || '';
     
-    // Try to parse as JSON first (we're sending { payload: "..." })
+    // Try to parse as JSON first (we're sending { payload: "...", purpose?: "booking" })
     try {
       const body = JSON.parse(rawBody);
       payload = body.payload;
+      tokenPurpose = body.purpose === 'booking' ? 'booking' : undefined;
     } catch (e) {
       // If not JSON, assume it's the payload string directly
       payload = rawBody;
@@ -282,13 +285,18 @@ async function handlePost(event, corsHeaders) {
         console.log('Challenge stored and marked as used (was not in store)');
       }
       
+      const loginToken =
+        process.env.CONTEXT === 'production' && altchaIsPlaceholder()
+          ? undefined
+          : createLoginToken(payload, { purpose: tokenPurpose });
+
       return {
         statusCode: 200,
         headers: addSecurityHeaders({
           ...corsHeaders,
           'Content-Type': 'application/json',
         }),
-        body: JSON.stringify({ verified: true }),
+        body: JSON.stringify({ verified: true, loginToken }),
       };
     } else {
       console.log('Verification failed - invalid proof-of-work solution');

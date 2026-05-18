@@ -33,7 +33,7 @@ import DraggableMap from '@/components/DraggableMap';
 import { removePlusCode, haversineKm } from '@/lib/maps';
 
 const WEBSITE_BOOKING_SITE_KEY: 'hydrogenro' | 'elevenro' =
-  (import.meta.env.VITE_WEBSITE_BOOKING_SITE_KEY as 'hydrogenro' | 'elevenro') ?? 'hydrogenro';
+  (import.meta.env.VITE_WEBSITE_BOOKING_SITE_KEY as 'hydrogenro' | 'elevenro') ?? 'elevenro';
 
 declare global {
   interface Window {
