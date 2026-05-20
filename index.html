@@ -20,6 +20,27 @@
     <meta name="googlebot" content="index, follow" />
     <meta name="bingbot" content="index, follow" />
     
+    <!-- Cleanup: remove any previously installed HydrogenRO PWA service workers / caches and block install prompts on the public ElevenRO site -->
+    <script>
+(function(){
+  try {
+    window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); }, { capture: true });
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        regs.forEach(function(reg){ try { reg.unregister(); } catch(_){} });
+      }).catch(function(){});
+    }
+    if (window.caches && caches.keys) {
+      caches.keys().then(function(keys){
+        keys.forEach(function(k){ try { caches.delete(k); } catch(_){} });
+      }).catch(function(){});
+    }
+    var stale = document.querySelector('link[rel="manifest"]');
+    if (stale) stale.parentNode.removeChild(stale);
+  } catch(_) {}
+})();
+    </script>
+
     <!-- Canonical URL - set immediately from requested URL so crawlers see correct canonical before React -->
     <script>
 (function(){
@@ -81,12 +102,8 @@
     <meta name="theme-color" content="#0ea5e9" />
     <meta name="msapplication-TileColor" content="#0ea5e9" />
     <meta name="msapplication-config" content="/browserconfig.xml" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="ElevenRO" />
     <meta name="application-name" content="ElevenRO" />
     <meta name="msapplication-tooltip" content="Best RO Water Purifier Services in Bengaluru" />
-    <meta name="msapplication-starturl" content="/" />
     <meta name="msapplication-navbutton-color" content="#0ea5e9" />
     <meta name="msapplication-TileImage" content="/fulllogo.png" />
     <meta name="msapplication-square70x70logo" content="/logo-70x70.jpg" />
@@ -96,11 +113,8 @@
     
     <!-- Performance and Technical SEO -->
     <meta name="format-detection" content="telephone=yes" />
-    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="HandheldFriendly" content="true" />
     <meta name="MobileOptimized" content="320" />
-    <meta name="apple-touch-fullscreen" content="yes" />
-    <meta name="apple-mobile-web-app-orientations" content="portrait" />
     
     <!-- Search Engine Specific -->
     <meta name="google-site-verification" content="YOUR_GOOGLE_VERIFICATION_CODE" />
@@ -176,7 +190,6 @@
     <!-- Windows tiles -->
     <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png?v=4" />
     <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png?v=4" />
-    <link rel="manifest" href="/site.webmanifest" id="pwa-manifest" />
     
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
