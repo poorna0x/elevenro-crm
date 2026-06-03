@@ -36,6 +36,7 @@ import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { emailService } from '@/lib/email';
 import { isIOS, isPWA, shouldUseFileInputFallback, requestCameraAccess, createVideoElement } from '@/lib/cameraUtils';
 import { generateJobNumber } from '@/lib/jobNumber';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import AltchaWidget from '@/components/AltchaWidget';
 import HoneypotField from '@/components/HoneypotField';
 import BehavioralTracker from '@/components/BehavioralTracker';
@@ -2920,23 +2921,33 @@ const Booking: React.FC = () => {
 
                 {otpSent && !otpVerified && (
                   <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="booking-otp-code" className="text-sm">
-                        Enter the 6-digit code
-                      </Label>
-                      <Input
-                        id="booking-otp-code"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        placeholder="••••••"
-                        value={otpCode}
-                        onChange={(e) => {
-                          setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6));
-                          setOtpError('');
-                        }}
-                        className="h-12 w-full text-center text-2xl font-semibold tracking-[0.5em] sm:tracking-[0.6em]"
-                      />
-                    </div>
+                    <Label htmlFor="booking-otp-code" className="text-sm">
+                      Enter the 6-digit code
+                    </Label>
+                    <InputOTP
+                      id="booking-otp-code"
+                      maxLength={6}
+                      value={otpCode}
+                      disabled={otpVerifying}
+                      onChange={(v) => {
+                        setOtpCode(v);
+                        setOtpError('');
+                      }}
+                      onComplete={() => {
+                        if (!otpVerifying) handleVerifyOtp();
+                      }}
+                      containerClassName="w-full"
+                    >
+                      <InputOTPGroup className="w-full justify-between gap-2 sm:gap-3">
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                          <InputOTPSlot
+                            key={i}
+                            index={i}
+                            className="h-12 flex-1 rounded-md border-l text-lg font-semibold sm:h-14 sm:text-xl"
+                          />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
                     <div className="flex items-center justify-between gap-2 text-xs sm:text-sm">
                       <span className="text-muted-foreground">Didn't get it?</span>
                       <button
