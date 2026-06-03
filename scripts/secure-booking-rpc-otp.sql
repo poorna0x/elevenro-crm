@@ -24,8 +24,8 @@ DECLARE
   booking_rpcs text[] := ARRAY[
     'create_job_for_booking',
     'create_customer_for_booking',
-    'get_customer_for_booking',
     'update_customer_for_booking',
+    'get_customer_by_phone_for_booking',
     'upsert_website_booking_intent',
     'mark_website_booking_intent_booked'
   ];
@@ -52,5 +52,5 @@ END $$;
 --   CROSS JOIN (SELECT unnest(ARRAY['anon','authenticated','service_role']) AS rolname) r
 --   WHERE n.nspname = 'public'
 --     AND p.proname IN ('create_job_for_booking','create_customer_for_booking',
---                       'get_customer_for_booking','update_customer_for_booking')
+--                       'get_customer_by_phone_for_booking','update_customer_for_booking')
 --   ORDER BY p.proname, r.rolname;
