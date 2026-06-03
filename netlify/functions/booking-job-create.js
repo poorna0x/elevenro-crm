@@ -11,6 +11,7 @@ const {
   getClientIdentifier,
 } = require('./booking-guard');
 const { sendBookingAdminNotification } = require('./booking-notify');
+const { isOtpEnforced, verifyFirebasePhoneToken } = require('./otp-guard');
 
 // Best-effort internal "new booking" email to the business owner. Never allowed
 // to throw or meaningfully delay the booking response.
@@ -73,6 +74,15 @@ exports.handler = async (event) => {
 
   const altcha = verifyAltcha(body, corsHeaders);
   if (!altcha.ok) return altcha.response;
+
+  if (isOtpEnforced()) {
+    const phoneCheck = await verifyFirebasePhoneToken(body.phoneToken, phoneNorm);
+    if (!phoneCheck.ok) {
+      return jsonResponse(403, corsHeaders, {
+        error: phoneCheck.error || 'Phone verification required',
+      });
+    }
+  }
 
   const row = body.row;
   if (!row || typeof row !== 'object') {

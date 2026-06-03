@@ -25,6 +25,13 @@ import {
   markWebsiteBookingIntentBooked,
 } from '@/lib/bookingIntent';
 import { createBookingJob } from '@/lib/bookingJob';
+import {
+  OTP_ENABLED,
+  FIREBASE_RECAPTCHA_CONTAINER_ID,
+  sendBookingOtp,
+  verifyBookingOtp,
+  resetBookingOtpSession,
+} from '@/lib/otp';
 import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { emailService } from '@/lib/email';
 import { isIOS, isPWA, shouldUseFileInputFallback, requestCameraAccess, createVideoElement } from '@/lib/cameraUtils';
@@ -106,6 +113,30 @@ const Booking: React.FC = () => {
   const [captchaStartTime] = useState(Date.now());
   const [backgroundVerificationFailed, setBackgroundVerificationFailed] = useState(false);
 
+  // Phone OTP (Firebase). When enabled, booking only proceeds after SMS verify.
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [phoneToken, setPhoneToken] = useState('');
+  const phoneTokenRef = useRef('');
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [otpResendAt, setOtpResendAt] = useState(0);
+
+  const resetOtpState = () => {
+    setOtpSent(false);
+    setOtpCode('');
+    setOtpVerified(false);
+    setPhoneToken('');
+    phoneTokenRef.current = '';
+    setOtpSending(false);
+    setOtpVerifying(false);
+    setOtpError('');
+    setOtpResendAt(0);
+    resetBookingOtpSession();
+  };
+
   // Location search states for service provider
   const [locationSearchQuery, setLocationSearchQuery] = useState('');
   const [locationSearchResult, setLocationSearchResult] = useState<{ lat: number; lng: number } | null>(null);
@@ -167,6 +198,7 @@ const Booking: React.FC = () => {
     setBookingDetails(null);
     bookingSucceededRef.current = false;
     websiteIntentLastSentRef.current = null;
+    resetOtpState();
   };
 
   const [formData, setFormData] = useState<FormData>({
@@ -600,6 +632,14 @@ const Booking: React.FC = () => {
     // Process phone numbers
     if (field === 'phone' || field === 'alternatePhone') {
       processedValue = normalizePhoneNumber(value);
+    }
+
+    if (field === 'phone' && OTP_ENABLED) {
+      const newNorm = normalizePhoneNumber(value);
+      const prevNorm = normalizePhoneNumber(formData.phone);
+      if (prevNorm && newNorm !== prevNorm) {
+        resetOtpState();
+      }
     }
     
     // Process email
@@ -1327,10 +1367,53 @@ const Booking: React.FC = () => {
     }
   }, []);
 
+  const handleSendOtp = async () => {
+    if (!acceptLegal) {
+      toast.error('Please accept the terms before continuing.');
+      nudgeLegalConsent();
+      return;
+    }
+    if (!validatePhoneNumber(formData.phone)) {
+      toast.error('Enter a valid 10-digit mobile number.');
+      return;
+    }
+    setOtpSending(true);
+    setOtpError('');
+    const res = await sendBookingOtp(formData.phone);
+    setOtpSending(false);
+    if (!res.ok) {
+      setOtpError(res.error || 'Could not send verification code.');
+      return;
+    }
+    setOtpSent(true);
+    setOtpResendAt(Date.now() + 60_000);
+    toast.success('Verification code sent to your phone.');
+  };
+
+  const handleVerifyOtp = async () => {
+    setOtpVerifying(true);
+    setOtpError('');
+    const res = await verifyBookingOtp(otpCode);
+    setOtpVerifying(false);
+    if (!res.verified || !res.phoneToken) {
+      setOtpError(res.error || 'Invalid code. Please try again.');
+      return;
+    }
+    setOtpVerified(true);
+    setPhoneToken(res.phoneToken);
+    phoneTokenRef.current = res.phoneToken;
+    toast.success('Phone verified. Tap Book Service to confirm your booking.');
+  };
+
   const handleSubmit = async () => {
     if (!acceptLegal) {
       toast.error('Please accept Terms of Service, Privacy Policy, and Disclaimer to submit.');
       nudgeLegalConsent();
+      return;
+    }
+
+    if (OTP_ENABLED && !otpVerified) {
+      toast.error('Please verify your phone number before booking.');
       return;
     }
 
@@ -1712,7 +1795,10 @@ const Booking: React.FC = () => {
           formData.phone,
           jobData as Record<string, unknown>,
           altchaCtx,
-          { consumeToken: false }
+          {
+            consumeToken: false,
+            phoneToken: OTP_ENABLED ? phoneTokenRef.current || phoneToken : undefined,
+          }
         );
         job = result.data;
         jobError = result.error;
@@ -2788,11 +2874,62 @@ const Booking: React.FC = () => {
                   <Link to="/disclaimer" className="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer">
                     Disclaimer
                   </Link>
-                  . I consent to Hydrogen RO using my contact details to arrange and perform this service, including
+                  . I consent to Eleven RO using my contact details to arrange and perform this service, including
                   calls, SMS, or WhatsApp where I have provided those details.
                 </label>
               </div>
             </div>
+
+            {OTP_ENABLED && (
+              <div className="rounded-lg border border-border p-4 space-y-3">
+                <div id={FIREBASE_RECAPTCHA_CONTAINER_ID} className="sr-only" aria-hidden="true" />
+                <div className="flex items-center gap-2">
+                  <Phone className="w-5 h-5 text-primary shrink-0" />
+                  <h4 className="font-semibold text-foreground">Verify your phone</h4>
+                </div>
+                {!otpSent && !otpVerified && (
+                  <p className="text-sm text-muted-foreground">
+                    We will send a one-time code to <strong>+91 {formData.phone}</strong> to confirm this booking.
+                  </p>
+                )}
+                {otpSent && !otpVerified && (
+                  <div className="space-y-2">
+                    <Label htmlFor="booking-otp-code">Enter 6-digit code</Label>
+                    <Input
+                      id="booking-otp-code"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="123456"
+                      value={otpCode}
+                      onChange={(e) => {
+                        setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 8));
+                        setOtpError('');
+                      }}
+                      className="max-w-[200px] tracking-widest"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={otpSending || Date.now() < otpResendAt}
+                      onClick={handleSendOtp}
+                    >
+                      {Date.now() < otpResendAt ? 'Resend code shortly' : 'Resend code'}
+                    </Button>
+                  </div>
+                )}
+                {otpVerified && (
+                  <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <Check className="w-4 h-4" /> Phone verified — you can book now.
+                  </p>
+                )}
+                {otpError && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {otpError}
+                  </p>
+                )}
+              </div>
+            )}
             
             {/* Background ALTCHA — starts once name+phone are valid (live intent + submit) */}
             {!showConfirmation &&
@@ -2876,6 +3013,9 @@ const Booking: React.FC = () => {
       case 4:
         return formData.serviceDate && formData.preferredTime;
       case 5:
+        if (OTP_ENABLED) {
+          return acceptLegal && otpVerified;
+        }
         return acceptLegal;
       case 6:
         return isCaptchaVerified;
@@ -3283,22 +3423,66 @@ const Booking: React.FC = () => {
                   Next
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
+              ) : OTP_ENABLED && !otpSent && !otpVerified ? (
+                <Button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={otpSending || !acceptLegal || !isCaptchaVerified}
+                  className={`flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
+                    !acceptLegal || !isCaptchaVerified ? 'opacity-50 hover:scale-100 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {otpSending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending code…
+                    </>
+                  ) : (
+                    'Send verification code'
+                  )}
+                </Button>
+              ) : OTP_ENABLED && otpSent && !otpVerified ? (
+                <Button
+                  type="button"
+                  onClick={handleVerifyOtp}
+                  disabled={otpVerifying || otpCode.length < 4}
+                  className="flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"
+                >
+                  {otpVerifying ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Verifying…
+                    </>
+                  ) : (
+                    'Verify code'
+                  )}
+                </Button>
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  disabled={isSubmitting || !isCaptchaVerified}
-                  aria-disabled={!canProceed() || !isCaptchaVerified}
+                  disabled={
+                    isSubmitting ||
+                    !isCaptchaVerified ||
+                    (OTP_ENABLED && !otpVerified)
+                  }
+                  aria-disabled={
+                    !canProceed() ||
+                    !isCaptchaVerified ||
+                    (OTP_ENABLED && !otpVerified)
+                  }
                   className={`flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
-                    (!isCaptchaVerified) ? 'opacity-50 hover:scale-100 cursor-not-allowed' : ''
+                    !isCaptchaVerified || (OTP_ENABLED && !otpVerified)
+                      ? 'opacity-50 hover:scale-100 cursor-not-allowed'
+                      : ''
                   }`}
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Submitting...
+                      Booking…
                     </>
                   ) : (
-                    'Submit Booking'
+                    'Book Service'
                   )}
                 </Button>
               )}
