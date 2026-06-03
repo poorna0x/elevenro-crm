@@ -32,6 +32,7 @@ import {
   verifyBookingOtp,
   resetBookingOtpSession,
   prewarmBookingOtp,
+  checkOtpRateLimit,
 } from '@/lib/otp';
 import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { emailService } from '@/lib/email';
@@ -1393,6 +1394,24 @@ const Booking: React.FC = () => {
     }
     if (!validatePhoneNumber(formData.phone)) {
       toast.error('Enter a valid 10-digit mobile number.');
+      return;
+    }
+    // Client-side rate limit before hitting Firebase (cuts cost + abuse).
+    const rate = checkOtpRateLimit(formData.phone);
+    if (!rate.allowed) {
+      const secs = Math.ceil((rate.waitMs || 0) / 1000);
+      const wait =
+        secs >= 3600
+          ? `${Math.ceil(secs / 3600)} hour(s)`
+          : secs >= 60
+            ? `${Math.ceil(secs / 60)} minute(s)`
+            : `${secs} second(s)`;
+      const msg = `${rate.reason || 'Please wait before requesting another code.'} (try again in ${wait})`;
+      setOtpError(msg);
+      toast.error(msg);
+      if (rate.waitMs && rate.waitMs < 5 * 60_000) {
+        setOtpResendAt(Date.now() + rate.waitMs);
+      }
       return;
     }
     setOtpSending(true);

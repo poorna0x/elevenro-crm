@@ -40,6 +40,89 @@ function toE164Indian(phone: string): string {
   return `+91${ten}`;
 }
 
+function phoneKey(phone: string): string {
+  return phone.replace(/\D/g, '').slice(-10);
+}
+
+// --- Client-side OTP send rate limiting -------------------------------------
+// Reduces accidental/abusive SMS sends (and cost). Firebase enforces its own
+// per-phone/per-IP quotas server-side; this is a friendly first line of defense.
+const OTP_MIN_GAP_MS = 60_000; // 1 minute between sends
+const OTP_MAX_PER_HOUR = 5;
+const OTP_MAX_PER_DAY = 10;
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
+function otpStoreKey(phone: string): string {
+  return `otp_sends_${phoneKey(phone)}`;
+}
+
+function readOtpSends(phone: string): number[] {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(otpStoreKey(phone));
+    const arr = raw ? (JSON.parse(raw) as number[]) : [];
+    const cutoff = Date.now() - DAY_MS;
+    return Array.isArray(arr) ? arr.filter((t) => typeof t === 'number' && t > cutoff) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeOtpSends(phone: string, times: number[]): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(otpStoreKey(phone), JSON.stringify(times));
+  } catch {
+    /* ignore quota/availability errors */
+  }
+}
+
+export interface OtpRateCheck {
+  allowed: boolean;
+  waitMs?: number;
+  reason?: string;
+}
+
+/** Check whether another OTP can be sent to this phone right now. */
+export function checkOtpRateLimit(phone: string): OtpRateCheck {
+  const now = Date.now();
+  const sends = readOtpSends(phone);
+  const last = sends.length ? Math.max(...sends) : 0;
+
+  if (last && now - last < OTP_MIN_GAP_MS) {
+    return {
+      allowed: false,
+      waitMs: OTP_MIN_GAP_MS - (now - last),
+      reason: 'Please wait a moment before requesting another code.',
+    };
+  }
+  const inHour = sends.filter((t) => now - t < HOUR_MS);
+  if (inHour.length >= OTP_MAX_PER_HOUR) {
+    const oldest = Math.min(...inHour);
+    return {
+      allowed: false,
+      waitMs: HOUR_MS - (now - oldest),
+      reason: 'Too many code requests. Please try again later.',
+    };
+  }
+  if (sends.length >= OTP_MAX_PER_DAY) {
+    const oldest = Math.min(...sends);
+    return {
+      allowed: false,
+      waitMs: DAY_MS - (now - oldest),
+      reason: 'Daily verification limit reached. Please try again tomorrow.',
+    };
+  }
+  return { allowed: true };
+}
+
+function recordOtpSend(phone: string): void {
+  const sends = readOtpSends(phone);
+  sends.push(Date.now());
+  writeOtpSends(phone, sends);
+}
+
 /** Extra detail for /otp-test logs (safe to show; no secrets). */
 export function formatFirebaseErrorDetail(err: unknown): string {
   if (!err || typeof err !== 'object') return String(err);
@@ -156,6 +239,7 @@ export async function sendBookingOtp(
     const auth = getFirebaseAuth();
     const verifier = await getRecaptchaVerifier(recaptchaContainerId);
     confirmationResult = await signInWithPhoneNumber(auth, toE164Indian(phone), verifier);
+    recordOtpSend(phone);
     return { ok: true };
   } catch (e) {
     console.error('[otp] sendBookingOtp failed', e);
