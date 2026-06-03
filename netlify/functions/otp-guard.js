@@ -20,9 +20,21 @@ function isFirebaseAdminConfigured() {
   return raw.length > 10;
 }
 
+let warnedPartialConfig = false;
+
 /** True only when explicitly turned on AND Firebase Admin is configured. */
 function isOtpEnforced() {
-  return process.env.OTP_ENFORCED === 'true' && isFirebaseAdminConfigured();
+  const wantEnforce = process.env.OTP_ENFORCED === 'true';
+  const adminReady = isFirebaseAdminConfigured();
+  // Warn once per cold start if intent and config disagree (fail-open).
+  if (!warnedPartialConfig && wantEnforce && !adminReady) {
+    warnedPartialConfig = true;
+    console.warn(
+      '[otp-guard] OTP_ENFORCED=true but FIREBASE_SERVICE_ACCOUNT_JSON is missing/invalid. ' +
+        'OTP is NOT being enforced. Add the service account JSON to enable verification.'
+    );
+  }
+  return wantEnforce && adminReady;
 }
 
 function getFirebaseAdmin() {

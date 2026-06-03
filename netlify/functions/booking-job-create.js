@@ -75,7 +75,18 @@ exports.handler = async (event) => {
   const altcha = verifyAltcha(body, corsHeaders);
   if (!altcha.ok) return altcha.response;
 
-  if (isOtpEnforced()) {
+  const otpEnforced = isOtpEnforced();
+  // Fail-open detector: the client completed OTP (sent a token) but the server
+  // is not configured to verify it. This means anyone could skip OTP. Surfaces
+  // in Netlify function logs so the misconfig is caught quickly.
+  if (body.phoneToken && !otpEnforced) {
+    console.warn(
+      '[booking-job-create] SECURITY: received an OTP phone token but server ' +
+        'enforcement is OFF. Set OTP_ENFORCED=true and FIREBASE_SERVICE_ACCOUNT_JSON ' +
+        'on this site so the phone token is actually verified.'
+    );
+  }
+  if (otpEnforced) {
     const phoneCheck = await verifyFirebasePhoneToken(body.phoneToken, phoneNorm);
     if (!phoneCheck.ok) {
       return jsonResponse(403, corsHeaders, {
