@@ -3459,7 +3459,8 @@ const Booking: React.FC = () => {
                 <Button
                   type="button"
                   onClick={handleSendOtp}
-                  disabled={otpSending || !acceptLegal || !isCaptchaVerified}
+                  disabled={otpSending || !isCaptchaVerified}
+                  aria-disabled={!acceptLegal || !isCaptchaVerified}
                   className={`flex flex-1 sm:flex-none items-center justify-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
                     !acceptLegal || !isCaptchaVerified ? 'opacity-50 hover:scale-100 cursor-not-allowed' : ''
                   }`}
