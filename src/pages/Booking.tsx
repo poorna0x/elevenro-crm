@@ -3463,7 +3463,7 @@ const Booking: React.FC = () => {
             {/* Form Content */}
             <BehavioralTracker>
               <Card className="mb-6">
-                <CardContent className="p-6 max-h-[70vh] overflow-y-auto">
+                <CardContent className="p-6">
                   {/* Honeypot field - hidden from users */}
                   <HoneypotField />
                   
@@ -3475,7 +3475,7 @@ const Booking: React.FC = () => {
             </BehavioralTracker>
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between gap-3">
+            <div className="flex justify-between gap-3 pb-2">
               <Button
                 variant="outline"
                 onClick={prevStep}
