@@ -8,6 +8,7 @@ import {
   sendBookingOtp,
   verifyBookingOtp,
   resetBookingOtpSession,
+  formatFirebaseErrorDetail,
 } from '@/lib/otp';
 import { isFirebaseConfigured } from '@/lib/firebase';
 
@@ -37,7 +38,10 @@ const OtpTest = () => {
     addLog(`Sending OTP to +91 ${phone} …`);
     const res = await sendBookingOtp(phone);
     if (res.unavailable) addLog('UNAVAILABLE: Firebase not configured.');
-    else if (!res.ok) addLog(`SEND FAILED: ${res.error}`);
+      else if (!res.ok) {
+        addLog(`SEND FAILED: ${res.error}`);
+        if (res.errorDetail) addLog(`DETAIL: ${res.errorDetail}`);
+      }
     else {
       setSent(true);
       addLog('OTP sent. Check SMS.');

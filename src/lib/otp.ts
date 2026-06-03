@@ -17,6 +17,7 @@ export interface OtpSendResult {
   ok: boolean;
   unavailable?: boolean;
   error?: string;
+  errorDetail?: string;
 }
 
 export interface OtpVerifyResult {
@@ -39,11 +40,27 @@ function toE164Indian(phone: string): string {
   return `+91${ten}`;
 }
 
+/** Extra detail for /otp-test logs (safe to show; no secrets). */
+export function formatFirebaseErrorDetail(err: unknown): string {
+  if (!err || typeof err !== 'object') return String(err);
+  const e = err as { code?: string; message?: string; customData?: unknown };
+  const parts = [e.code, e.message].filter(Boolean);
+  if (e.customData && typeof e.customData === 'object') {
+    try {
+      parts.push(JSON.stringify(e.customData));
+    } catch {
+      /* ignore */
+    }
+  }
+  return parts.join(' | ') || 'unknown';
+}
+
 function mapFirebaseError(err: unknown): string {
   const code =
     err && typeof err === 'object' && 'code' in err
       ? String((err as { code: string }).code)
       : '';
+  const detail = formatFirebaseErrorDetail(err);
   switch (code) {
     case 'auth/invalid-phone-number':
       return 'Invalid phone number.';
@@ -58,13 +75,18 @@ function mapFirebaseError(err: unknown): string {
     case 'auth/quota-exceeded':
       return 'SMS limit reached. Please try again later.';
     case 'auth/internal-error':
-      return [
-        'Firebase internal error (usually config, not your phone). Check:',
-        '1) Firebase → Auth → Settings → Authorized domains includes this site (elevenro.com)',
-        '2) Google Cloud → Credentials → Browser API key → allow https://elevenro.com/* and https://www.elevenro.com/*',
-        '3) Netlify has VITE_FIREBASE_* set and you redeployed after adding them',
-        '4) SMS region policy includes India (IN)',
-      ].join(' ');
+      if (typeof window !== 'undefined' && window.location.hostname.includes('elevenro')) {
+        return [
+          'Fix: Google Cloud → project hydrogenro-otp → APIs & Services → Credentials →',
+          'open "Browser key (auto created by Firebase)" → Application restrictions → HTTP referrers → add:',
+          'https://elevenro.com/* and https://www.elevenro.com/* → Save, wait 5 min.',
+          'Also confirm elevenro.com + www.elevenro.com in Firebase → Auth → Authorized domains.',
+          detail ? `Detail: ${detail}` : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+      }
+      return `Firebase internal error. ${detail}`;
     case 'auth/invalid-app-credential':
       // Firebase blocks real SMS on localhost; test numbers still work.
       if (
@@ -124,7 +146,11 @@ export async function sendBookingOtp(
     // A failed/expired verifier can't be reused — drop it so the next attempt
     // renders a fresh one.
     resetBookingOtpSession();
-    return { ok: false, error: mapFirebaseError(e) };
+    return {
+      ok: false,
+      error: mapFirebaseError(e),
+      errorDetail: formatFirebaseErrorDetail(e),
+    };
   }
 }
 
