@@ -31,6 +31,7 @@ import {
   sendBookingOtp,
   verifyBookingOtp,
   resetBookingOtpSession,
+  prewarmBookingOtp,
 } from '@/lib/otp';
 import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { emailService } from '@/lib/email';
@@ -133,6 +134,13 @@ const Booking: React.FC = () => {
     return () => clearInterval(id);
   }, [otpSent, otpVerified, otpResendAt]);
   const otpResendRemaining = Math.max(0, Math.ceil((otpResendAt - otpNow) / 1000));
+
+  // Pre-warm Firebase + reCAPTCHA on the Review step so the first send is fast.
+  useEffect(() => {
+    if (OTP_ENABLED && currentStep === 5 && !otpSent && !otpVerified) {
+      void prewarmBookingOtp();
+    }
+  }, [currentStep, otpSent, otpVerified]);
 
   const resetOtpState = () => {
     setOtpSent(false);
@@ -3477,14 +3485,14 @@ const Booking: React.FC = () => {
                   onClick={handleSendOtp}
                   disabled={otpSending || !isCaptchaVerified}
                   aria-disabled={!acceptLegal || !isCaptchaVerified}
-                  className={`flex flex-1 sm:flex-none items-center justify-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
+                  className={`flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
                     !acceptLegal || !isCaptchaVerified ? 'opacity-50 hover:scale-100 cursor-not-allowed' : ''
                   }`}
                 >
                   {otpSending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Sending code…
+                      Sending…
                     </>
                   ) : (
                     'Book Service'
@@ -3495,7 +3503,7 @@ const Booking: React.FC = () => {
                   type="button"
                   onClick={handleVerifyOtp}
                   disabled={otpVerifying || otpCode.length < 6}
-                  className={`flex flex-1 sm:flex-none items-center justify-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
+                  className={`flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
                     otpCode.length < 6 ? 'opacity-50 hover:scale-100 cursor-not-allowed' : ''
                   }`}
                 >
@@ -3521,7 +3529,7 @@ const Booking: React.FC = () => {
                     !isCaptchaVerified ||
                     (OTP_ENABLED && !otpVerified)
                   }
-                  className={`flex flex-1 sm:flex-none items-center justify-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
+                  className={`flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
                     !isCaptchaVerified || (OTP_ENABLED && !otpVerified)
                       ? 'opacity-50 hover:scale-100 cursor-not-allowed'
                       : ''

@@ -127,6 +127,23 @@ async function getRecaptchaVerifier(containerId: string): Promise<RecaptchaVerif
   return recaptchaVerifier;
 }
 
+/**
+ * Warm up Firebase + the invisible reCAPTCHA ahead of time so the first
+ * "send code" tap isn't slowed by SDK init + widget render. Safe to call
+ * repeatedly; no-op if already rendered or not configured.
+ */
+export async function prewarmBookingOtp(
+  recaptchaContainerId = FIREBASE_RECAPTCHA_CONTAINER_ID
+): Promise<void> {
+  if (!isFirebaseConfigured()) return;
+  try {
+    getFirebaseAuth();
+    await getRecaptchaVerifier(recaptchaContainerId);
+  } catch {
+    // Best-effort; sendBookingOtp will retry/render on demand.
+  }
+}
+
 /** Send SMS OTP via Firebase (Google handles delivery; no DLT). */
 export async function sendBookingOtp(
   phone: string,
