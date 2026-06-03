@@ -4,11 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Content Security Policy - Secure production configuration -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://cdn.gpteng.co https://maps.googleapis.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://maps.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; worker-src 'self' blob:; connect-src 'self' http://localhost:8888 http://127.0.0.1:8888 ws://localhost:8888 ws://127.0.0.1:8888 wss://*.supabase.co ws://*.supabase.co https://www.google-analytics.com https://*.supabase.co https://api.bigdatacloud.net https://api-bdc.io https://api.cloudinary.com https://nominatim.openstreetmap.org https://maps.googleapis.com https://maps.app.goo.gl https://goo.gl; frame-src 'self';"
-    />
+    <!-- Production CSP: HTTP header via dist/_headers (see scripts/csp-config.mjs). Dev CSP meta injected by Vite when plugin is enabled. -->
     
     <!-- Primary Meta Tags -->
     <title>ElevenRO - #1 Best RO Service in Bengaluru Bangalore | 5★ Rated</title>
