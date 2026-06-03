@@ -36,6 +36,7 @@ import { cloudinaryService, compressImage } from '@/lib/cloudinary';
 import { emailService } from '@/lib/email';
 import { isIOS, isPWA, shouldUseFileInputFallback, requestCameraAccess, createVideoElement } from '@/lib/cameraUtils';
 import { generateJobNumber } from '@/lib/jobNumber';
+import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import AltchaWidget from '@/components/AltchaWidget';
 import HoneypotField from '@/components/HoneypotField';
@@ -2929,6 +2930,10 @@ const Booking: React.FC = () => {
                       maxLength={6}
                       value={otpCode}
                       disabled={otpVerifying}
+                      inputMode="numeric"
+                      pattern={REGEXP_ONLY_DIGITS}
+                      autoComplete="one-time-code"
+                      autoFocus
                       onChange={(v) => {
                         setOtpCode(v);
                         setOtpError('');
@@ -2938,12 +2943,12 @@ const Booking: React.FC = () => {
                       }}
                       containerClassName="w-full"
                     >
-                      <InputOTPGroup className="w-full justify-between gap-2 sm:gap-3">
+                      <InputOTPGroup className="w-full justify-between gap-1.5 sm:gap-3">
                         {[0, 1, 2, 3, 4, 5].map((i) => (
                           <InputOTPSlot
                             key={i}
                             index={i}
-                            className="h-12 flex-1 rounded-md border-l text-lg font-semibold sm:h-14 sm:text-xl"
+                            className="h-12 flex-1 rounded-md border-l bg-background text-lg font-semibold shadow-sm sm:h-14 sm:text-xl"
                           />
                         ))}
                       </InputOTPGroup>
