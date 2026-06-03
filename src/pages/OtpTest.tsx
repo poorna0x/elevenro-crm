@@ -11,6 +11,9 @@ import {
 } from '@/lib/otp';
 import { isFirebaseConfigured } from '@/lib/firebase';
 
+const firebaseProjectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || '—';
+const firebaseAuthDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '—';
+
 /**
  * Standalone OTP test harness (route: /otp-test).
  * Isolated from the booking flow — exercises Firebase Phone Auth send/verify and
@@ -82,6 +85,12 @@ const OtpTest = () => {
           </div>
           <div>
             <strong>Host:</strong> {typeof window !== 'undefined' ? window.location.hostname : '—'}
+          </div>
+          <div>
+            <strong>Firebase project:</strong> {firebaseProjectId}
+          </div>
+          <div>
+            <strong>Auth domain:</strong> {firebaseAuthDomain}
           </div>
         </div>
 
