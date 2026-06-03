@@ -123,6 +123,14 @@ const Booking: React.FC = () => {
   const [otpVerifying, setOtpVerifying] = useState(false);
   const [otpError, setOtpError] = useState('');
   const [otpResendAt, setOtpResendAt] = useState(0);
+  // Drives the live resend countdown without affecting other logic.
+  const [otpNow, setOtpNow] = useState(Date.now());
+  useEffect(() => {
+    if (!otpSent || otpVerified || otpResendAt <= Date.now()) return;
+    const id = setInterval(() => setOtpNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, [otpSent, otpVerified, otpResendAt]);
+  const otpResendRemaining = Math.max(0, Math.ceil((otpResendAt - otpNow) / 1000));
 
   const resetOtpState = () => {
     setOtpSent(false);
@@ -1394,25 +1402,28 @@ const Booking: React.FC = () => {
     setOtpVerifying(true);
     setOtpError('');
     const res = await verifyBookingOtp(otpCode);
-    setOtpVerifying(false);
     if (!res.verified || !res.phoneToken) {
+      setOtpVerifying(false);
       setOtpError(res.error || 'Invalid code. Please try again.');
       return;
     }
     setOtpVerified(true);
     setPhoneToken(res.phoneToken);
     phoneTokenRef.current = res.phoneToken;
-    toast.success('Phone verified. Tap Book Service to confirm your booking.');
+    toast.success('Phone verified — confirming your booking…');
+    // Auto-book as soon as the phone is verified (token is held in the ref).
+    await handleSubmit({ skipOtpCheck: true });
+    setOtpVerifying(false);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (opts?: { skipOtpCheck?: boolean }) => {
     if (!acceptLegal) {
       toast.error('Please accept Terms of Service, Privacy Policy, and Disclaimer to submit.');
       nudgeLegalConsent();
       return;
     }
 
-    if (OTP_ENABLED && !otpVerified) {
+    if (OTP_ENABLED && !opts?.skipOtpCheck && !otpVerified) {
       toast.error('Please verify your phone number before booking.');
       return;
     }
@@ -2881,48 +2892,69 @@ const Booking: React.FC = () => {
             </div>
 
             {OTP_ENABLED && (
-              <div className="rounded-lg border border-border p-4 space-y-3">
+              <div className="rounded-xl border border-border bg-muted/30 p-4 sm:p-5 space-y-4">
                 <div id={FIREBASE_RECAPTCHA_CONTAINER_ID} className="sr-only" aria-hidden="true" />
-                <div className="flex items-center gap-2">
-                  <Phone className="w-5 h-5 text-primary shrink-0" />
-                  <h4 className="font-semibold text-foreground">Verify your phone</h4>
+                <div className="flex items-start gap-3">
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                    otpVerified ? 'bg-green-100 dark:bg-green-900/40' : 'bg-primary/10'
+                  }`}>
+                    {otpVerified ? (
+                      <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <Phone className="h-5 w-5 text-primary" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-foreground leading-tight">
+                      {otpVerified ? 'Phone verified' : 'Verify your phone'}
+                    </h4>
+                    <p className="text-xs sm:text-sm text-muted-foreground break-words">
+                      {otpVerified
+                        ? 'Your number is confirmed.'
+                        : otpSent
+                          ? `Code sent to +91 ${formData.phone}`
+                          : `We'll text a code to +91 ${formData.phone}`}
+                    </p>
+                  </div>
                 </div>
-                {!otpSent && !otpVerified && (
-                  <p className="text-sm text-muted-foreground">
-                    We will send a one-time code to <strong>+91 {formData.phone}</strong> to confirm this booking.
-                  </p>
-                )}
+
                 {otpSent && !otpVerified && (
-                  <div className="space-y-2">
-                    <Label htmlFor="booking-otp-code">Enter 6-digit code</Label>
-                    <Input
-                      id="booking-otp-code"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      placeholder="123456"
-                      value={otpCode}
-                      onChange={(e) => {
-                        setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 8));
-                        setOtpError('');
-                      }}
-                      className="max-w-[200px] tracking-widest"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={otpSending || Date.now() < otpResendAt}
-                      onClick={handleSendOtp}
-                    >
-                      {Date.now() < otpResendAt ? 'Resend code shortly' : 'Resend code'}
-                    </Button>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="booking-otp-code" className="text-sm">
+                        Enter the 6-digit code
+                      </Label>
+                      <Input
+                        id="booking-otp-code"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        placeholder="••••••"
+                        value={otpCode}
+                        onChange={(e) => {
+                          setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                          setOtpError('');
+                        }}
+                        className="h-12 w-full text-center text-2xl font-semibold tracking-[0.5em] sm:tracking-[0.6em]"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-xs sm:text-sm">
+                      <span className="text-muted-foreground">Didn't get it?</span>
+                      <button
+                        type="button"
+                        disabled={otpSending || otpResendRemaining > 0}
+                        onClick={handleSendOtp}
+                        className="font-medium text-primary underline-offset-2 hover:underline disabled:opacity-50 disabled:no-underline"
+                      >
+                        {otpResendRemaining > 0
+                          ? `Resend in ${otpResendRemaining}s`
+                          : otpSending
+                            ? 'Sending…'
+                            : 'Resend code'}
+                      </button>
+                    </div>
                   </div>
                 )}
-                {otpVerified && (
-                  <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-                    <Check className="w-4 h-4" /> Phone verified — you can book now.
-                  </p>
-                )}
+
                 {otpError && (
                   <p className="text-sm text-destructive" role="alert">
                     {otpError}
@@ -3400,12 +3432,12 @@ const Booking: React.FC = () => {
             </BehavioralTracker>
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between">
+            <div className="flex justify-between gap-3">
               <Button
                 variant="outline"
                 onClick={prevStep}
                 disabled={currentStep === 1}
-                className="flex items-center"
+                className="flex items-center shrink-0"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Previous
@@ -3428,7 +3460,7 @@ const Booking: React.FC = () => {
                   type="button"
                   onClick={handleSendOtp}
                   disabled={otpSending || !acceptLegal || !isCaptchaVerified}
-                  className={`flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
+                  className={`flex flex-1 sm:flex-none items-center justify-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
                     !acceptLegal || !isCaptchaVerified ? 'opacity-50 hover:scale-100 cursor-not-allowed' : ''
                   }`}
                 >
@@ -3438,15 +3470,17 @@ const Booking: React.FC = () => {
                       Sending code…
                     </>
                   ) : (
-                    'Send verification code'
+                    'Book Service'
                   )}
                 </Button>
               ) : OTP_ENABLED && otpSent && !otpVerified ? (
                 <Button
                   type="button"
                   onClick={handleVerifyOtp}
-                  disabled={otpVerifying || otpCode.length < 4}
-                  className="flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"
+                  disabled={otpVerifying || otpCode.length < 6}
+                  className={`flex flex-1 sm:flex-none items-center justify-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
+                    otpCode.length < 6 ? 'opacity-50 hover:scale-100 cursor-not-allowed' : ''
+                  }`}
                 >
                   {otpVerifying ? (
                     <>
@@ -3454,12 +3488,12 @@ const Booking: React.FC = () => {
                       Verifying…
                     </>
                   ) : (
-                    'Verify code'
+                    'Verify & Book'
                   )}
                 </Button>
               ) : (
                 <Button
-                  onClick={handleSubmit}
+                  onClick={() => handleSubmit()}
                   disabled={
                     isSubmitting ||
                     !isCaptchaVerified ||
@@ -3470,7 +3504,7 @@ const Booking: React.FC = () => {
                     !isCaptchaVerified ||
                     (OTP_ENABLED && !otpVerified)
                   }
-                  className={`flex items-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
+                  className={`flex flex-1 sm:flex-none items-center justify-center bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105 ${
                     !isCaptchaVerified || (OTP_ENABLED && !otpVerified)
                       ? 'opacity-50 hover:scale-100 cursor-not-allowed'
                       : ''
