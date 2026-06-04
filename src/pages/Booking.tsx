@@ -153,6 +153,7 @@ const Booking: React.FC = () => {
     setOtpVerifying(false);
     setOtpError('');
     setOtpResendAt(0);
+    customerLookupRef.current = null;
     resetBookingOtpSession();
   };
 
@@ -217,6 +218,8 @@ const Booking: React.FC = () => {
     setBookingDetails(null);
     bookingSucceededRef.current = false;
     websiteIntentLastSentRef.current = null;
+    imageUploadCacheRef.current.clear();
+    setImageUploadInfo({ uploading: 0, failed: 0 });
     resetOtpState();
   };
 
@@ -242,6 +245,36 @@ const Booking: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bookingSucceededRef = useRef(false);
+
+  const imageUploadCacheRef = useRef<Map<File, Promise<string>>>(new Map());
+  const [imageUploadInfo, setImageUploadInfo] = useState<{ uploading: number; failed: number }>({
+    uploading: 0,
+    failed: 0,
+  });
+
+  const customerLookupRef = useRef<{
+    phone: string;
+    lat?: number;
+    lng?: number;
+    promise: Promise<{ data: any; error: any }>;
+  } | null>(null);
+
+  const startImageUpload = useCallback((file: File) => {
+    if (imageUploadCacheRef.current.has(file)) return;
+    setImageUploadInfo((prev) => ({ ...prev, uploading: prev.uploading + 1 }));
+    const promise = cloudinaryService.uploadImage(file);
+    promise.then(
+      () => setImageUploadInfo((prev) => ({ ...prev, uploading: Math.max(0, prev.uploading - 1) })),
+      () => {
+        imageUploadCacheRef.current.delete(file);
+        setImageUploadInfo((prev) => ({
+          uploading: Math.max(0, prev.uploading - 1),
+          failed: prev.failed + 1,
+        }));
+      }
+    );
+    imageUploadCacheRef.current.set(file, promise);
+  }, []);
 
   // Helper function to format time slot
   const formatTimeSlot = (timeSlot: string, customTime?: string) => {
@@ -1339,6 +1372,8 @@ const Booking: React.FC = () => {
         images: [...prev.images, ...processedFiles]
       }));
 
+      processedFiles.forEach(startImageUpload);
+
       toast.success(`${validFiles.length} image(s) added successfully!`);
     } catch (error) {
       toast.error('Failed to process images. Please try again.');
@@ -1371,10 +1406,14 @@ const Booking: React.FC = () => {
   };
 
   const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+    setFormData(prev => {
+      const removed = prev.images[index];
+      if (removed) imageUploadCacheRef.current.delete(removed);
+      return {
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index),
+      };
+    });
   };
 
   const nudgeLegalConsent = useCallback(() => {
@@ -1425,6 +1464,35 @@ const Booking: React.FC = () => {
     setOtpSent(true);
     setOtpResendAt(Date.now() + 60_000);
     toast.success('Verification code sent to your phone.');
+
+    try {
+      const warmInit: RequestInit = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ warmup: true }),
+        keepalive: true,
+      };
+      void fetch('/.netlify/functions/booking-job-create', warmInit).catch(() => {});
+      void fetch('/.netlify/functions/booking-customer-mutate', warmInit).catch(() => {});
+    } catch {
+      /* ignore */
+    }
+
+    if (altchaLoginToken) {
+      const lat = formData.coordinates?.lat;
+      const lng = formData.coordinates?.lng;
+      customerLookupRef.current = {
+        phone: formData.phone,
+        lat,
+        lng,
+        promise: getBookingCustomerByPhone(formData.phone, {
+          altchaLoginToken,
+          altchaPayload: altchaPayload || undefined,
+          lat,
+          lng,
+        }).catch((err) => ({ data: null, error: err })),
+      };
+    }
   };
 
   const handleVerifyOtp = async () => {
@@ -1489,10 +1557,19 @@ const Booking: React.FC = () => {
     setShowSuccessLoader(true);
     
     try {
-      // Upload images to Cloudinary (non-blocking, continue even if upload fails)
-      const imageUrls = formData.images.length > 0 
+      const imageUrls = formData.images.length > 0
         ? await Promise.all(
-        formData.images.map(file => cloudinaryService.uploadImage(file))
+            formData.images.map(async (file) => {
+              const cached = imageUploadCacheRef.current.get(file);
+              if (cached) {
+                try {
+                  return await cached;
+                } catch {
+                  /* fall through to retry below */
+                }
+              }
+              return cloudinaryService.uploadImage(file);
+            })
           )
         : [];
 
@@ -1518,11 +1595,19 @@ const Booking: React.FC = () => {
         [addressDetail, base].filter((p) => p && p.trim()).join(', ');
       
       try {
-        const result = await getBookingCustomerByPhone(formData.phone, {
-          ...altchaCtx,
-          lat: formData.coordinates?.lat,
-          lng: formData.coordinates?.lng,
-        });
+        const prefetch = customerLookupRef.current;
+        const canUsePrefetch =
+          prefetch &&
+          prefetch.phone === formData.phone &&
+          prefetch.lat === formData.coordinates?.lat &&
+          prefetch.lng === formData.coordinates?.lng;
+        const result = canUsePrefetch
+          ? await prefetch.promise
+          : await getBookingCustomerByPhone(formData.phone, {
+              ...altchaCtx,
+              lat: formData.coordinates?.lat,
+              lng: formData.coordinates?.lng,
+            });
         existingCustomer = result.data;
         findError = result.error;
       } catch (networkError: any) {
@@ -1930,11 +2015,8 @@ const Booking: React.FC = () => {
         images: formData.images,
       });
       
-      // Show confirmation page after 2 seconds
-      setTimeout(() => {
-        setShowSuccessLoader(false);
-        setShowConfirmation(true);
-      }, 2000);
+      setShowSuccessLoader(false);
+      setShowConfirmation(true);
       
       // Show toast notification immediately
       toast.success('Booking confirmed successfully!', {
@@ -2641,6 +2723,25 @@ const Booking: React.FC = () => {
                         </div>
                       ))}
                     </div>
+                  )}
+
+                  {formData.images.length > 0 && (
+                    <p className="text-xs mt-1">
+                      {imageUploadInfo.uploading > 0 ? (
+                        <span className="text-muted-foreground inline-flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Uploading {imageUploadInfo.uploading} image{imageUploadInfo.uploading > 1 ? 's' : ''}…
+                        </span>
+                      ) : imageUploadInfo.failed > 0 ? (
+                        <span className="text-amber-600 dark:text-amber-500">
+                          Some images will finish uploading when you submit.
+                        </span>
+                      ) : (
+                        <span className="text-green-600 dark:text-green-500">
+                          ✓ All images uploaded — ready to submit.
+                        </span>
+                      )}
+                    </p>
                   )}
                 </div>
               </div>

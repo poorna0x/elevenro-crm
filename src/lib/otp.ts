@@ -270,9 +270,12 @@ export async function verifyBookingOtp(otp: string): Promise<OtpVerifyResult> {
   try {
     const cred = await confirmationResult.confirm(code);
     const phoneToken = await cred.user.getIdToken();
-    const auth = getFirebaseAuth();
-    await signOut(auth);
     confirmationResult = null;
+    try {
+      void signOut(getFirebaseAuth());
+    } catch {
+      /* ignore */
+    }
     return { verified: true, phoneToken };
   } catch (e) {
     return { verified: false, error: mapFirebaseError(e) };
