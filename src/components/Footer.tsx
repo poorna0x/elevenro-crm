@@ -25,6 +25,9 @@ const Footer = () => {
           <Link to="/cookie-policy" className="hover:text-primary transition-colors">
             Cookie Policy
           </Link>
+          <Link to="/warranty" className="hover:text-primary transition-colors">
+            Check Warranty Status
+          </Link>
         </div>
         <p className="text-sm text-primary-foreground/40">&copy; {new Date().getFullYear()} ElevenRO. All rights reserved.</p>
       </div>

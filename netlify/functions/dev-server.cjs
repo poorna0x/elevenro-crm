@@ -44,6 +44,7 @@ const bookingCustomerMutate = require('./booking-customer-mutate');
 const bookingJobCreate = require('./booking-job-create');
 const bookingIntent = require('./booking-intent');
 const bookingNotify = require('./booking-notify');
+const warrantyLookup = require('./warranty-lookup');
 
 const PORT = 8888;
 
@@ -99,6 +100,8 @@ const server = http.createServer((req, res) => {
     handler = bookingIntent;
   } else if (req.url.startsWith('/.netlify/functions/booking-notify')) {
     handler = bookingNotify;
+  } else if (req.url.startsWith('/.netlify/functions/warranty-lookup')) {
+    handler = warrantyLookup;
   } else {
     console.log('⚠️ No handler found for:', req.url);
   }
