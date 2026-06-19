@@ -190,7 +190,6 @@
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://www.googletagmanager.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
     
@@ -286,61 +285,9 @@
     <link rel="dns-prefetch" href="//cdn.gpteng.co">
     <link rel="dns-prefetch" href="//fonts.googleapis.com">
     <link rel="dns-prefetch" href="//fonts.gstatic.com">
-    <link rel="dns-prefetch" href="//www.googletagmanager.com">
-    <link rel="dns-prefetch" href="//www.google-analytics.com">
     
     <!-- Resource hints for better performance -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" as="style">
-    
-    <!-- Google Analytics 4 - Initialized by React component for SPA routing -->
-    <!-- The GoogleAnalytics component will handle initialization and page view tracking -->
-
-    <!-- Performance & Social Media Tracking -->
-    <script>
-      // Social media and contact tracking
-      window.addEventListener('load', function() {
-        // WhatsApp click tracking
-        const whatsappLinks = document.querySelectorAll('a[href*="wa.me"]');
-        whatsappLinks.forEach(link => {
-          link.addEventListener('click', function() {
-            if (typeof gtag !== 'undefined') {
-              gtag('event', 'click', {
-                'event_category': 'social',
-                'event_label': 'whatsapp_contact'
-              });
-            }
-          });
-        });
-
-        // Phone call tracking
-        const phoneLinks = document.querySelectorAll('a[href^="tel:"]');
-        phoneLinks.forEach(link => {
-          link.addEventListener('click', function() {
-            if (typeof gtag !== 'undefined') {
-              gtag('event', 'click', {
-                'event_category': 'contact',
-                'event_label': 'phone_call'
-              });
-            }
-          });
-        });
-
-        // Performance monitoring
-        if ('performance' in window) {
-          window.addEventListener('load', function() {
-            setTimeout(function() {
-              const perfData = performance.getEntriesByType('navigation')[0];
-              if (perfData && typeof gtag !== 'undefined') {
-                gtag('event', 'timing_complete', {
-                  'name': 'load',
-                  'value': Math.round(perfData.loadEventEnd - perfData.loadEventStart)
-                });
-              }
-            }, 0);
-          });
-        }
-      });
-    </script>
     
     <!-- Google Maps API for address autocomplete (optional - will use free services if not available) -->
     <!-- <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_ACTUAL_GOOGLE_MAPS_API_KEY&libraries=places"></script> -->

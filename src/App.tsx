@@ -10,7 +10,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PerformanceMonitor from "./components/PerformanceMonitor";
 import CanonicalTag from "./components/CanonicalTag";
-import GoogleAnalytics from "./components/GoogleAnalytics";
+import WebsiteAnalyticsTracker from "./components/WebsiteAnalyticsTracker";
 
 // Lazy load heavy components for better performance
 const Booking = lazy(() => import("./pages/Booking"));
@@ -61,7 +61,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <GoogleAnalytics />
+            <WebsiteAnalyticsTracker />
             <CanonicalTag />
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>

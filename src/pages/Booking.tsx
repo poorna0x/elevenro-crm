@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { openPublicPhoneCall, trackPublicBookingSubmit, trackPublicWhatsAppClick } from '@/lib/websiteAnalytics';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -2040,6 +2041,7 @@ const Booking: React.FC = () => {
       
       setShowSuccessLoader(false);
       setShowConfirmation(true);
+      trackPublicBookingSubmit();
       
       // Show toast notification immediately
       toast.success('Booking confirmed successfully!', {
@@ -3452,14 +3454,17 @@ const Booking: React.FC = () => {
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 justify-center items-center">
                       <Button 
-                        onClick={() => window.open('tel:+918884944288', '_self')}
+                        onClick={() => openPublicPhoneCall('+919880693311', 'booking_page')}
                         className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"
                       >
                         <Phone className="w-4 h-4" />
                         Call: +91-8884944288
                       </Button>
                       <Button 
-                        onClick={() => window.open('https://wa.me/918884944288', '_blank', 'noopener,noreferrer')}
+                        onClick={() => {
+                          trackPublicWhatsAppClick('booking_page');
+                          window.open('https://wa.me/919880693311', '_blank', 'noopener,noreferrer');
+                        }}
                         className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"
                       >
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

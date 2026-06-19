@@ -113,7 +113,7 @@ const EnhancedBookingForm = () => {
   };
 
   const handleWhatsApp = () => {
-    window.open('https://wa.me/918884944288', '_blank', 'noopener,noreferrer');
+    window.open('https://wa.me/919880693311', '_blank', 'noopener,noreferrer');
   };
 
   const handleEmail = () => {

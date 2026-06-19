@@ -3,11 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, MapPin, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { openPublicPhoneCall, trackPublicBookingClick } from '@/lib/websiteAnalytics';
 
 const BookingRedirect: React.FC = () => {
   const navigate = useNavigate();
 
   const handleBookService = () => {
+    trackPublicBookingClick('booking_redirect');
     navigate('/book');
   };
 
@@ -89,7 +91,7 @@ const BookingRedirect: React.FC = () => {
             </p>
             <Button 
               variant="outline"
-              onClick={() => window.open('tel:+919880693311', '_self')}
+              onClick={() => openPublicPhoneCall('+919880693311', 'booking_redirect')}
               className="flex items-center gap-2 mx-auto"
             >
               <Phone className="w-4 h-4" />
