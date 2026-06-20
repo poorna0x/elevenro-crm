@@ -9,7 +9,8 @@ import { Suspense, lazy } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PerformanceMonitor from "./components/PerformanceMonitor";
-import CanonicalTag from "./components/CanonicalTag";
+import PublicSiteSeo from "./components/PublicSiteSeo";
+import { SEO_LOCATION_PAGES, SEO_SERVICE_PAGES } from "@/lib/publicSeoPages";
 import WebsiteAnalyticsTracker from "./components/WebsiteAnalyticsTracker";
 
 // Lazy load heavy components for better performance
@@ -62,7 +63,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <WebsiteAnalyticsTracker />
-            <CanonicalTag />
+            <PublicSiteSeo />
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -87,31 +88,13 @@ const App = () => (
                 {/* Search route - return 404 */}
                 <Route path="/search" element={<NotFound />} />
 
-                {/* Service-specific pages */}
-                <Route path="/ro-installation" element={<Services />} />
-                <Route path="/ro-repair" element={<Services />} />
-                <Route path="/water-softener" element={<Services />} />
-                <Route path="/filter-replacement" element={<Services />} />
-                <Route path="/ro-maintenance" element={<Services />} />
-                <Route path="/ro-troubleshooting" element={<Services />} />
-                <Route path="/ro-spare-parts" element={<Services />} />
-                <Route path="/ro-brands" element={<Services />} />
-                <Route path="/ro-price-list" element={<Services />} />
-                <Route path="/ro-warranty" element={<Services />} />
-                <Route path="/emergency-ro-repair" element={<Services />} />
-                <Route path="/same-day-ro-service" element={<Services />} />
+                {SEO_SERVICE_PAGES.map(({ path }) => (
+                  <Route key={path} path={path} element={<Services />} />
+                ))}
 
-                {/* Location-specific pages */}
-                <Route path="/ro-service-whitefield" element={<ServiceAreas />} />
-                <Route path="/ro-service-electronic-city" element={<ServiceAreas />} />
-                <Route path="/ro-service-koramangala" element={<ServiceAreas />} />
-                <Route path="/ro-service-hsr-layout" element={<ServiceAreas />} />
-                <Route path="/ro-service-indiranagar" element={<ServiceAreas />} />
-                <Route path="/ro-service-marathahalli" element={<ServiceAreas />} />
-                <Route path="/ro-service-btm-layout" element={<ServiceAreas />} />
-                <Route path="/ro-service-jayanagar" element={<ServiceAreas />} />
-                <Route path="/ro-service-malleshwaram" element={<ServiceAreas />} />
-                <Route path="/ro-service-rajajinagar" element={<ServiceAreas />} />
+                {SEO_LOCATION_PAGES.map(({ path }) => (
+                  <Route key={path} path={path} element={<ServiceAreas />} />
+                ))}
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
