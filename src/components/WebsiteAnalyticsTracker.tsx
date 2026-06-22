@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   flushWebsiteAnalytics,
-  isPublicMarketingPath,
+  shouldTrackWebsiteAnalytics,
   trackPublicPhoneCall,
   trackPublicWhatsAppClick,
   trackWebsiteEvent,
@@ -13,12 +13,12 @@ export default function WebsiteAnalyticsTracker() {
   const location = useLocation();
 
   useEffect(() => {
-    if (!isPublicMarketingPath(location.pathname)) return;
+    if (!shouldTrackWebsiteAnalytics(location.pathname)) return;
     trackWebsiteEvent('page_view');
   }, [location.pathname, location.search]);
 
   useEffect(() => {
-    if (!isPublicMarketingPath(location.pathname)) return;
+    if (!shouldTrackWebsiteAnalytics(location.pathname)) return;
 
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
