@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { trackPublicBookingClick } from "@/lib/websiteAnalytics";
 
 const HeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -13,7 +12,6 @@ const HeroSection = () => {
   }, []);
 
   const handleBookService = () => {
-    trackPublicBookingClick('hero');
     navigate("/book");
   };
 

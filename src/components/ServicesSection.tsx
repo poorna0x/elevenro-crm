@@ -1,7 +1,6 @@
 import { memo } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { trackPublicBookingClick } from "@/lib/websiteAnalytics";
 import {
   Wrench,
   Settings,
@@ -243,7 +242,6 @@ const ServicesSectionInner = () => {
   const navigate = useNavigate();
 
   const handleBookService = () => {
-    trackPublicBookingClick('services_section');
     navigate("/book");
   };
 

@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Phone, Mail } from 'lucide-react';
 import NotFound from './NotFound';
-import { openPublicPhoneCall, trackPublicWhatsAppClick } from '@/lib/websiteAnalytics';
+import { openPublicPhoneCall } from '@/lib/publicPhone';
 
 // Blog articles data - matches Blog.tsx
 const blogArticles = [
@@ -95,12 +95,11 @@ const BlogArticle = () => {
   }
 
   const handleCall = (number: string) => {
-    openPublicPhoneCall(number, 'blog_article');
+    openPublicPhoneCall(number);
     setShowCallOptions(false);
   };
 
   const handleWhatsApp = () => {
-    trackPublicWhatsAppClick('blog_article');
     window.open('https://wa.me/919880693311', '_blank', 'noopener,noreferrer');
   };
 

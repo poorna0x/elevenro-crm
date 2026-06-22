@@ -11,8 +11,6 @@ import NotFound from "./pages/NotFound";
 import PerformanceMonitor from "./components/PerformanceMonitor";
 import PublicSiteSeo from "./components/PublicSiteSeo";
 import { SEO_LOCATION_PAGES, SEO_SERVICE_PAGES } from "@/lib/publicSeoPages";
-import WebsiteAnalyticsTracker from "./components/WebsiteAnalyticsTracker";
-import GoogleAnalytics from "./components/GoogleAnalytics";
 
 // Lazy load heavy components for better performance
 const Booking = lazy(() => import("./pages/Booking"));
@@ -64,8 +62,6 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <WebsiteAnalyticsTracker />
-            <GoogleAnalytics />
             <PublicSiteSeo />
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>

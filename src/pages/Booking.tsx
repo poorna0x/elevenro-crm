@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { openPublicPhoneCall, trackPublicBookingSubmit, trackPublicWhatsAppClick } from '@/lib/websiteAnalytics';
+import { openPublicPhoneCall } from '@/lib/publicPhone';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -2047,8 +2047,6 @@ const Booking: React.FC = () => {
       
       setShowSuccessLoader(false);
       setShowConfirmation(true);
-      trackPublicBookingSubmit();
-      
       // Show toast notification immediately
       toast.success('Booking confirmed successfully!', {
         description: 'You will receive a confirmation email shortly. Please check your spam folder if you don\'t see it.',
@@ -3460,7 +3458,7 @@ const Booking: React.FC = () => {
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 justify-center items-center">
                       <Button 
-                        onClick={() => openPublicPhoneCall('+919880693311', 'booking_page')}
+                        onClick={() => openPublicPhoneCall('+919880693311')}
                         className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"
                       >
                         <Phone className="w-4 h-4" />
@@ -3468,7 +3466,6 @@ const Booking: React.FC = () => {
                       </Button>
                       <Button 
                         onClick={() => {
-                          trackPublicWhatsAppClick('booking_page');
                           window.open('https://wa.me/919880693311', '_blank', 'noopener,noreferrer');
                         }}
                         className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 transition-transform duration-300 hover:scale-105"

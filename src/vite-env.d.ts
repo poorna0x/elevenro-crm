@@ -10,9 +10,6 @@ interface ImportMetaEnv {
   readonly VITE_CLOUDINARY_UPLOAD_PRESET?: string
   readonly VITE_CLOUDINARY_API_KEY?: string
   readonly VITE_WEBSITE_BOOKING_SITE_KEY?: 'hydrogenro' | 'elevenro'
-  /** GA4 — set both in one .env.local; code picks by hostname */
-  readonly VITE_GA_MEASUREMENT_ID_HYDROGENRO?: string
-  readonly VITE_GA_MEASUREMENT_ID_ELEVENRO?: string
 }
 
 interface ImportMeta {

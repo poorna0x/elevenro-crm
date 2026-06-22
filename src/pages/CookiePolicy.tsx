@@ -115,7 +115,6 @@ const CookiePolicy: React.FC = () => {
                     We may use third-party services that set their own cookies:
                   </p>
                   <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                    <li><strong>Google Analytics:</strong> Website traffic and user behavior analysis</li>
                     <li><strong>Maps Services:</strong> Location services for service area mapping</li>
                     <li><strong>Payment Processors:</strong> Secure payment processing</li>
                     <li><strong>Social Media:</strong> Social sharing and integration features</li>
@@ -153,7 +152,6 @@ const CookiePolicy: React.FC = () => {
                         You can opt out of specific cookie types:
                       </p>
                       <ul className="list-disc list-inside space-y-1 text-muted-foreground text-sm mt-2">
-                        <li>Google Analytics: Use the Google Analytics Opt-out Browser Add-on</li>
                         <li>Advertising cookies: Visit the Digital Advertising Alliance website</li>
                         <li>Social media cookies: Adjust settings on respective platforms</li>
                       </ul>
