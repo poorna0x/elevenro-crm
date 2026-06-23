@@ -20,8 +20,9 @@ const PRODUCTION_ORIGINS = [
 /** Local `netlify dev` / dev-server only — not Netlify deployed functions. */
 function isLocalDev() {
   if (process.env.CORS_PERMISSIVE === 'true') return true;
-  if (process.env.CONTEXT === 'dev') return true;
+  if (process.env.CONTEXT === 'dev' || process.env.NETLIFY_DEV === 'true') return true;
   if (process.env.NETLIFY || process.env.CONTEXT) return false;
+  if (process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.AWS_EXECUTION_ENV) return false;
   return process.env.NODE_ENV !== 'production';
 }
 

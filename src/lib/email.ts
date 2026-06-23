@@ -30,7 +30,9 @@ export class EmailService {
     this.apiUrl = import.meta.env.VITE_EMAIL_API_URL || '/.netlify/functions/send-email';
     this.previewApiUrl =
       import.meta.env.VITE_EMAIL_PREVIEW_API_URL || '/.netlify/functions/send-email-preview';
-    this.previewSecret = import.meta.env.VITE_EMAIL_PREVIEW_SECRET || '';
+    this.previewSecret = import.meta.env.DEV
+      ? import.meta.env.VITE_EMAIL_PREVIEW_SECRET || ''
+      : '';
   }
 
   async sendEmail(
