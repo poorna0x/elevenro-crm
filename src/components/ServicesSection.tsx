@@ -249,7 +249,7 @@ const ServicesSectionInner = () => {
     <section id="services" className="py-24 bg-section-alt">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-3">Our Services</p>
+          <p className="text-sm font-semibold uppercase tracking-widest text-section-label mb-3">Our Services</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground">Complete Water Purifier Care</h2>
           <p className="mt-4 text-muted-foreground leading-relaxed">
             From installation to maintenance, we cover every aspect of water purifier service to give you pure, safe water every day.
@@ -268,7 +268,7 @@ const ServicesSectionInner = () => {
                 </div>
                 <h3 className="text-lg font-semibold text-card-foreground mb-1">{service.title}</h3>
                 {service.pricing && (
-                  <p className="text-primary font-bold text-base mb-3">{service.pricing}</p>
+                  <p className="text-section-label font-bold text-base mb-3">{service.pricing}</p>
                 )}
                 <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{service.description}</p>
                 <ul className="space-y-2 mb-4">
@@ -301,7 +301,7 @@ const ServicesSectionInner = () => {
 
                       {service.pricing && (
                         <div className="rounded-lg bg-primary/10 p-4 text-center">
-                          <p className="text-primary font-bold text-lg">{service.pricing}</p>
+                          <p className="text-section-label font-bold text-lg">{service.pricing}</p>
                         </div>
                       )}
 

@@ -110,10 +110,11 @@ const Testimonials = () => {
               variant="outline"
               size="icon"
               onClick={scrollLeft}
+              aria-label="Scroll testimonials left"
               className="rounded-full bg-background/80 backdrop-blur-sm border-border/50 hover:scale-110 transition-transform duration-200 shadow-lg"
               style={{ WebkitBackdropFilter: 'blur(4px)' }}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" aria-hidden />
             </Button>
           </div>
           <div className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 -mr-16">
@@ -121,10 +122,11 @@ const Testimonials = () => {
               variant="outline"
               size="icon"
               onClick={scrollRight}
+              aria-label="Scroll testimonials right"
               className="rounded-full bg-background/80 backdrop-blur-sm border-border/50 hover:scale-110 transition-transform duration-200 shadow-lg"
               style={{ WebkitBackdropFilter: 'blur(4px)' }}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" aria-hidden />
             </Button>
           </div>
           

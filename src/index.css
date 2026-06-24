@@ -20,7 +20,7 @@
     --secondary-foreground: 206 62% 17%;
 
     --muted: 199 60% 92%; /* Mist blue */
-    --muted-foreground: 205 35% 38%; /* Muted slate blue */
+    --muted-foreground: 205 40% 32%; /* Muted slate blue — WCAG AA on light surfaces */
 
     --accent: 191 91% 36%; /* Teal-water accent */
     --accent-foreground: 210 40% 98%;
@@ -180,6 +180,15 @@
 
   .text-balance {
     text-wrap: balance;
+  }
+
+  .text-section-label {
+    color: hsl(201 96% 28%);
+  }
+
+  .dark-mode .text-section-label,
+  .dark .text-section-label {
+    color: hsl(197 96% 64%);
   }
   
   .cosmic-glass {

@@ -13,7 +13,7 @@ const CTASection = () => {
       <div className="container mx-auto px-6 relative z-10">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-primary-foreground mb-4">Get Pure Water Today</h2>
-          <p className="text-primary-foreground/60 leading-relaxed">Book a service or request a free water quality check. Our team is ready to help.</p>
+          <p className="text-primary-foreground/80 leading-relaxed">Book a service or request a free water quality check. Our team is ready to help.</p>
         </div>
 
         <div className="grid sm:grid-cols-3 gap-6 max-w-3xl mx-auto mb-12">
@@ -23,8 +23,8 @@ const CTASection = () => {
             { icon: MapPin, label: "Location", value: "Bengaluru" },
           ].map((item) => (
             <div key={item.label} className="text-center p-6 rounded-xl bg-primary-foreground/5 border border-primary-foreground/10">
-              <item.icon className="h-6 w-6 text-primary mx-auto mb-3" />
-              <p className="text-sm text-primary-foreground/50 mb-1">{item.label}</p>
+              <item.icon className="h-6 w-6 text-primary-foreground/90 mx-auto mb-3" aria-hidden />
+              <p className="text-sm text-primary-foreground/80 mb-1">{item.label}</p>
               <p className="font-semibold text-primary-foreground">{item.value}</p>
             </div>
           ))}

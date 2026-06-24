@@ -29,7 +29,7 @@ const WhyUsSection = () => {
       <div className="container mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-3">Why ElevenRO</p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-section-label mb-3">Why ElevenRO</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight">
               Your Trusted Partner for{" "}
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Clean Water</span>

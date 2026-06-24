@@ -5,12 +5,34 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SecurityProvider } from "./contexts/SecurityContext";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import PerformanceMonitor from "./components/PerformanceMonitor";
 import PublicSiteSeo from "./components/PublicSiteSeo";
 import { SEO_LOCATION_PAGES, SEO_SERVICE_PAGES } from "@/lib/publicSeoPages";
+
+const PerformanceMonitor = lazy(() => import("./components/PerformanceMonitor"));
+
+const DeferredPerformanceMonitor = () => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const enable = () => setReady(true);
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(enable, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(enable, 2500);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  if (!ready) return null;
+  return (
+    <Suspense fallback={null}>
+      <PerformanceMonitor />
+    </Suspense>
+  );
+};
 
 // Lazy load heavy components for better performance
 const Booking = lazy(() => import("./pages/Booking"));
@@ -58,7 +80,7 @@ const App = () => (
     <ThemeProvider>
       <SecurityProvider>
         <TooltipProvider>
-          <PerformanceMonitor />
+          <DeferredPerformanceMonitor />
           <Toaster />
           <Sonner />
           <BrowserRouter>

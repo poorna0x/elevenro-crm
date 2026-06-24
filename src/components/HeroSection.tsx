@@ -73,7 +73,7 @@ const HeroSection = () => {
           </Button>
         </div>
 
-        <div className="pt-6 text-sm text-primary-foreground/65 space-y-1">
+        <div className="pt-6 text-sm text-primary-foreground/80 space-y-1">
           <div>Same-day service available</div>
           <div>All brands service supported</div>
           <div>Genuine spare parts</div>

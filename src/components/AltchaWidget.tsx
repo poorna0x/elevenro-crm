@@ -63,6 +63,11 @@ const AltchaWidget: React.FC<AltchaWidgetProps> = ({
     return Math.min(Math.floor(baseComplexity + additionalComplexity), 14); // Max 14 instead of 18
   };
 
+  // Load ALTCHA only on pages that use this widget (not the global marketing bundle)
+  useEffect(() => {
+    void Promise.all([import("altcha"), import("altcha/altcha.css")]);
+  }, []);
+
   // Update refs when callbacks change (without triggering re-configuration)
   useEffect(() => {
     onVerifyRef.current = onVerify;

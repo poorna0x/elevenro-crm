@@ -45,13 +45,20 @@ const Navbar = () => {
           </Link>
         </div>
 
-        <button className="md:hidden text-foreground" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        <button
+          type="button"
+          className="md:hidden text-foreground"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label={isOpen ? "Close menu" : "Open menu"}
+          aria-expanded={isOpen}
+          aria-controls="mobile-nav-menu"
+        >
+          {isOpen ? <X className="h-6 w-6" aria-hidden /> : <Menu className="h-6 w-6" aria-hidden />}
         </button>
       </div>
 
       {isOpen && (
-        <div className="md:hidden bg-background/95 backdrop-blur-md border-t border-border px-6 py-5 animate-fade-in">
+        <div id="mobile-nav-menu" className="md:hidden bg-background/95 backdrop-blur-md border-t border-border px-6 py-5 animate-fade-in">
           <div className="flex flex-col">
             {navLinks.map((link) => (
               <Link
