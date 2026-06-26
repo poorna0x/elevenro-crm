@@ -1088,7 +1088,7 @@ function createQuotationContent(data: PDFQuotationData): string {
       <div class="signatures">
         <div class="signature-box">
           <div class="signature-label">Authorized Signatory</div>
-          <img src="/HydrogenROSeal.webp" alt="ElevenRO Seal" class="signature-seal" />
+          <img src="/elevenro-seal-sign.webp" alt="ElevenRO Seal" class="signature-seal" />
           <div class="signature-date">Date: ${new Date(data.billDate).toLocaleDateString('en-IN', { 
             day: '2-digit', 
             month: '2-digit', 
@@ -1547,7 +1547,7 @@ function generateQuotationHTML(data: PDFQuotationData): string {
         <div class="signatures">
           <div class="signature-box">
             <div class="signature-label">Authorized Signatory</div>
-            <img src="/HydrogenROSeal.webp" alt="ElevenRO Seal" class="signature-seal" />
+            <img src="/elevenro-seal-sign.webp" alt="ElevenRO Seal" class="signature-seal" />
             <div class="signature-date">Date: ${new Date(data.billDate).toLocaleDateString('en-IN', { 
               day: '2-digit', 
               month: '2-digit', 

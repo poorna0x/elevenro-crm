@@ -558,7 +558,7 @@ function generateSalarySlipHTML(data: SalarySlipPDFData, includeDayWiseBreakdown
           
           <div class="signature-box">
             <div class="signature-label">Authorized Signatory</div>
-            <img src="/HydrogenROSeal.webp" alt="ElevenRO Seal" class="signature-seal" />
+            <img src="/elevenro-seal-sign.webp" alt="ElevenRO Seal" class="signature-seal" />
             <div class="signature-date">Date: ${formatDate(paymentDate)}</div>
           </div>
         </div>

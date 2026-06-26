@@ -67,6 +67,27 @@
   to = "/robots.txt"
   status = 200
 
+# Legacy Hydrogen asset paths must not appear in ElevenRO link previews or crawlers.
+[[redirects]]
+  from = "/HydrogenROSeal.webp"
+  to = "/elevenro-og.webp"
+  status = 200
+
+[[redirects]]
+  from = "/og-image.jpg"
+  to = "/elevenro-og.webp"
+  status = 200
+
+[[redirects]]
+  from = "/fulllogo.png"
+  to = "/elevenrofulloogo.webp"
+  status = 200
+
+[[redirects]]
+  from = "/fulllogo.webp"
+  to = "/elevenrofulloogo.webp"
+  status = 200
+
 # CRM on hydrogenro.com only
 [[redirects]]
   from = "/admin"

@@ -1165,7 +1165,7 @@ function createBillContent(data: PDFBillData): string {
       <div class="signatures">
         <div class="signature-box">
           <div class="signature-label" style="text-align: center;">Authorized Signatory</div>
-          <img src="/HydrogenROSeal.webp" alt="ElevenRO Seal" class="signature-seal" />
+          <img src="/elevenro-seal-sign.webp" alt="ElevenRO Seal" class="signature-seal" />
           <div class="signature-date" style="text-align: center;">Date: ${new Date(data.billDate).toLocaleDateString('en-IN', { 
             day: '2-digit', 
             month: '2-digit', 
@@ -1652,7 +1652,7 @@ function generateBillHTML(data: PDFBillData): string {
         <div class="signatures">
           <div class="signature-box">
             <div class="signature-label" style="text-align: center;">Authorized Signatory</div>
-            <img src="/HydrogenROSeal.webp" alt="ElevenRO Seal" class="signature-seal" />
+            <img src="/elevenro-seal-sign.webp" alt="ElevenRO Seal" class="signature-seal" />
             <div class="signature-date" style="text-align: center;">Date: ${new Date(data.billDate).toLocaleDateString('en-IN', { 
               day: '2-digit', 
               month: '2-digit', 
