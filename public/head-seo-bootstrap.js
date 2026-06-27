@@ -1,6 +1,6 @@
 (function () {
   var SHARED_AREAS =
-    'Whitefield, Electronic City, Electronic City Phase 1, Electronic City Phase 2, Bommanahalli, Bommasandra, Sarjapur, Sarjapur Road, Attibele, Chandapura, Jigani, Anekal, Singasandra, Hosur Road, Silk Board, BTM Layout, HSR Layout, Koramangala, Bellandur, JP Nagar, Banashankari, Anjanapura, Tumakuru, Nelamangala, Devanahalli';
+    'Whitefield, ITPL, Electronic City, Bommanahalli, Bommasandra, Sarjapur, Sarjapura, Sarjapur Road, Attibele, Chandapura, Jigani, Anekal, Singasandra, Hosur Road, Silk Board, BTM Layout, HSR Layout, Koramangala, Bellandur, Varthur, Kadubeesanahalli, Panathur, Haralur, Yelahanka, Thanisandra, Jakkur, Bagalur, Budigere Cross, Devanahalli, Manyata Tech Park, RT Nagar, Nagawara, Hebbal, Hoskote, JP Nagar, Banashankari, Anjanapura, Tumakuru, Nelamangala';
 
   var SITE_PROFILES = {
     hydrogenro: {
@@ -232,15 +232,20 @@
       return { title: profile.defaultTitle, description: profile.defaultDescription, keywords: profile.keywords };
     }
     if (clean.indexOf('/ro-service-') === 0) {
-      var area = titleCaseSlug(clean.replace('/ro-service-', ''));
-      var southAreas = ['electronic-city', 'bommanahalli', 'sarjapur', 'attibele', 'chandapura', 'bommasandra', 'jigani', 'singasandra', 'anekal', 'bellandur', 'hsr-layout'];
-      var southExtra = southAreas.indexOf(clean.replace('/ro-service-', '')) >= 0
-        ? ' Serving Electronic City, Bommanahalli, Sarjapur Road, Attibele, Chandapura, Bommasandra, Hosur Road, Silk Board and South Bangalore corridor.'
-        : '';
+      var slug = clean.replace('/ro-service-', '');
+      var area = titleCaseSlug(slug);
+      var southAreas = ['electronic-city', 'bommanahalli', 'sarjapur', 'attibele', 'chandapura', 'bommasandra', 'jigani', 'singasandra', 'anekal', 'bellandur', 'hsr-layout', 'haralur', 'varthur', 'kadubeesanahalli', 'panathur', 'silk-board'];
+      var northAreas = ['yelahanka', 'thanisandra', 'jakkur', 'bagalur', 'budigere-cross', 'devanahalli', 'manyata-tech-park', 'rt-nagar', 'nagawara', 'hebbal', 'hoskote', 'itpl'];
+      var corridorExtra = '';
+      if (southAreas.indexOf(slug) >= 0) {
+        corridorExtra = ' Serving Electronic City, Bommanahalli, Sarjapur, Sarjapura, Attibele, Chandapura, Bommasandra, Hosur Road, Silk Board and South Bangalore corridor.';
+      } else if (northAreas.indexOf(slug) >= 0) {
+        corridorExtra = ' Serving Yelahanka, Thanisandra, Jakkur, Bagalur, Budigere Cross, Devanahalli, Manyata Tech Park, Hebbal and North Bangalore corridor.';
+      }
       return {
         title: 'RO Service in ' + area + ' Bengaluru | Installation & Repair | ' + profile.brandName,
-        description: 'Best RO water purifier service in ' + area + ', Bengaluru by ' + profile.brandName + '. Same-day RO installation, repair, filter replacement and AMC.' + southExtra + ' Call ' + profile.primaryPhone + '.',
-        keywords: 'RO service ' + area + ', RO repair ' + area + ', RO installation ' + area + ' Bangalore, ' + profile.brandName + ' ' + area + ', RO service Electronic City, RO service Bommanahalli, RO service Sarjapur, RO service Attibele',
+        description: 'Best RO water purifier service in ' + area + ', Bengaluru by ' + profile.brandName + '. Same-day RO installation, repair, filter replacement and AMC.' + corridorExtra + ' Call ' + profile.primaryPhone + '.',
+        keywords: 'RO service ' + area + ', RO repair ' + area + ', RO installation ' + area + ' Bangalore, ' + profile.brandName + ' ' + area + ', RO service Yelahanka, RO service Sarjapur, RO service Budigere Cross, RO service Devanahalli, RO service Attibele',
       };
     }
     var serviceTitles = {
@@ -288,7 +293,10 @@
   var profile = SITE_PROFILES[siteKey];
   var p = (window.location.pathname || '/').replace(/\/$/, '') || '';
   var pathForTest = '/' + (p || '');
-  var noIndex = /^\/(technician|admin|dashboard|search|settings|calling)(\/|$)/.test(pathForTest);
+  var noIndex =
+    /^\/(technician-id|technician\/|technician$|admin|dashboard|search|settings|calling|product-verify)(\/|$)/.test(
+      pathForTest
+    );
   var canonical = profile.origin + (p ? p : '');
   var routeSeo = resolveRouteSeo(profile, p ? p : '/');
 
@@ -306,6 +314,18 @@
   setMetaName('title', routeSeo.title);
   setMetaName('description', routeSeo.description);
   setMetaName('keywords', routeSeo.keywords);
+
+  if (!p || p === '/') {
+    var heroPreload = document.createElement('link');
+    heroPreload.rel = 'preload';
+    heroPreload.as = 'image';
+    heroPreload.href = '/hero-ro-purifier-640.webp';
+    heroPreload.type = 'image/webp';
+    heroPreload.setAttribute('fetchpriority', 'high');
+    heroPreload.setAttribute('imagesrcset', '/hero-ro-purifier-640.webp 640w, /hero-ro-purifier.webp 1100w');
+    heroPreload.setAttribute('imagesizes', '(max-width: 1024px) 100vw, 50vw');
+    document.head.appendChild(heroPreload);
+  }
   setMetaName('author', profile.brandName + ' - Water Purifier Services');
   setMetaName('robots', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
   setMetaName('business:contact_data:phone_number', profile.primaryPhone);
@@ -345,4 +365,68 @@
       elevenCrawler.removeAttribute('aria-hidden');
     }
   }
+
+  function removeFoucGuards() {
+    var el = document.getElementById('async-css-fouc-guards');
+    if (el) el.remove();
+  }
+
+  function activateAsyncStyles() {
+    function activate(link) {
+      if (link.getAttribute('data-async-css') !== 'true') return;
+      link.rel = 'stylesheet';
+      link.removeAttribute('data-async-css');
+      link.removeAttribute('as');
+      removeFoucGuards();
+    }
+
+    function isPreloadComplete(href) {
+      var absoluteHref = href;
+      try {
+        absoluteHref = new URL(href, document.baseURI || window.location.href).href;
+      } catch (e) {
+        // keep relative href
+      }
+
+      if (performance.getEntriesByName(absoluteHref).length > 0) return true;
+      if (absoluteHref !== href && performance.getEntriesByName(href).length > 0) return true;
+
+      var resources = performance.getEntriesByType('resource');
+      for (var i = 0; i < resources.length; i++) {
+        if (resources[i].name.indexOf(href) !== -1) return true;
+      }
+      return false;
+    }
+
+    var links = document.querySelectorAll('link[data-async-css="true"]');
+    for (var i = 0; i < links.length; i++) {
+      (function (link) {
+        var href = link.getAttribute('href');
+        if (!href) return;
+
+        link.addEventListener('load', function () {
+          activate(link);
+        });
+        link.addEventListener('error', function () {
+          activate(link);
+        });
+
+        // Cached preloads can finish before listeners attach (relative href broke the old check).
+        if (isPreloadComplete(href)) {
+          activate(link);
+        }
+      })(links[i]);
+    }
+
+    // Last resort: never leave the page unstyled if activation was missed.
+    window.setTimeout(function () {
+      var pending = document.querySelectorAll('link[data-async-css="true"]');
+      for (var j = 0; j < pending.length; j++) {
+        activate(pending[j]);
+      }
+      removeFoucGuards();
+    }, 2500);
+  }
+
+  activateAsyncStyles();
 })();

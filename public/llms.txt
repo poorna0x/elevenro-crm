@@ -21,13 +21,22 @@
 - RO spare parts: https://elevenro.com/spare-parts
 
 ## Service Areas — South & Southeast Bengaluru (high priority)
-Electronic City (Phase 1, Phase 2), Bommanahalli, Bommasandra, Sarjapur, Sarjapur Road, Attibele, Chandapura, Jigani, Anekal, Singasandra, Hosur Road, Silk Board, Bellandur, HSR Layout, Anjanapura, JP Nagar, Bannerghatta
+Electronic City (Phase 1, Phase 2), Bommanahalli, Bommasandra, Sarjapur, Sarjapura, Sarjapur Road, Attibele, Chandapura, Jigani, Anekal, Singasandra, Hosur Road, Silk Board, Bellandur, HSR Layout, Anjanapura, JP Nagar, Bannerghatta, Haralur, Varthur, Kadubeesanahalli, Panathur
 - Electronic City: https://elevenro.com/ro-service-electronic-city
 - Bommanahalli: https://elevenro.com/ro-service-bommanahalli
 - Sarjapur: https://elevenro.com/ro-service-sarjapur
 - Attibele: https://elevenro.com/ro-service-attibele
-- Anjanapura: https://elevenro.com/ro-service-anjanapura
-- Bommasandra: https://elevenro.com/ro-service-bommasandra
+- HSR Layout: https://elevenro.com/ro-service-hsr-layout
+- Varthur: https://elevenro.com/ro-service-varthur
+- Haralur: https://elevenro.com/ro-service-haralur
+
+## Service Areas — North & Northeast Bengaluru
+Yelahanka, Thanisandra, Jakkur, Bagalur, Budigere Cross, Devanahalli, Manyata Tech Park, RT Nagar, Nagawara, Hebbal, Hoskote, ITPL
+- Yelahanka: https://elevenro.com/ro-service-yelahanka
+- Budigere Cross: https://elevenro.com/ro-service-budigere-cross
+- Devanahalli: https://elevenro.com/ro-service-devanahalli
+- Thanisandra: https://elevenro.com/ro-service-thanisandra
+- Manyata Tech Park: https://elevenro.com/ro-service-manyata-tech-park
 
 ## Key Pages
 - Home: https://elevenro.com/
