@@ -60,7 +60,7 @@ const ServicesPage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="pt-32 pb-16 bg-section-alt">
+      <section className="pt-10 md:pt-12 pb-16 bg-section-alt">
         <div className="container mx-auto px-6 text-center max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-widest text-section-label mb-3 opacity-0 animate-fade-up">Our Services</p>
           <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight opacity-0 animate-fade-up" style={{ animationDelay: "0.1s" }}>

@@ -18,75 +18,78 @@ const Navbar = () => {
   const isActive = (href: string) => location.pathname === href;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-      <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <Droplets className="h-8 w-8 text-primary" />
-          <span className="text-xl font-bold tracking-tight text-foreground">
-            Eleven<span className="text-primary">RO</span>
-          </span>
-        </Link>
-
-        <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              to={link.href}
-              className={`text-sm font-medium transition-colors ${
-                isActive(link.href) ? "text-primary" : "text-muted-foreground hover:text-primary"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-          <Link to="/book">
-            <Button variant="hero" size="sm">
-              Book Service
-            </Button>
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border pt-[env(safe-area-inset-top,0px)]">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <Droplets className="h-8 w-8 text-primary" />
+            <span className="text-xl font-bold tracking-tight text-foreground">
+              Eleven<span className="text-primary">RO</span>
+            </span>
           </Link>
-        </div>
 
-        <button
-          type="button"
-          className="md:hidden text-foreground"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label={isOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isOpen}
-          aria-controls="mobile-nav-menu"
-        >
-          {isOpen ? <X className="h-6 w-6" aria-hidden /> : <Menu className="h-6 w-6" aria-hidden />}
-        </button>
-      </div>
-
-      {isOpen && (
-        <div id="mobile-nav-menu" className="md:hidden bg-background/95 backdrop-blur-md border-t border-border px-6 py-5 animate-fade-in">
-          <div className="flex flex-col">
+          <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
                 to={link.href}
-                className={`block py-2.5 text-[15px] font-medium tracking-tight transition-colors first:pt-0 ${
-                  isActive(link.href) ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                className={`text-sm font-medium transition-colors ${
+                  isActive(link.href) ? "text-primary" : "text-muted-foreground hover:text-primary"
                 }`}
-                onClick={() => setIsOpen(false)}
               >
                 {link.label}
               </Link>
             ))}
-          </div>
-          <div className="mt-6 pt-5 border-t border-border/60">
-            <Link to="/book" onClick={() => setIsOpen(false)} className="block">
-              <Button
-                variant="hero"
-                className="w-full h-11 rounded-xl text-sm font-medium shadow-sm hover:shadow-md hover:scale-100 active:scale-[0.99] transition-all duration-200"
-              >
+            <Link to="/book">
+              <Button variant="hero" size="sm">
                 Book Service
               </Button>
             </Link>
           </div>
+
+          <button
+            type="button"
+            className="md:hidden text-foreground"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isOpen}
+            aria-controls="mobile-nav-menu"
+          >
+            {isOpen ? <X className="h-6 w-6" aria-hidden /> : <Menu className="h-6 w-6" aria-hidden />}
+          </button>
         </div>
-      )}
-    </nav>
+
+        {isOpen && (
+          <div id="mobile-nav-menu" className="md:hidden bg-background/95 backdrop-blur-md border-t border-border px-6 py-5 animate-fade-in">
+            <div className="flex flex-col">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.label}
+                  to={link.href}
+                  className={`block py-2.5 text-[15px] font-medium tracking-tight transition-colors first:pt-0 ${
+                    isActive(link.href) ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+            <div className="mt-6 pt-5 border-t border-border/60">
+              <Link to="/book" onClick={() => setIsOpen(false)} className="block">
+                <Button
+                  variant="hero"
+                  className="w-full h-11 rounded-xl text-sm font-medium shadow-sm hover:shadow-md hover:scale-100 active:scale-[0.99] transition-all duration-200"
+                >
+                  Book Service
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+      </nav>
+      <div className="public-nav-offset w-full" aria-hidden="true" />
+    </>
   );
 };
 

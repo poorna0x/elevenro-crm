@@ -266,7 +266,7 @@ const Warranty: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Header />
-      <main className="flex-1 pt-16">
+      <main className="flex-1 pt-8 md:pt-10 pb-12">
         <PageHero
           badge="Warranty self-check"
           title="Check your warranty status"

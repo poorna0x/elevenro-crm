@@ -187,7 +187,7 @@ const SpareParts = () => {
       <Navbar />
 
       <main className="flex-1">
-        <section className="pt-32 pb-12 bg-section-alt">
+        <section className="pt-10 md:pt-12 pb-12 bg-section-alt">
           <div className="container mx-auto px-6 text-center max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-widest text-section-label mb-3">Parts &amp; Filters</p>
             <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight">

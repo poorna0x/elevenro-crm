@@ -120,7 +120,7 @@ const BlogArticle = () => {
       <Header />
       
       <main className="flex-1">
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <div className="container mx-auto px-4 pt-8 pb-12 max-w-4xl">
         <h1 className="text-4xl font-bold mb-6 text-gray-900">
           {article.title}
         </h1>

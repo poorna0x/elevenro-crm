@@ -41,7 +41,7 @@ const PageHero: React.FC<PageHeroProps> = ({
 
   return (
     <section 
-      className="relative w-full py-12 md:py-20 px-2 md:px-12 flex flex-col items-center justify-center overflow-hidden bg-background/95 backdrop-blur-md"
+      className="relative w-full pt-8 md:pt-12 pb-12 md:pb-20 px-2 md:px-12 flex flex-col items-center justify-center overflow-hidden bg-background/95 backdrop-blur-md"
       style={darkBgStyle}
     >
       <div className="relative z-10 max-w-4xl text-center space-y-6">

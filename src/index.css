@@ -33,6 +33,9 @@
     --ring: 201 96% 42%; /* Primary blue ring */
     --section-alt: 198 78% 95%;
 
+    /* Fixed public Navbar (Navbar.tsx) — keep in sync with bar row height */
+    --public-nav-height: 4.125rem;
+
     --radius: 0.5rem;
   }
 
@@ -85,10 +88,17 @@
   /* Hide browser's default loading progress bar */
   html {
     overflow-x: hidden;
+    scroll-padding-top: calc(var(--public-nav-height) + env(safe-area-inset-top, 0px));
     /* Allow pull-to-refresh on mobile - use auto to allow all touch gestures */
     touch-action: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: auto;
+  }
+
+  /* Spacer below fixed Navbar — prevents hero/content sitting under the bar */
+  .public-nav-offset {
+    height: calc(var(--public-nav-height) + env(safe-area-inset-top, 0px));
+    flex-shrink: 0;
   }
 
   /* Prevent freeze issues in PWA */

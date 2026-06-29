@@ -18,7 +18,7 @@ const HeroSection = () => {
   return (
     <section
       id="home"
-      className="relative min-h-screen w-full flex flex-col items-center justify-center pt-24 md:pt-28 pb-16 md:pb-20 px-2 md:px-12 overflow-hidden"
+      className="relative min-h-[calc(100svh-var(--public-nav-height)-env(safe-area-inset-top,0px))] w-full flex flex-col items-center justify-center pt-6 md:pt-10 pb-16 md:pb-20 px-2 md:px-12 overflow-hidden"
     >
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
