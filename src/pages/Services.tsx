@@ -1,8 +1,11 @@
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import PublicAmcLearnMoreDialog from "@/components/PublicAmcLearnMoreDialog";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Wrench, Settings, RefreshCcw, Droplets, HeartPulse, Filter, CheckCircle2, ArrowRight } from "lucide-react";
+import { PUBLIC_AMC_PLANS, formatPublicAmcInr } from "@/lib/public-amc-info";
 
 const services = [
   {
@@ -16,8 +19,9 @@ const services = [
     icon: Settings,
     title: "Annual Maintenance Contract",
     description:
-      "Keep your purifier running at peak performance with our comprehensive AMC plans. Includes scheduled visits, filter changes, and priority support.",
-    features: ["4 scheduled visits/year", "Free filter replacements", "Priority support", "Discounted repairs"],
+      "Full RO care for one fixed price — scheduled visits, breakdown support, and genuine parts included.",
+    features: [],
+    isAmc: true,
   },
   {
     icon: RefreshCcw,
@@ -50,6 +54,8 @@ const services = [
 ];
 
 const ServicesPage = () => {
+  const [amcLearnMoreOpen, setAmcLearnMoreOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -80,15 +86,57 @@ const ServicesPage = () => {
                   <service.icon className="h-7 w-7" />
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground">{service.title}</h2>
-                <p className="text-muted-foreground leading-relaxed max-w-xl">{service.description}</p>
-                <ul className="grid grid-cols-2 gap-3">
-                  {service.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-foreground">
-                      <CheckCircle2 className="h-4 w-4 text-accent flex-shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
+
+                {service.isAmc ? (
+                  <div className="rounded-2xl border border-primary/15 bg-section-alt/60 p-5 sm:p-6 space-y-5 w-full">
+                    <p className="text-muted-foreground leading-relaxed text-[15px] sm:text-base">
+                      {service.description}
+                    </p>
+
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                      {PUBLIC_AMC_PLANS.map((plan) => (
+                        <div
+                          key={plan.years}
+                          className="rounded-lg bg-background/80 border border-border/80 px-2 py-3 sm:px-3 text-center"
+                        >
+                          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground leading-tight">
+                            {plan.label}
+                          </p>
+                          <p className="mt-1 text-base sm:text-lg font-bold text-primary leading-none">
+                            {formatPublicAmcInr(plan.amountInr)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                      Routine service every 6 months · No extra breakdown charges
+                    </p>
+
+                    <Button
+                      type="button"
+                      variant="hero"
+                      size="lg"
+                      className="flex w-full min-h-12 text-base font-semibold"
+                      onClick={() => setAmcLearnMoreOpen(true)}
+                    >
+                      Learn more about AMC
+                      <ArrowRight className="h-4 w-4 shrink-0" />
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-muted-foreground leading-relaxed max-w-xl">{service.description}</p>
+                    <ul className="grid grid-cols-2 gap-3">
+                      {service.features.map((f) => (
+                        <li key={f} className="flex items-center gap-2 text-sm text-foreground">
+                          <CheckCircle2 className="h-4 w-4 text-accent flex-shrink-0" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </div>
               <div className="flex-1 w-full bg-section-alt rounded-2xl border border-border p-10 flex items-center justify-center min-h-[220px]">
                 <service.icon className="h-24 w-24 text-primary/20" />
@@ -109,6 +157,8 @@ const ServicesPage = () => {
           </Link>
         </div>
       </section>
+
+      <PublicAmcLearnMoreDialog open={amcLearnMoreOpen} onOpenChange={setAmcLearnMoreOpen} />
 
       <Footer />
     </div>

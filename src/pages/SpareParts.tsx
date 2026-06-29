@@ -1,9 +1,9 @@
 import React from 'react';
-import Header from '@/components/Header';
+import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import PageHero from '@/components/PageHero';
 import { Card, CardContent } from '@/components/ui/card';
 import { Filter } from 'lucide-react';
+import { getBrandSeoProfile } from '@/lib/publicSiteSeo';
 
 interface SparePart {
   id: string;
@@ -157,6 +157,7 @@ const SPARE_PARTS: SparePart[] = [
 ];
 
 const SpareParts = () => {
+  const brand = getBrandSeoProfile('elevenro');
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -174,7 +175,7 @@ const SpareParts = () => {
           "@type": "Product",
           "name": "RO Spare Parts",
           "description": "Genuine RO water purifier spare parts and filters at competitive prices. All brands supported.",
-          "image": "https://elevenro.com/og-image.jpg",
+          "image": brand.ogImage,
           "offers": {
             "@type": "AggregateOffer",
             "priceCurrency": "INR",
@@ -183,18 +184,26 @@ const SpareParts = () => {
         })}
       </script>
 
-      <Header />
+      <Navbar />
 
       <main className="flex-1">
-        <PageHero 
-          title="RO Spare Parts & Filters"
-          description="Genuine spare parts and filters for all RO water purifier brands. Competitive prices with warranty."
-        />
+        <section className="pt-32 pb-12 bg-section-alt">
+          <div className="container mx-auto px-6 text-center max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-widest text-section-label mb-3">Parts &amp; Filters</p>
+            <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight">
+              RO Spare Parts{" "}
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">&amp; Filters</span>
+            </h1>
+            <p className="mt-5 text-lg text-muted-foreground leading-relaxed">
+              Genuine spare parts and filters for all RO water purifier brands. Transparent MRP list — call to order.
+            </p>
+          </div>
+        </section>
 
         {/* Service Charge Note */}
-        <section className="py-8 px-2 md:px-12 bg-background">
-          <div className="max-w-6xl mx-auto">
-            <Card className="cosmic-card border-primary/20 bg-primary/5">
+        <section className="py-8 px-6 bg-background">
+          <div className="container mx-auto max-w-6xl">
+            <Card className="border-primary/15 bg-primary/5">
               <CardContent className="p-6">
                 <div className="flex items-start gap-3">
                   <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
@@ -213,9 +222,8 @@ const SpareParts = () => {
         </section>
 
         {/* Parts List */}
-        {(
-          <section className="py-16 px-2 md:px-12 bg-background">
-            <div className="max-w-6xl mx-auto">
+        <section className="py-12 px-6 bg-background">
+            <div className="container mx-auto max-w-6xl">
               <>
                 <div className="mb-6">
                   <p className="text-muted-foreground text-sm">
@@ -225,7 +233,7 @@ const SpareParts = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {SPARE_PARTS.map((part) => (
-                    <Card key={part.id} className="cosmic-card hover:shadow-lg transition-all duration-300">
+                    <Card key={part.id} className="border-border hover:shadow-md transition-shadow duration-300">
                       <CardContent className="p-6">
                         <div className="flex items-center gap-2 mb-4">
                           <Filter className="w-5 h-5 text-primary" />
@@ -251,21 +259,19 @@ const SpareParts = () => {
               </>
             </div>
           </section>
-        )}
 
-        {/* Contact Section */}
-        <section className="py-16 px-2 md:px-12 bg-background">
-          <div className="max-w-4xl mx-auto">
-            <Card className="cosmic-card">
+        <section className="py-16 px-6 bg-section-alt">
+          <div className="container mx-auto max-w-4xl">
+            <Card className="border-border">
               <CardContent className="p-8">
                 <div className="text-center">
                   <h3 className="text-2xl font-semibold mb-6 text-foreground">Need Help?</h3>
                   <div className="space-y-3 text-foreground">
                     <p>Call us to order spare parts or get assistance:</p>
                     <p className="text-lg font-semibold text-primary">
-                      +91-9880693311, +91-9880693311
+                      +91-9880693311, +91-8792467611
                     </p>
-                    <p>Email: info@elevenro.com</p>
+                    <p>Email: mail@elevenro.com</p>
                     <p className="text-sm text-muted-foreground">
                       Available: 24/7 Emergency Service
                     </p>
