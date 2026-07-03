@@ -641,3 +641,37 @@ _::-webkit-full-page-media, _:future, :root input[type="date"] {
     font-size: 16px !important;
   }
 }
+
+/*
+ * Radix dialog scroll-lock: reserve scrollbar space so the page doesn't jump when
+ * "Learn More" opens on the services section (and other modals).
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
+html body[data-scroll-locked] {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+  padding-top: 0 !important;
+}
+
+html body[data-scroll-locked] .right-scroll-bar-position {
+  right: 0 !important;
+}
+
+html body[data-scroll-locked] .width-before-scroll-bar {
+  margin-right: 0 !important;
+}
+
+html body.with-scroll-bars-hidden {
+  padding-right: 0 !important;
+}
+
+[role="dialog"] .overflow-y-auto,
+[role="alertdialog"] .overflow-y-auto,
+[data-radix-select-viewport] {
+  scrollbar-gutter: stable;
+}
