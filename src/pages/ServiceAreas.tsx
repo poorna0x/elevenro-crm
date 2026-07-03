@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PageHero from '@/components/PageHero';
+import SeoBreadcrumbs from '@/components/SeoBreadcrumbs';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Clock, Check } from 'lucide-react';
 import {
@@ -30,7 +31,9 @@ const ServiceAreas = () => {
       : `${loc.name}, ${loc.region}`
     : 'Bengaluru';
 
-  const heroTitle = loc ? `RO Service in ${loc.name}` : 'Service Areas in Bengaluru';
+  const heroTitle = loc
+    ? `RO Service in ${loc.name}${loc.region === 'Karnataka' ? ', Karnataka' : ''}`
+    : 'Service Areas in Bengaluru';
   const heroDescription = loc
     ? buildLocationDescription(loc, brand.brandName, brand.primaryPhone)
     : 'We provide professional RO water purifier services across all areas of Bengaluru. Find your area and book service today!';
@@ -57,7 +60,7 @@ const ServiceAreas = () => {
   const faqItems = loc ? buildLocationFaqItems(loc, brand.brandName, brand.primaryPhone) : [];
 
   const nearbyPillClass =
-    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15 transition-colors';
+    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300 border border-sky-200/60 dark:border-sky-500/20 hover:bg-sky-200/80 dark:hover:bg-sky-500/25 transition-colors';
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -202,6 +205,7 @@ const ServiceAreas = () => {
       <Header />
 
       <main className="flex-1">
+        <SeoBreadcrumbs />
         <PageHero 
           badge={loc ? `RO service in ${placeLabel}` : 'Trusted by 3000+ customers'}
           title={heroTitle}
@@ -210,7 +214,7 @@ const ServiceAreas = () => {
         />
 
         {loc && (
-          <section className="py-12 px-4 md:px-12">
+          <section className="py-12 px-4 md:px-12 water-soft">
             <div className="max-w-4xl mx-auto text-center">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
                 RO Water Purifier Service in {loc.name}
@@ -243,7 +247,7 @@ const ServiceAreas = () => {
         )}
 
         {loc && faqItems.length > 0 && (
-          <section className="py-12 px-4 md:px-12 bg-background border-t border-border">
+          <section className="py-12 px-4 md:px-12 bg-background border-t border-sky-100/60 dark:border-sky-500/10">
             <div className="max-w-3xl mx-auto">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 text-center">
                 RO Service in {loc.name} — FAQs
@@ -252,11 +256,11 @@ const ServiceAreas = () => {
                 {faqItems.map((item) => (
                   <details
                     key={item.question}
-                    className="group rounded-xl border border-border bg-card p-4"
+                    className="group rounded-xl border border-sky-100 dark:border-sky-500/15 bg-card p-4"
                   >
                     <summary className="cursor-pointer font-medium text-foreground list-none flex justify-between items-center gap-2">
                       {item.question}
-                      <span className="text-primary text-sm group-open:rotate-180 transition-transform">▼</span>
+                      <span className="text-sky-600 dark:text-sky-400 text-sm group-open:rotate-180 transition-transform">▼</span>
                     </summary>
                     <p className="mt-3 text-muted-foreground text-sm leading-relaxed">{item.answer}</p>
                   </details>
@@ -288,7 +292,7 @@ const ServiceAreas = () => {
                           <Link
                             key={slug}
                             to={`/${slug}`}
-                            className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15 transition-colors"
+                            className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm bg-sky-50 text-sky-800 dark:bg-sky-500/10 dark:text-sky-300 border border-sky-100 dark:border-sky-500/20 hover:bg-sky-100 dark:hover:bg-sky-500/20 transition-colors"
                           >
                             RO service {area.name}
                           </Link>
@@ -329,12 +333,12 @@ const ServiceAreas = () => {
                 { area: 'Rajajinagar', pincode: '560010', time: '30 minutes' },
                 { area: 'Bannerghatta', pincode: '560076', time: '50 minutes' },
                 { area: 'Hebbal', pincode: '560024', time: '45 minutes' }
-              ].map((location) => (
-                <Card key={location.area} className="cosmic-card hover:shadow-lg transition-all duration-300">
+              ].map((location, index) => (
+                <Card key={index} className="border-sky-100 dark:border-sky-500/15 hover:shadow-lg transition-all duration-300">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <MapPin className="w-5 h-5 text-primary" />
+                      <div className="w-10 h-10 bg-sky-100 dark:bg-sky-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <MapPin className="w-5 h-5 text-sky-600 dark:text-sky-400" />
             </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-foreground mb-1">{location.area}</h3>
@@ -350,7 +354,7 @@ const ServiceAreas = () => {
               ))}
             </div>
 
-            <Card className="cosmic-card">
+            <Card className="border-sky-100 dark:border-sky-500/15">
               <CardContent className="p-8">
                 <h3 className="text-2xl font-bold mb-6 text-center text-foreground">
                   All Bengaluru Areas Covered
@@ -361,48 +365,48 @@ const ServiceAreas = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <Check className="w-5 h-5 text-primary" />
+                      <Check className="w-5 h-5 text-sky-600 dark:text-sky-400" />
                       Why Choose Us?
                     </h4>
                     <ul className="space-y-2 text-muted-foreground">
                       <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                        <Check className="w-4 h-4 text-sky-600 dark:text-sky-400 flex-shrink-0" />
                         Quick Response - Average response time of 30 minutes
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                        <Check className="w-4 h-4 text-sky-600 dark:text-sky-400 flex-shrink-0" />
                         Certified Technicians
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                        <Check className="w-4 h-4 text-sky-600 dark:text-sky-400 flex-shrink-0" />
                         Quality Guarantee
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                        <Check className="w-4 h-4 text-sky-600 dark:text-sky-400 flex-shrink-0" />
                         Local Expertise
                       </li>
                     </ul>
             </div>
                   <div>
                     <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <Check className="w-5 h-5 text-primary" />
+                      <Check className="w-5 h-5 text-sky-600 dark:text-sky-400" />
                       Services Offered
                     </h4>
                     <ul className="space-y-2 text-muted-foreground">
                       <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                        <Check className="w-4 h-4 text-sky-600 dark:text-sky-400 flex-shrink-0" />
                         RO Installation
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                        <Check className="w-4 h-4 text-sky-600 dark:text-sky-400 flex-shrink-0" />
                         RO Repair & Maintenance
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                        <Check className="w-4 h-4 text-sky-600 dark:text-sky-400 flex-shrink-0" />
                         Filter Replacement
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                        <Check className="w-4 h-4 text-sky-600 dark:text-sky-400 flex-shrink-0" />
                         Emergency Repair
                       </li>
                     </ul>

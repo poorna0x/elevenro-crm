@@ -2,12 +2,16 @@ import React from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PageHero from '@/components/PageHero';
+import SeoBreadcrumbs from '@/components/SeoBreadcrumbs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, User, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getBrandSeoProfile } from '@/lib/publicSiteSeo';
+import { getPublicSiteKey } from '@/lib/websiteSiteKey';
 
 const Blog = () => {
   const navigate = useNavigate();
+  const brand = getBrandSeoProfile(getPublicSiteKey());
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -15,15 +19,15 @@ const Blog = () => {
         {JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Blog",
-          "name": "ElevenRO Blog",
-          "description": "Expert insights, maintenance tips, and latest news on RO water purification technology in Bengaluru",
-          "url": "https://elevenro.com/blog",
+          "name": `${brand.brandName} Blog`,
+          "description": "Expert insights, maintenance tips, and latest news on RO water purification technology in Bengaluru and Karnataka",
+          "url": `${brand.origin}/blog`,
           "publisher": {
             "@type": "Organization",
-            "name": "ElevenRO",
+            "name": brand.brandName,
             "logo": {
               "@type": "ImageObject",
-              "url": "https://elevenro.com/logo.png"
+              "url": brand.logoPath
             }
           }
         })}
@@ -32,8 +36,9 @@ const Blog = () => {
       <Header />
 
       <main className="flex-1">
+        <SeoBreadcrumbs />
         <PageHero 
-          title="ElevenRO Blog"
+          title={`${brand.brandName} Blog`}
           description="Expert insights, maintenance tips, and the latest news on water purification technology in Bengaluru, Karnataka"
           showButtons={true}
         />
@@ -163,10 +168,10 @@ const Blog = () => {
               slug: "ro-purifier-buying-tips-considerations"
             }
           ].map((article, index) => (
-            <Card key={index} className="cosmic-card hover:shadow-xl transition-all duration-300 cursor-pointer group">
+            <Card key={index} className="border-sky-100 dark:border-sky-500/15 hover:shadow-xl transition-all duration-300 cursor-pointer group">
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-sky-100 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400">
                     {article.category}
                   </span>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -174,7 +179,7 @@ const Blog = () => {
                     {article.readTime}
             </div>
             </div>
-                <h3 className="text-xl font-semibold mb-3 text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                <h3 className="text-xl font-semibold mb-3 text-foreground group-hover:text-sky-600 dark:text-sky-400 transition-colors line-clamp-2">
                   {article.title}
               </h3>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
@@ -186,7 +191,7 @@ const Blog = () => {
               </p>
                 <button 
                   onClick={() => navigate(`/blog/${article.slug}`)}
-                  className="text-primary hover:underline text-sm font-medium"
+                  className="text-sky-600 dark:text-sky-400 hover:underline text-sm font-medium"
                 >
                   Read more →
                 </button>
