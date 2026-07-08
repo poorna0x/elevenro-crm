@@ -42,6 +42,11 @@ export function shouldTrackGaPath(pathname: string): boolean {
   return shouldIndexPath(pathname);
 }
 
+/** Public marketing pages only — never load gtag on internal portal routes. */
+export function shouldEnableGoogleAnalytics(pathname: string): boolean {
+  return getGaMeasurementId() !== null && shouldTrackGaPath(pathname);
+}
+
 function loadGtagScript(measurementId: string): Promise<void> {
   const existing = document.querySelector<HTMLScriptElement>(
     `script[src*="googletagmanager.com/gtag/js?id=${measurementId}"]`,
