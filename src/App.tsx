@@ -9,6 +9,7 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PublicSiteSeo from "./components/PublicSiteSeo";
+import GoogleAnalytics from "./components/GoogleAnalytics";
 import { SEO_LOCATION_PAGES, SEO_SERVICE_PAGES } from "@/lib/publicSeoPages";
 
 const PerformanceMonitor = lazy(() => import("./components/PerformanceMonitor"));
@@ -85,6 +86,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <PublicSiteSeo />
+            <GoogleAnalytics />
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>
                 <Route path="/" element={<Index />} />
