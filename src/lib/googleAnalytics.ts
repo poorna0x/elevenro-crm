@@ -1,5 +1,4 @@
 import { shouldIndexPath } from '@/lib/publicSiteSeo';
-import { getPublicSiteKey } from '@/lib/websiteSiteKey';
 
 declare global {
   interface Window {
@@ -9,33 +8,24 @@ declare global {
 }
 
 let initializedId: string | null = null;
+let resolvedMeasurementId: string | null = null;
 const scriptPromises = new Map<string, Promise<void>>();
 
 function parseMeasurementId(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
-/** GA4 is on when the current hostname has a measurement ID configured. */
-export function isGoogleAnalyticsEnabled(): boolean {
-  return getGaMeasurementId() !== null;
+/** Eleven RO Netlify site — dedicated env first, then generic fallback. */
+export function getMeasurementIdCandidates(): string[] {
+  const elevenro = parseMeasurementId(import.meta.env.VITE_GA_MEASUREMENT_ID_ELEVENRO);
+  const general = parseMeasurementId(import.meta.env.VITE_GA_MEASUREMENT_ID);
+  if (elevenro) return [elevenro];
+  if (general) return [general];
+  return [];
 }
 
-/**
- * Eleven RO site (elevenro.com; localhost defaults to elevenro):
- * VITE_GA_MEASUREMENT_ID_ELEVENRO, or VITE_GA_MEASUREMENT_ID as fallback.
- */
 export function getGaMeasurementId(): string | null {
-  const site = getPublicSiteKey();
-  if (site === 'elevenro') {
-    return (
-      parseMeasurementId(import.meta.env.VITE_GA_MEASUREMENT_ID_ELEVENRO) ||
-      parseMeasurementId(import.meta.env.VITE_GA_MEASUREMENT_ID)
-    );
-  }
-  return (
-    parseMeasurementId(import.meta.env.VITE_GA_MEASUREMENT_ID) ||
-    parseMeasurementId(import.meta.env.VITE_GA_MEASUREMENT_ID_HYDROGENRO)
-  );
+  return resolvedMeasurementId ?? getMeasurementIdCandidates()[0] ?? null;
 }
 
 export function shouldTrackGaPath(pathname: string): boolean {
@@ -44,14 +34,38 @@ export function shouldTrackGaPath(pathname: string): boolean {
 
 /** Public marketing pages only — never load gtag on internal portal routes. */
 export function shouldEnableGoogleAnalytics(pathname: string): boolean {
-  return getGaMeasurementId() !== null && shouldTrackGaPath(pathname);
+  return getMeasurementIdCandidates().length > 0 && shouldTrackGaPath(pathname);
+}
+
+async function isMeasurementIdValid(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`,
+      { method: 'HEAD', cache: 'no-store' },
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveValidMeasurementId(): Promise<string | null> {
+  for (const id of getMeasurementIdCandidates()) {
+    if (await isMeasurementIdValid(id)) return id;
+  }
+  if (getMeasurementIdCandidates().length > 0) {
+    console.error(
+      '[GA4] Invalid measurement ID in Netlify env. Set VITE_GA_MEASUREMENT_ID_ELEVENRO to your Eleven RO stream (GA Admin → Data streams). Then redeploy.',
+    );
+  }
+  return null;
 }
 
 function loadGtagScript(measurementId: string): Promise<void> {
   const existing = document.querySelector<HTMLScriptElement>(
     `script[src*="googletagmanager.com/gtag/js?id=${measurementId}"]`,
   );
-  if (existing?.dataset.loaded === 'true' || (existing && window.gtag)) {
+  if (existing?.dataset.loaded === 'true') {
     return Promise.resolve();
   }
 
@@ -90,7 +104,6 @@ function loadGtagScript(measurementId: string): Promise<void> {
 function ensureGtagStub(): void {
   window.dataLayer = window.dataLayer || [];
   if (window.gtag) return;
-  // Must match Google's install snippet — rest/arrow args break GA4 network dispatch.
   window.gtag = function gtag() {
     // eslint-disable-next-line prefer-rest-params
     window.dataLayer!.push(arguments);
@@ -99,9 +112,10 @@ function ensureGtagStub(): void {
 
 /** Load gtag.js once and configure the property for SPA page_view events. */
 export async function initGoogleAnalytics(): Promise<boolean> {
-  const measurementId = getGaMeasurementId();
+  const measurementId = await resolveValidMeasurementId();
   if (!measurementId) return false;
 
+  resolvedMeasurementId = measurementId;
   ensureGtagStub();
 
   if (initializedId === measurementId && typeof window.gtag === 'function') {
@@ -126,7 +140,7 @@ export async function initGoogleAnalytics(): Promise<boolean> {
 export function trackGaPageView(pathname: string, search = ''): void {
   if (!shouldTrackGaPath(pathname)) return;
 
-  const measurementId = getGaMeasurementId();
+  const measurementId = resolvedMeasurementId;
   if (!measurementId || initializedId !== measurementId || typeof window.gtag !== 'function') {
     return;
   }
