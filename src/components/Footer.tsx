@@ -31,6 +31,16 @@ const Footer = () => {
             Check Warranty Status
           </Link>
         </nav>
+        <p className="text-sm text-primary-foreground/90 text-center max-w-md leading-relaxed px-2">
+          Sister RO service brand — north &amp; central Bengaluru:{' '}
+          <a
+            href="https://hydrogenro.com"
+            className="font-medium underline underline-offset-4 hover:text-sky-300 transition-colors"
+            rel="noopener noreferrer"
+          >
+            Hydrogen RO
+          </a>
+        </p>
         <p className="text-sm text-primary-foreground/80">
           &copy; {new Date().getFullYear()} ElevenRO. All rights reserved.
         </p>
