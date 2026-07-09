@@ -11,6 +11,7 @@ import { Filter, Wrench, CheckCircle, DollarSign, Clock, Shield, Settings, Shiel
 
 import { buildPublicLocalBusinessJsonLd, getBrandSeoProfile } from '@/lib/publicSiteSeo';
 import { findServicePage } from '@/lib/publicSeoPages';
+import { getCityServicePage } from '@/data/cityServiceSeo';
 import { PUBLIC_AMC_PLANS, formatPublicAmcInr, PUBLIC_AMC_TAGLINE } from '@/lib/public-amc-info';
 import { getPublicSiteKey } from '@/lib/websiteSiteKey';
 
@@ -21,7 +22,9 @@ const serviceCardContentClass = 'p-8 flex flex-col h-full';
 const Services = () => {
   const { pathname } = useLocation();
   const servicePage = findServicePage(pathname);
+  const cityServicePage = getCityServicePage(pathname);
   const siteKey = getPublicSiteKey();
+  const isHydrogenRo = siteKey === 'hydrogenro';
   const brand = getBrandSeoProfile(siteKey);
   const [amcLearnMoreOpen, setAmcLearnMoreOpen] = useState(false);
 
@@ -50,14 +53,16 @@ const Services = () => {
       "priceCurrency": "INR",
       "availability": "https://schema.org/InStock"
     },
-    ...PUBLIC_AMC_PLANS.map((plan) => ({
-      "@type": "Offer" as const,
-      "name": `RO AMC — ${plan.label}`,
-      "description": PUBLIC_AMC_TAGLINE,
-      "price": String(plan.amountInr),
-      "priceCurrency": "INR",
-      "availability": "https://schema.org/InStock"
-    })),
+    ...(isHydrogenRo
+      ? PUBLIC_AMC_PLANS.map((plan) => ({
+          "@type": "Offer" as const,
+          "name": `RO AMC — ${plan.label}`,
+          "description": PUBLIC_AMC_TAGLINE,
+          "price": String(plan.amountInr),
+          "priceCurrency": "INR",
+          "availability": "https://schema.org/InStock"
+        }))
+      : []),
   ];
 
   return (
@@ -86,8 +91,18 @@ const Services = () => {
       <main className="flex-1">
         <SeoBreadcrumbs />
         <PageHero 
-          title={servicePage ? `${servicePage.serviceName} in Karnataka` : 'RO Water Purifier Services in Bengaluru'}
-          description={servicePage?.shortDescription ?? 'Professional RO water purifier installation, repair, and maintenance services by certified technicians in Bengaluru, Karnataka. Same-day service, 24/7 emergency support across all areas of Bangalore.'}
+          title={
+            cityServicePage
+              ? `${cityServicePage.serviceName} in ${cityServicePage.cityName}`
+              : servicePage
+                ? `${servicePage.serviceName} in Karnataka`
+                : 'RO Water Purifier Services in Bengaluru'
+          }
+          description={
+            cityServicePage?.shortDescription ??
+            servicePage?.shortDescription ??
+            'Professional RO water purifier installation, repair, and maintenance services by certified technicians in Bengaluru, Karnataka. Same-day service, 24/7 emergency support across all areas of Bangalore.'
+          }
         />
 
         {/* Why Choose Section */}
@@ -168,7 +183,11 @@ const Services = () => {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div
+              className={`grid grid-cols-1 md:grid-cols-2 gap-8 ${
+                isHydrogenRo ? '' : 'lg:grid-cols-3'
+              }`}
+            >
               <Card className={serviceCardClass}>
                 <CardContent className={serviceCardContentClass}>
                   <div className="w-16 h-16 bg-sky-100 dark:bg-sky-500/15 rounded-xl flex items-center justify-center mb-6">
@@ -228,35 +247,37 @@ const Services = () => {
                 </CardContent>
               </Card>
 
-              <Card className={`${serviceCardClass} border-sky-200 dark:border-sky-500/25 ring-1 ring-sky-100/80 dark:ring-sky-500/10`}>
-                <CardContent className={serviceCardContentClass}>
-                  <div className="w-16 h-16 bg-sky-100 dark:bg-sky-500/15 rounded-xl flex items-center justify-center mb-6">
-                    <ShieldCheck className="w-8 h-8 text-sky-600 dark:text-sky-400" />
-                  </div>
-                  <h3 className="text-2xl font-semibold mb-3 text-foreground">AMC Plans</h3>
-                  <div className="mb-4 min-h-[3.5rem] space-y-0.5">
-                    {PUBLIC_AMC_PLANS.map((plan) => (
-                      <p key={plan.years} className="text-sky-600 dark:text-sky-400 font-semibold text-sm sm:text-base">
-                        {plan.label}: {formatPublicAmcInr(plan.amountInr)}
-                      </p>
-                    ))}
-                  </div>
-                  <ul className="space-y-2 text-muted-foreground flex-1">
-                    <li>• 1 / 2 / 3 year plans</li>
-                    <li>• No extra charge breakdown support</li>
-                    <li>• Routine service every 6 months</li>
-                    <li>• Filters, membrane &amp; electricals included</li>
-                  </ul>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="mt-6 w-full border-sky-200 text-sky-800 hover:bg-sky-50 dark:border-sky-500/30 dark:text-sky-300 dark:hover:bg-sky-500/10"
-                    onClick={() => setAmcLearnMoreOpen(true)}
-                  >
-                    Learn more about AMC
-                  </Button>
-                </CardContent>
-              </Card>
+              {isHydrogenRo && (
+                <Card className={`${serviceCardClass} border-sky-200 dark:border-sky-500/25 ring-1 ring-sky-100/80 dark:ring-sky-500/10`}>
+                  <CardContent className={serviceCardContentClass}>
+                    <div className="w-16 h-16 bg-sky-100 dark:bg-sky-500/15 rounded-xl flex items-center justify-center mb-6">
+                      <ShieldCheck className="w-8 h-8 text-sky-600 dark:text-sky-400" />
+                    </div>
+                    <h3 className="text-2xl font-semibold mb-3 text-foreground">AMC Plans</h3>
+                    <div className="mb-4 min-h-[3.5rem] space-y-0.5">
+                      {PUBLIC_AMC_PLANS.map((plan) => (
+                        <p key={plan.years} className="text-sky-600 dark:text-sky-400 font-semibold text-sm sm:text-base">
+                          {plan.label}: {formatPublicAmcInr(plan.amountInr)}
+                        </p>
+                      ))}
+                    </div>
+                    <ul className="space-y-2 text-muted-foreground flex-1">
+                      <li>• 1 / 2 / 3 year plans</li>
+                      <li>• No extra charge breakdown support</li>
+                      <li>• Routine service every 6 months</li>
+                      <li>• Filters, membrane &amp; electricals included</li>
+                    </ul>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-6 w-full border-sky-200 text-sky-800 hover:bg-sky-50 dark:border-sky-500/30 dark:text-sky-300 dark:hover:bg-sky-500/10"
+                      onClick={() => setAmcLearnMoreOpen(true)}
+                    >
+                      Learn more about AMC
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </section>
@@ -269,8 +290,8 @@ const Services = () => {
                 <div className="text-center">
                   <h3 className="text-2xl font-semibold mb-6 text-foreground">Contact Us</h3>
                   <div className="space-y-3 text-foreground">
-                    <p>Phone: {brand.phones.join(', ')}</p>
-                    <p>Email: {brand.email}</p>
+                    <p>Phone: +91-8884944288, +91-9886944288</p>
+                    <p>Email: info@hydrogenro.com</p>
                     <p>Available: 24/7 Emergency Service</p>
                   </div>
                 </div>
@@ -280,7 +301,9 @@ const Services = () => {
         </section>
       </main>
 
-      <PublicAmcLearnMoreDialog open={amcLearnMoreOpen} onOpenChange={setAmcLearnMoreOpen} />
+      {isHydrogenRo && (
+        <PublicAmcLearnMoreDialog open={amcLearnMoreOpen} onOpenChange={setAmcLearnMoreOpen} />
+      )}
 
       <Footer />
     </div>

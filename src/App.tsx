@@ -10,7 +10,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PublicSiteSeo from "./components/PublicSiteSeo";
 import GoogleAnalytics from "./components/GoogleAnalytics";
-import { SEO_LOCATION_PAGES, SEO_SERVICE_PAGES } from "@/lib/publicSeoPages";
+import { SEO_CITY_SERVICE_PAGES, SEO_LOCATION_PAGES, SEO_SERVICE_PAGES } from "@/lib/publicSeoPages";
 
 const PerformanceMonitor = lazy(() => import("./components/PerformanceMonitor"));
 
@@ -113,6 +113,10 @@ const App = () => (
 
                 {/* Search route - return 404 */}
                 <Route path="/search" element={<NotFound />} />
+
+                {SEO_CITY_SERVICE_PAGES.map(({ path }) => (
+                  <Route key={path} path={path} element={<Services />} />
+                ))}
 
                 {SEO_SERVICE_PAGES.map(({ path }) => (
                   <Route key={path} path={path} element={<Services />} />

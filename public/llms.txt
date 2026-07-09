@@ -1,7 +1,7 @@
 # Eleven RO — llms.txt
 # https://elevenro.com
 
-> Eleven RO is a trusted RO water purifier service provider in Bengaluru (Bangalore), Karnataka, India.
+> Eleven RO is a trusted RO water purifier service provider in Bengaluru (Bangalore), Karnataka, India — serving homes, apartments, offices and commercial facilities statewide.
 
 ## Company
 - Name: Eleven RO (ELEVEN RO)
@@ -16,32 +16,57 @@
 - RO filter replacement: https://elevenro.com/filter-replacement
 - RO maintenance and AMC: https://elevenro.com/ro-maintenance
 - Water softener service: https://elevenro.com/water-softener
+- Commercial RO service: https://elevenro.com/commercial-ro-service
+- Industrial RO service: https://elevenro.com/industrial-ro-service
 - Emergency RO repair: https://elevenro.com/emergency-ro-repair
 - Same-day RO service: https://elevenro.com/same-day-ro-service
 - RO spare parts: https://elevenro.com/spare-parts
 
-## Service Areas — South & Southeast Bengaluru (high priority)
-Electronic City (Phase 1, Phase 2), Bommanahalli, Bommasandra, Sarjapur, Sarjapura, Sarjapur Road, Attibele, Chandapura, Jigani, Anekal, Singasandra, Hosur Road, Silk Board, Bellandur, HSR Layout, Anjanapura, JP Nagar, Bannerghatta, Haralur, Varthur, Kadubeesanahalli, Panathur
+## Karnataka Priority Cities (Tier 1)
+Bengaluru, Mysuru, Mangaluru
+- RO service Bengaluru: https://elevenro.com/ro-service-bengaluru
+- RO installation Bengaluru: https://elevenro.com/ro-installation-in-bengaluru
+- Commercial RO plant Bengaluru: https://elevenro.com/commercial-ro-plant-in-bengaluru
+- Water softener installation Bengaluru: https://elevenro.com/water-softener-installation-in-bengaluru
+- RO AMC Bengaluru: https://elevenro.com/ro-amc-in-bengaluru
+- RO service Mysuru: https://elevenro.com/ro-service-mysuru
+- RO installation Mysuru: https://elevenro.com/ro-installation-in-mysuru
+- RO service Mangaluru: https://elevenro.com/ro-service-mangaluru
+
+## Karnataka Priority Cities (Tier 2)
+Hubballi, Dharwad, Belagavi, Tumakuru, Shivamogga, Davanagere, Kalaburagi
+- RO service Hubballi: https://elevenro.com/ro-service-hubballi
+- RO installation Hubballi: https://elevenro.com/ro-installation-in-hubballi
+- RO service Belagavi: https://elevenro.com/ro-service-belagavi
+- RO service Tumakuru: https://elevenro.com/ro-service-tumakuru
+
+## Service Areas — South & Southeast Bengaluru
+Electronic City, Bommanahalli, Bommasandra, Sarjapur, HSR Layout, Bellandur, JP Nagar, Jayanagar, Banashankari, Bannerghatta, Kanakapura Road, RR Nagar, KR Puram, Whitefield, Marathahalli
 - Electronic City: https://elevenro.com/ro-service-electronic-city
 - Bommanahalli: https://elevenro.com/ro-service-bommanahalli
 - Sarjapur: https://elevenro.com/ro-service-sarjapur
-- Attibele: https://elevenro.com/ro-service-attibele
 - HSR Layout: https://elevenro.com/ro-service-hsr-layout
-- Varthur: https://elevenro.com/ro-service-varthur
-- Haralur: https://elevenro.com/ro-service-haralur
+- KR Puram: https://elevenro.com/ro-service-kr-puram
+- Whitefield: https://elevenro.com/ro-service-whitefield
 
 ## Service Areas — North & Northeast Bengaluru
-Yelahanka, Thanisandra, Jakkur, Bagalur, Budigere Cross, Devanahalli, Manyata Tech Park, RT Nagar, Nagawara, Hebbal, Hoskote, ITPL
+Yelahanka, Thanisandra, Jakkur, Hebbal, Nagawara, Hennur, Devanahalli, Manyata Tech Park
 - Yelahanka: https://elevenro.com/ro-service-yelahanka
-- Budigere Cross: https://elevenro.com/ro-service-budigere-cross
-- Devanahalli: https://elevenro.com/ro-service-devanahalli
+- Hebbal: https://elevenro.com/ro-service-hebbal
 - Thanisandra: https://elevenro.com/ro-service-thanisandra
-- Manyata Tech Park: https://elevenro.com/ro-service-manyata-tech-park
+- Devanahalli: https://elevenro.com/ro-service-devanahalli
+
+## Service Areas — West Bengaluru
+Rajajinagar, Vijayanagar, Nagarbhavi, Kengeri
+- Rajajinagar: https://elevenro.com/ro-service-rajajinagar
+- Vijayanagar: https://elevenro.com/ro-service-vijayanagar
+- Nagarbhavi: https://elevenro.com/ro-service-nagarbhavi
 
 ## Key Pages
 - Home: https://elevenro.com/
 - Book service: https://elevenro.com/book
 - Services: https://elevenro.com/services
+- Service areas hub: https://elevenro.com/service-areas
 - Contact: https://elevenro.com/contact
 - Blog: https://elevenro.com/blog
 - Warranty & AMC: https://elevenro.com/warranty
