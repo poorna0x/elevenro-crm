@@ -14,7 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ChevronLeft, ChevronRight, MapPin, Camera, Upload, Check, Phone, Mail, User, Home, Clock, Wrench, Loader2, Search, Navigation, X, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Camera, Upload, Check, Phone, Mail, User, Home, Clock, Wrench, Loader2, Search, Navigation, X, ExternalLink, Info } from 'lucide-react';
 import {
   createBookingCustomer,
   getBookingCustomerByPhone,
@@ -2233,7 +2233,17 @@ const Booking: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
+              {/* Installation policy note */}
+              {(formData.service === 'Installation' || formData.service === 'New Purifier Installation') && (
+                <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/5 p-3">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  <p className="text-xs sm:text-sm leading-relaxed text-foreground/85">
+                    <span className="font-medium">Please note:</span> We primarily install existing (previously used) purifiers. For brand-new purifiers not purchased from us, installation is taken up on a model-by-model basis — our team will review your model and confirm before the visit.
+                  </p>
+                </div>
+              )}
+
               {/* Show custom service input when "Other" is selected */}
               {formData.service === 'Other' && (
                 <div>
