@@ -690,12 +690,234 @@ export const normalizeForComparison = (str: string): string => {
     .trim();
 };
 
+/** Max length for customer one-word / short location (visible_address). */
+export const VISIBLE_ADDRESS_MAX_LEN = 40;
+
+const GENERIC_GEO_LOCALITIES = new Set(
+  [
+    'bengaluru',
+    'bangalore',
+    'karnataka',
+    'india',
+    'in',
+    'ka',
+    'urban',
+    'rural',
+    'district',
+    'taluk',
+    'hobli',
+    'bengaluru urban',
+    'bangalore urban',
+    'bengaluru urban district',
+    'bangalore urban district',
+    'bengaluru rural',
+    'bangalore rural',
+  ].map((s) => s.toLowerCase())
+);
+
+function clipVisibleAddress(value: string): string {
+  return value.trim().substring(0, VISIBLE_ADDRESS_MAX_LEN);
+}
+
+function isGenericGeoLocality(name: string): boolean {
+  const n = name.trim().toLowerCase();
+  if (!n || n.length < 3) return true;
+  if (GENERIC_GEO_LOCALITIES.has(n)) return true;
+  if (/^\d{6}$/.test(n)) return true;
+  if (/\b(bengaluru|bangalore)\b/.test(n) && /\b(urban|rural|district|division|metropolitan)\b/.test(n)) {
+    return true;
+  }
+  return false;
+}
+
+/** Longest bangaloreAreas name that appears in the full address text. */
+export function findLongestAreaMatchInText(completeAddress: string): string | null {
+  if (!completeAddress?.trim()) return null;
+
+  const uniqueAreas = [...new Set(bangaloreAreas)];
+  const haystack = completeAddress.toLowerCase();
+  const hayNorm = normalizeForComparison(completeAddress);
+
+  let best: string | null = null;
+  let bestLen = 0;
+
+  for (const area of uniqueAreas) {
+    const trimmed = area.trim();
+    if (trimmed.length < 3) continue;
+    const areaLower = trimmed.toLowerCase();
+    const areaNorm = normalizeForComparison(trimmed);
+    const hit =
+      haystack.includes(areaLower) ||
+      (areaNorm.length >= 3 && hayNorm.includes(areaNorm));
+    if (hit && trimmed.length > bestLen) {
+      best = trimmed;
+      bestLen = trimmed.length;
+    }
+  }
+
+  return best;
+}
+
+export type GoogleAddressComponentLike = {
+  long_name?: string;
+  short_name?: string;
+  types?: string[];
+};
+
+const GOOGLE_SHORT_LOCATION_TYPES = [
+  'neighborhood',
+  'sublocality_level_1',
+  'sublocality',
+  'sublocality_level_2',
+  'sublocality_level_3',
+  'administrative_area_level_3',
+  'administrative_area_level_4',
+  'administrative_area_level_2',
+  'locality',
+  'premise',
+] as const;
+
+function componentLabel(comp: GoogleAddressComponentLike): string {
+  return (comp.long_name || comp.short_name || '').trim();
+}
+
+function joinGoogleComponentText(components: GoogleAddressComponentLike[]): string {
+  return components.map((c) => componentLabel(c)).join(', ');
+}
+
+/** Google Plus Code lines look like: "3Q5F+23 Amanidoddakere, India" */
+export function extractPlaceFromPlusCodeAddress(formatted: string): string | null {
+  if (!formatted?.trim()) return null;
+  const m = formatted.trim().match(/^[A-Z0-9]{2,}\+[A-Z0-9]{2,}\s+(.+)$/i);
+  if (!m) return null;
+
+  const parts = m[1]
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  for (const part of parts) {
+    if (isGenericGeoLocality(part)) continue;
+    const cleaned = part.replace(/\s+(Taluk|District|Hobli)$/i, '').trim();
+    if (!cleaned || isGenericGeoLocality(cleaned)) continue;
+    return cleaned;
+  }
+  return null;
+}
+
+export function shortLocationFromGoogleComponents(
+  components: GoogleAddressComponentLike[] | null | undefined
+): string | null {
+  if (!Array.isArray(components) || components.length === 0) return null;
+
+  const combined = joinGoogleComponentText(components);
+  const listFromAll = findLongestAreaMatchInText(combined);
+  if (listFromAll) return clipVisibleAddress(listFromAll);
+
+  for (const type of GOOGLE_SHORT_LOCATION_TYPES) {
+    const comp = components.find((c) => Array.isArray(c.types) && c.types.includes(type));
+    const raw = componentLabel(comp || {});
+    if (!raw || isGenericGeoLocality(raw)) continue;
+
+    const cleaned = raw.replace(/\s+(Taluk|District|Hobli)$/i, '').trim();
+    if (!cleaned || isGenericGeoLocality(cleaned)) continue;
+
+    const fromList = findLongestAreaMatchInText(cleaned);
+    if (fromList) return clipVisibleAddress(fromList);
+    return clipVisibleAddress(cleaned);
+  }
+
+  return null;
+}
+
+/**
+ * Resolve short/visible location after Fetch / booking geocode:
+ * 1) bangaloreAreas list  2) Plus Code place  3) Google components
+ */
+export function resolveVisibleAddressFromGeocode(options: {
+  formattedAddress?: string | null;
+  addressComponents?: GoogleAddressComponentLike[] | null;
+  addressHints?: Array<string | null | undefined>;
+}): string | null {
+  const componentText = Array.isArray(options.addressComponents)
+    ? joinGoogleComponentText(options.addressComponents)
+    : '';
+
+  const texts = [
+    options.formattedAddress,
+    componentText,
+    ...(options.addressHints || []),
+  ].filter((t): t is string => typeof t === 'string' && t.trim().length > 0);
+
+  for (const text of texts) {
+    const longest = findLongestAreaMatchInText(text);
+    if (longest) return clipVisibleAddress(longest);
+    const legacy = extractLocationFromAddressString(text);
+    if (legacy) return clipVisibleAddress(legacy);
+  }
+
+  if (options.formattedAddress) {
+    const plusPlace = extractPlaceFromPlusCodeAddress(options.formattedAddress);
+    if (plusPlace) {
+      const fromList = findLongestAreaMatchInText(plusPlace);
+      if (fromList) return clipVisibleAddress(fromList);
+      return clipVisibleAddress(plusPlace);
+    }
+  }
+
+  return shortLocationFromGoogleComponents(options.addressComponents);
+}
+
+export type ReverseGeocodeResult = {
+  formattedAddress: string;
+  addressComponents: GoogleAddressComponentLike[];
+};
+
+/** Browser reverse-geocode — formatted address + components (one Google call). */
+export async function reverseGeocodeLatLng(
+  lat: number,
+  lng: number
+): Promise<ReverseGeocodeResult | null> {
+  try {
+    if (typeof window === 'undefined' || !(window as any).google?.maps?.Geocoder) {
+      return null;
+    }
+    return await new Promise((resolve) => {
+      const geocoder = new (window as any).google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results: any[], status: string) => {
+        const ok =
+          status === 'OK' ||
+          (typeof (window as any).google?.maps?.GeocoderStatus !== 'undefined' &&
+            status === (window as any).google.maps.GeocoderStatus.OK);
+        if (ok && results && results[0]?.formatted_address) {
+          resolve({
+            formattedAddress: results[0].formatted_address,
+            addressComponents: (results[0].address_components || []).map((c: any) => ({
+              long_name: c.long_name,
+              short_name: c.short_name,
+              types: c.types ? [...c.types] : [],
+            })),
+          });
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Reverse geocoding error:', error);
+    return null;
+  }
+}
+
 // Reusable function to extract location from any address string
 // Only returns a match if it's confident - otherwise returns null
 export const extractLocationFromAddressString = (completeAddress: string): string | null => {
   if (!completeAddress || completeAddress.trim().length === 0) {
     return null;
   }
+
+  const longest = findLongestAreaMatchInText(completeAddress);
+  if (longest) return longest;
 
   // Remove duplicates from bangaloreAreas
   const uniqueAreas = [...new Set(bangaloreAreas)];
