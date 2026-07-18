@@ -1,5 +1,5 @@
 import {
-  resolveVisibleAddressFromGeocode,
+  resolveVisibleAddressFromGoogleOnly,
   reverseGeocodeLatLng,
 } from '@/lib/adminUtils';
 
@@ -15,21 +15,14 @@ function hasCoords(lat?: number | null, lng?: number | null): boolean {
 
 /**
  * Short location (visible_address) for public /book create+update.
- * Tries address text first; reverse-geocodes only when needed.
+ * Google reverse-geocode only (neighborhood / sublocality / Plus Code place) —
+ * does not use the bangaloreAreas list.
  */
 export async function resolveBookingVisibleAddress(options: {
   address?: string | null;
   lat?: number | null;
   lng?: number | null;
 }): Promise<string | null> {
-  const address = typeof options.address === 'string' ? options.address.trim() : '';
-
-  const fromText = resolveVisibleAddressFromGeocode({
-    formattedAddress: address || null,
-    addressHints: address ? [address] : [],
-  });
-  if (fromText) return fromText;
-
   const lat = options.lat;
   const lng = options.lng;
   if (!hasCoords(lat, lng)) return null;
@@ -37,9 +30,8 @@ export async function resolveBookingVisibleAddress(options: {
   const geo = await reverseGeocodeLatLng(lat as number, lng as number);
   if (!geo) return null;
 
-  return resolveVisibleAddressFromGeocode({
+  return resolveVisibleAddressFromGoogleOnly({
     formattedAddress: geo.formattedAddress,
     addressComponents: geo.addressComponents,
-    addressHints: address ? [address] : [],
   });
 }
