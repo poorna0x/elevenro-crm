@@ -56,7 +56,8 @@ export function buildUpiPayDeepLink(input: UpiPayLinkInput): string | null {
 
 export type PayPlatform = 'android' | 'ios' | 'other';
 
-/** Best-effort UA detection for /pay-upi layout. */
+/** Best-effort UA detection for /pay-upi layout (WhatsApp in-app browsers included). */
+/** Best-effort UA detection for /pay-upi layout (WhatsApp in-app browsers included). */
 export function detectPayPlatform(): PayPlatform {
   if (typeof navigator === 'undefined') return 'other';
   const ua = navigator.userAgent || '';
