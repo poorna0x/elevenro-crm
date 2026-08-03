@@ -52,6 +52,7 @@ const BlogArticle = lazy(() => import("./pages/BlogArticle"));
 const SpareParts = lazy(() => import("./pages/SpareParts"));
 const Warranty = lazy(() => import("./pages/Warranty"));
 const TechnicianIdCard = lazy(() => import("./pages/TechnicianIdCard"));
+const PayUpi = lazy(() => import("./pages/PayUpi"));
 
 // Loading component for lazy-loaded routes
 const LoadingSpinner = () => (
@@ -110,6 +111,9 @@ const App = () => (
 
                 {/* Public technician ID card (QR links from admin settings) */}
                 <Route path="/technician-id/:id" element={<TechnicianIdCard />} />
+
+                {/* Public UPI pay landing (WhatsApp pay links) */}
+                <Route path="/pay-upi" element={<PayUpi />} />
 
                 {/* Search route - return 404 */}
                 <Route path="/search" element={<NotFound />} />
