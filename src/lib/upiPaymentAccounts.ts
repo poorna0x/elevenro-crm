@@ -57,7 +57,6 @@ export function buildUpiPayDeepLink(input: UpiPayLinkInput): string | null {
 export type PayPlatform = 'android' | 'ios' | 'other';
 
 /** Best-effort UA detection for /pay-upi layout (WhatsApp in-app browsers included). */
-/** Best-effort UA detection for /pay-upi layout (WhatsApp in-app browsers included). */
 export function detectPayPlatform(): PayPlatform {
   if (typeof navigator === 'undefined') return 'other';
   const ua = navigator.userAgent || '';
@@ -88,4 +87,54 @@ export function buildUpiAppDeepLinks(input: UpiPayLinkInput): {
     { id: 'paytm', name: 'Paytm', href: `paytmmp://upi/pay?${q}`, color: '#00BAF2' },
     { id: 'bhim', name: 'BHIM', href: `bhim://upi/pay?${q}`, color: '#007272' },
   ];
+}
+
+export type UpiPayLinkRecord = {
+  code: string;
+  upiId: string;
+  payeeName: string;
+  amount: number | null;
+  note: string;
+  phone: string;
+  brand: 'hydrogenro' | 'elevenro';
+};
+
+/** Public: resolve short /p/{code} pay link. */
+export async function fetchUpiPayShortLink(code: string): Promise<UpiPayLinkRecord | null> {
+  const c = String(code || '')
+    .trim()
+    .replace(/[^a-zA-Z0-9]/g, '');
+  if (c.length < 6 || c.length > 16) return null;
+  try {
+    const { supabase } = await import('@/lib/supabase');
+    const { data, error } = await supabase.rpc('get_upi_pay_link', { p_code: c });
+    if (error) {
+      console.warn('[upi] get_upi_pay_link failed', error.message);
+      return null;
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || typeof row !== 'object') return null;
+    const r = row as Record<string, unknown>;
+    const upiId = normalizeUpiId(typeof r.upi_id === 'string' ? r.upi_id : '');
+    if (!isValidUpiId(upiId)) return null;
+    const amountRaw = r.amount;
+    const amount =
+      typeof amountRaw === 'number'
+        ? amountRaw
+        : amountRaw != null && amountRaw !== ''
+          ? Number(amountRaw)
+          : null;
+    return {
+      code: typeof r.code === 'string' ? r.code : c,
+      upiId,
+      payeeName: typeof r.payee_name === 'string' ? r.payee_name : '',
+      amount: Number.isFinite(amount as number) && (amount as number) > 0 ? (amount as number) : null,
+      note: typeof r.note === 'string' ? r.note : '',
+      phone: normalizePaymentPhone(typeof r.phone === 'string' ? r.phone : ''),
+      brand: r.brand === 'elevenro' ? 'elevenro' : 'hydrogenro',
+    };
+  } catch (e) {
+    console.warn('[upi] get_upi_pay_link error', e);
+    return null;
+  }
 }

@@ -113,6 +113,7 @@ const App = () => (
                 <Route path="/technician-id/:id" element={<TechnicianIdCard />} />
 
                 {/* Public UPI pay landing (WhatsApp pay links) */}
+                <Route path="/p/:code" element={<PayUpi />} />
                 <Route path="/pay-upi" element={<PayUpi />} />
 
                 {/* Search route - return 404 */}
