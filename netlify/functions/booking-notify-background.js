@@ -16,6 +16,7 @@
 //     required, so the endpoint cannot be hit directly to spam the owner inbox.
 const { getServiceClient } = require('./booking-guard');
 const { sendBookingAdminNotification } = require('./booking-notify');
+const { maybeSendOnlineBookingConfirmationWhatsApp } = require('./booking-confirmation-whatsapp-helper');
 
 async function lookupCustomerName(client, customerId) {
   if (!customerId) return '';
@@ -69,7 +70,7 @@ exports.handler = async (event) => {
 
     const requirements = Array.isArray(row.requirements) ? row.requirements[0] : null;
 
-    await sendBookingAdminNotification({
+    const details = {
       customerName,
       phone: phoneNorm,
       brandSource: row.booking_source,
@@ -80,7 +81,25 @@ exports.handler = async (event) => {
       scheduledTimeSlot: row.scheduled_time_slot,
       customTime: requirements ? requirements.custom_time : null,
       jobNumber: (job && (job.job_number || job.jobNumber)) || row.job_number,
-    });
+    };
+
+    if (!client.error) {
+      await maybeSendOnlineBookingConfirmationWhatsApp(client.admin, {
+        phone: phoneNorm,
+        customerName,
+        customerId,
+        jobNumber: details.jobNumber,
+        scheduledDate: details.scheduledDate,
+        scheduledTimeSlot: details.scheduledTimeSlot,
+        customTime: details.customTime,
+        bookingSource: row.booking_source,
+        bookingDomain: row.booking_domain,
+      }).catch((err) =>
+        console.error('[booking-notify-background] customer WA failed:', err && err.message)
+      );
+    }
+
+    await sendBookingAdminNotification(details);
   } catch (err) {
     console.error('[booking-notify-background] failed:', err && err.message);
   }
