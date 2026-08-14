@@ -17,7 +17,7 @@ export default function CookieConsentBanner() {
 
   return (
     <div
-      className="fixed bottom-0 inset-x-0 z-[90] border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pt-4"
+      className="fixed bottom-0 inset-x-0 z-[90] border-t bg-background px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pt-4"
       role="dialog"
       aria-label="Cookie and analytics consent"
     >
