@@ -1,13 +1,61 @@
 /**
  * Client helpers for public /authenticity (OTP session + hash check via Netlify).
+ * Self-contained — do not import admin AMC/document authenticity modules (those
+ * files are not in this website repo and would break the Netlify Vite build).
  */
-import { sha256HexFromFile } from '@/lib/amcPdfAuthenticity';
-import {
-  formatBytes,
-  normalizeVerifyCodeInput,
-  validatePdfFileForAuthenticity,
-  PDF_AUTH_MAX_BYTES,
-} from '@/lib/pdfAuthenticityVerify';
+
+export const PDF_AUTH_MAX_BYTES = 20 * 1024 * 1024;
+
+export function formatBytes(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n) || n < 0) return '—';
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+export function normalizeVerifyCodeInput(raw: string): string {
+  return raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+async function sha256HexFromFile(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest('SHA-256', buffer);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function validatePdfFileForAuthenticity(
+  file: File
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!file || file.size <= 0) {
+    return { ok: false, message: 'File is empty.' };
+  }
+  if (file.size > PDF_AUTH_MAX_BYTES) {
+    return {
+      ok: false,
+      message: `PDF is too large (max ${Math.round(PDF_AUTH_MAX_BYTES / (1024 * 1024))} MB).`,
+    };
+  }
+  const nameOk = file.name.toLowerCase().endsWith('.pdf');
+  const typeOk = !file.type || file.type === 'application/pdf' || file.type === 'application/x-pdf';
+  if (!nameOk && !typeOk) {
+    return { ok: false, message: 'Please upload a PDF file.' };
+  }
+  try {
+    const head = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+    const isPdf =
+      head.length >= 4 &&
+      head[0] === 0x25 &&
+      head[1] === 0x50 &&
+      head[2] === 0x44 &&
+      head[3] === 0x46;
+    if (!isPdf) {
+      return { ok: false, message: 'File does not look like a PDF (missing %PDF header).' };
+    }
+  } catch {
+    return { ok: false, message: 'Could not read the file.' };
+  }
+  return { ok: true };
+}
 
 const SESSION_KEY = 'pdf_auth_session_v1';
 
@@ -160,5 +208,3 @@ export async function hashAndCheckPdfFile(
   if ('error' in result) return { ok: false, error: result.error };
   return { ok: true, result, sha256Hex };
 }
-
-export { formatBytes, normalizeVerifyCodeInput, PDF_AUTH_MAX_BYTES };

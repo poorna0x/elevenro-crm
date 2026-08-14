@@ -715,7 +715,14 @@ export default function TaxInvoiceGenerator({ customer, onPrint, onTaxInvoiceSav
             <Save className="w-4 h-4 mr-2" />
             {isSaving ? 'Saving...' : 'Save to Database'}
           </Button>
-          <Button onClick={() => handlePrint('print')} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto min-w-[140px]">
+          <Button
+            onClick={() => {
+              if (window.confirm('Generate / download this tax invoice PDF now?')) {
+                void handlePrint('print');
+              }
+            }}
+            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto min-w-[140px]"
+          >
             <Download className="w-4 h-4 mr-2" />
             Download Tax Invoice
           </Button>
@@ -958,82 +965,14 @@ export default function TaxInvoiceGenerator({ customer, onPrint, onTaxInvoiceSav
                     )}
                   </div>
                 </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Address</Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="address-street">Street</Label>
-                      <Input
-                        id="address-street"
-                        value={editableCustomer.address.street}
-                        onChange={(e) => setEditableCustomer(prev => ({ 
-                          ...prev, 
-                          address: { ...prev.address, street: e.target.value }
-                        }))}
-                        placeholder="Enter street address"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="address-area">Area</Label>
-                      <Input
-                        id="address-area"
-                        value={editableCustomer.address.area}
-                        onChange={(e) => setEditableCustomer(prev => ({ 
-                          ...prev, 
-                          address: { ...prev.address, area: e.target.value }
-                        }))}
-                        placeholder="Enter area"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="address-city">City</Label>
-                      <Input
-                        id="address-city"
-                        value={editableCustomer.address.city}
-                        onChange={(e) => setEditableCustomer(prev => ({ 
-                          ...prev, 
-                          address: { ...prev.address, city: e.target.value }
-                        }))}
-                        placeholder="Enter city"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="address-state">State</Label>
-                      <Input
-                        id="address-state"
-                        value={editableCustomer.address.state}
-                        onChange={(e) => setEditableCustomer(prev => ({ 
-                          ...prev, 
-                          address: { ...prev.address, state: e.target.value }
-                        }))}
-                        placeholder="Enter state"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="address-pincode">Pincode</Label>
-                      <Input
-                        id="address-pincode"
-                        value={editableCustomer.address.pincode}
-                        onChange={(e) => setEditableCustomer(prev => ({ 
-                          ...prev, 
-                          address: { ...prev.address, pincode: e.target.value }
-                        }))}
-                        placeholder="Enter pincode"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Name and phone are enough for the invoice — address is not required.
+                </p>
               </div>
             ) : (
             <div className="space-y-2">
                 <div className="font-semibold text-lg">{editableCustomer.name}</div>
               <div className="text-sm text-gray-600">
-                  {(editableCustomer.address.street || editableCustomer.address.area) && (
-                    <div>{editableCustomer.address.street || ''}, {editableCustomer.address.area || ''}</div>
-                  )}
-                  {(editableCustomer.address.city || editableCustomer.address.state || editableCustomer.address.pincode) && (
-                    <div>{editableCustomer.address.city || ''}, {editableCustomer.address.state || ''} - {editableCustomer.address.pincode || ''}</div>
-                  )}
                   {editableCustomer.phone && <div>Phone: {editableCustomer.phone}</div>}
                   {editableCustomer.email && <div>Email: {editableCustomer.email}</div>}
                   {editableCustomer.gst && <div>GST: {editableCustomer.gst}</div>}
