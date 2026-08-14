@@ -127,7 +127,7 @@ exports.handler = async (event) => {
   // When enforced, the Firebase ID token's phone must equal the looked-up number, so a
   // caller can only reveal warranty details for a SIM they actually control. Done after
   // rate limits so the Firebase verify endpoint can't be hammered.
-  if (isOtpEnforced()) {
+  if (await isOtpEnforced()) {
     const otpCheck = await verifyFirebasePhoneToken(body.phoneToken, norm);
     if (!otpCheck.ok) {
       return json(403, corsHeaders, {

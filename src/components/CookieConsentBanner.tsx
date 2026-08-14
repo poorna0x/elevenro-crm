@@ -21,8 +21,8 @@ export default function CookieConsentBanner() {
       role="dialog"
       aria-label="Cookie and analytics consent"
     >
-      <div className="mx-auto w-full max-w-4xl flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <p className="text-sm text-muted-foreground leading-snug">
+      <div className="mx-auto w-full max-w-4xl flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <p className="text-sm text-muted-foreground leading-snug text-center sm:text-left">
           We use essential cookies to run this site. Optional analytics (Google Analytics) help us
           improve the website — only if you accept.{' '}
           <Link to="/cookie-policy" className="text-primary underline underline-offset-2">
@@ -33,12 +33,12 @@ export default function CookieConsentBanner() {
             Privacy Policy
           </Link>
         </p>
-        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:shrink-0">
+        <div className="flex w-full max-w-sm justify-center gap-2 sm:max-w-none sm:w-auto sm:shrink-0">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="w-full sm:w-auto"
+            className="min-w-[9.5rem]"
             onClick={() => {
               writeCookieConsent('rejected');
               setVisible(false);
@@ -49,7 +49,7 @@ export default function CookieConsentBanner() {
           <Button
             type="button"
             size="sm"
-            className="w-full sm:w-auto"
+            className="min-w-[9.5rem]"
             onClick={() => {
               writeCookieConsent('accepted');
               setVisible(false);
