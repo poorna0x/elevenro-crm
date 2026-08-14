@@ -18,6 +18,9 @@ const Footer = () => {
           <Link to="/privacy-policy" className="underline-offset-4 hover:underline">
             Privacy Policy
           </Link>
+          <Link to="/privacy-request" className="underline-offset-4 hover:underline">
+            Privacy request
+          </Link>
           <Link to="/terms-of-service" className="underline-offset-4 hover:underline">
             Terms of Service
           </Link>
@@ -34,14 +37,6 @@ const Footer = () => {
         <p className="text-sm text-primary-foreground/80">
           &copy; {new Date().getFullYear()} ElevenRO. All rights reserved.
         </p>
-        <div className="sr-only">
-          <p>
-            Sister RO service brand — north &amp; central Bengaluru:{' '}
-            <a href="https://hydrogenro.com" rel="noopener noreferrer">
-              Hydrogen RO
-            </a>
-          </p>
-        </div>
       </div>
     </footer>
   );

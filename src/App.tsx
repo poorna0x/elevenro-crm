@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PublicSiteSeo from "./components/PublicSiteSeo";
 import GoogleAnalytics from "./components/GoogleAnalytics";
+import CookieConsentBanner from "./components/CookieConsentBanner";
 import { SEO_CITY_SERVICE_PAGES, SEO_LOCATION_PAGES, SEO_SERVICE_PAGES } from "@/lib/publicSeoPages";
 
 const PerformanceMonitor = lazy(() => import("./components/PerformanceMonitor"));
@@ -41,6 +42,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const RefundPolicy = lazy(() => import("./pages/RefundPolicy"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
+const PrivacyDataRequestPage = lazy(() => import("./pages/PrivacyDataRequestPage"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
 // New SEO pages
 const Services = lazy(() => import("./pages/Services"));
@@ -51,6 +53,7 @@ const Blog = lazy(() => import("./pages/Blog"));
 const BlogArticle = lazy(() => import("./pages/BlogArticle"));
 const SpareParts = lazy(() => import("./pages/SpareParts"));
 const Warranty = lazy(() => import("./pages/Warranty"));
+const PublicPdfAuthenticityPage = lazy(() => import("./pages/PublicPdfAuthenticityPage"));
 const TechnicianIdCard = lazy(() => import("./pages/TechnicianIdCard"));
 const PayUpi = lazy(() => import("./pages/PayUpi"));
 
@@ -88,12 +91,14 @@ const App = () => (
           <BrowserRouter>
             <PublicSiteSeo />
             <GoogleAnalytics />
+            <CookieConsentBanner />
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/book" element={<Booking />} />
                 <Route path="/booking" element={<Navigate to="/book" replace />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/privacy-request" element={<PrivacyDataRequestPage />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/refund-policy" element={<RefundPolicy />} />
                 <Route path="/disclaimer" element={<Disclaimer />} />
@@ -108,6 +113,7 @@ const App = () => (
                 <Route path="/blog/:slug" element={<BlogArticle />} />
                 <Route path="/spare-parts" element={<SpareParts />} />
                 <Route path="/warranty" element={<Warranty />} />
+                <Route path="/authenticity" element={<PublicPdfAuthenticityPage />} />
 
                 {/* Public technician ID card (QR links from admin settings) */}
                 <Route path="/technician-id/:id" element={<TechnicianIdCard />} />

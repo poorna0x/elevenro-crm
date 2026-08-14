@@ -42,9 +42,12 @@ const cloudinarySignedUrl = require('./cloudinary-signed-url');
 const bookingCustomerLookup = require('./booking-customer-lookup');
 const bookingCustomerMutate = require('./booking-customer-mutate');
 const bookingJobCreate = require('./booking-job-create');
+const privacyRequest = require('./privacy-request');
 const bookingIntent = require('./booking-intent');
 const bookingNotify = require('./booking-notify');
 const warrantyLookup = require('./warranty-lookup');
+const pdfAuthenticityOtpVerify = require('./pdf-authenticity-otp-verify');
+const pdfAuthenticityCheck = require('./pdf-authenticity-check');
 
 const PORT = 8888;
 
@@ -96,12 +99,18 @@ const server = http.createServer((req, res) => {
     handler = bookingCustomerMutate;
   } else if (req.url.startsWith('/.netlify/functions/booking-job-create')) {
     handler = bookingJobCreate;
+  } else if (req.url.startsWith('/.netlify/functions/privacy-request')) {
+    handler = privacyRequest;
   } else if (req.url.startsWith('/.netlify/functions/booking-intent')) {
     handler = bookingIntent;
   } else if (req.url.startsWith('/.netlify/functions/booking-notify')) {
     handler = bookingNotify;
   } else if (req.url.startsWith('/.netlify/functions/warranty-lookup')) {
     handler = warrantyLookup;
+  } else if (req.url.startsWith('/.netlify/functions/pdf-authenticity-otp-verify')) {
+    handler = pdfAuthenticityOtpVerify;
+  } else if (req.url.startsWith('/.netlify/functions/pdf-authenticity-check')) {
+    handler = pdfAuthenticityCheck;
   } else {
     console.log('⚠️ No handler found for:', req.url);
   }
@@ -133,7 +142,7 @@ const server = http.createServer((req, res) => {
         
         // Read request body for POST requests
         let body = '';
-        if (req.method === 'POST') {
+        if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE') {
           try {
             for await (const chunk of req) {
               body += chunk.toString();
