@@ -54,6 +54,7 @@ const BlogArticle = lazy(() => import("./pages/BlogArticle"));
 const SpareParts = lazy(() => import("./pages/SpareParts"));
 const Warranty = lazy(() => import("./pages/Warranty"));
 const PublicPdfAuthenticityPage = lazy(() => import("./pages/PublicPdfAuthenticityPage"));
+const PublicJobReviewPage = lazy(() => import("./pages/PublicJobReviewPage"));
 const TechnicianIdCard = lazy(() => import("./pages/TechnicianIdCard"));
 const PayUpi = lazy(() => import("./pages/PayUpi"));
 
@@ -114,6 +115,7 @@ const App = () => (
                 <Route path="/spare-parts" element={<SpareParts />} />
                 <Route path="/warranty" element={<Warranty />} />
                 <Route path="/authenticity" element={<PublicPdfAuthenticityPage />} />
+                <Route path="/review/:token" element={<PublicJobReviewPage />} />
 
                 {/* Public technician ID card (QR links from admin settings) */}
                 <Route path="/technician-id/:id" element={<TechnicianIdCard />} />
