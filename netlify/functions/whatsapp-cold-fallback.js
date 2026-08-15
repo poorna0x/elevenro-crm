@@ -314,14 +314,14 @@ function buildFallbackAttempts(primaryName, bodyParams, hasDocHeader, headerComp
     push(VISIT, [name, 'your upcoming service visit']);
   }
 
-  // Missed-call / unregistered / reschedule CTA v2 (correct Call us) → v1
-  if (/^missed_call_callback_(ero|hro)_cta(_v2)?$/i.test(primaryName)) {
-    const suffix = /_hro/.test(primaryName) ? 'hro' : 'ero';
-    if (/_v2$/i.test(primaryName)) {
-      push(`missed_call_callback_${suffix}_cta`, [name]);
-    } else {
-      push(`missed_call_callback_${suffix}_cta_v2`, [name]);
+  if (/^missed_call_callback_(ero|hro)_cta(_v4|_v3|_v2)?$/i.test(primaryName) || /^svc_missed_call(_v3|_v2)?$/i.test(primaryName)) {
+    const suffix = /_hro/.test(primaryName) ? 'hro' : /_ero/.test(primaryName) ? 'ero' : null;
+    if (suffix && /callback/.test(primaryName) && !/_v4$/i.test(primaryName)) {
+      push(`missed_call_callback_${suffix}_cta_v4`, [name]);
     }
+    // Do not fall back to missed_call_callback_*_cta_v3 (Meta MARKETING).
+    push('svc_missed_call_v3', [name]);
+    push(MISSED_CALL, [name]);
   }
   if (/^unregistered_number_service_(ero|hro)_cta(_v2)?$/i.test(primaryName)) {
     const suffix = /_hro/.test(primaryName) ? 'hro' : 'ero';
