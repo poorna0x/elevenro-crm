@@ -114,6 +114,39 @@ const services: ServiceItem[] = [
     },
   },
   {
+    icon: Droplets,
+    title: "Water Softener — New Installation & Service",
+    description:
+      "New water softener installation for homes and apartments, plus salt, resin and repair.",
+    features: [
+      "New water softener installation",
+      "Re-installation",
+      "Resin & salt service",
+      "Apartment / home setups",
+    ],
+    pricing: "Starting from ₹499",
+    href: "/water-softener",
+    details: {
+      includes: [
+        "Water softener installation & setup",
+        "Softener re-installation & relocation",
+        "Resin level checking & replacement",
+        "Salt refill service",
+        "Water hardness testing",
+        "Control valve repair",
+      ],
+      benefits: [
+        "Reduces scale on geysers and taps",
+        "Protects appliances from hard water",
+        "Same team as RO service",
+        "Coverage up to 250 km from Bengaluru",
+      ],
+      terms: [
+        "Starting from ₹499 is the visiting charge; resin and salt are extra unless quoted.",
+      ],
+    },
+  },
+  {
     icon: Settings,
     title: "Annual Maintenance",
     description:
