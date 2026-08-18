@@ -15,6 +15,12 @@ const Footer = () => {
           className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-primary-foreground"
           aria-label="Footer"
         >
+          <Link to="/commercial-ro-service" className="underline-offset-4 hover:underline">
+            Commercial RO 25–1000 LPH
+          </Link>
+          <Link to="/water-softener-installation" className="underline-offset-4 hover:underline">
+            Water softener installation
+          </Link>
           <Link to="/privacy-policy" className="underline-offset-4 hover:underline">
             Privacy Policy
           </Link>

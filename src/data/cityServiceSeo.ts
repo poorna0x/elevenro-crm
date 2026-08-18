@@ -19,6 +19,14 @@ export const PRIORITY_CITIES: PriorityCity[] = [
   { slug: 'dharwad', name: 'Dharwad', tier: 2, district: 'Dharwad' },
   { slug: 'belagavi', name: 'Belagavi', tier: 2, district: 'Belagavi', alternateNames: ['Belgaum'] },
   { slug: 'tumakuru', name: 'Tumakuru', tier: 2, district: 'Tumakuru', alternateNames: ['Tumkur'] },
+  { slug: 'ramanagara', name: 'Ramanagara', tier: 2, district: 'Ramanagara' },
+  { slug: 'kolar', name: 'Kolar', tier: 2, district: 'Kolar' },
+  { slug: 'chikkaballapura', name: 'Chikkaballapura', tier: 2, district: 'Chikkaballapura', alternateNames: ['Chikkaballapur'] },
+  { slug: 'mandya', name: 'Mandya', tier: 2, district: 'Mandya' },
+  { slug: 'hassan', name: 'Hassan', tier: 2, district: 'Hassan' },
+  { slug: 'hosur', name: 'Hosur', tier: 2, district: 'Krishnagiri', alternateNames: ['Hosur Tamil Nadu'] },
+  { slug: 'nelamangala', name: 'Nelamangala', tier: 2, district: 'Bengaluru Rural' },
+  { slug: 'doddaballapur', name: 'Doddaballapur', tier: 2, district: 'Bengaluru Rural', alternateNames: ['Doddaballapura'] },
   { slug: 'shivamogga', name: 'Shivamogga', tier: 2, district: 'Shivamogga', alternateNames: ['Shimoga'] },
   { slug: 'davanagere', name: 'Davanagere', tier: 2, district: 'Davanagere' },
   { slug: 'kalaburagi', name: 'Kalaburagi', tier: 2, district: 'Kalaburagi', alternateNames: ['Gulbarga'] },
@@ -56,6 +64,18 @@ export const PRIORITY_BENGALURU_LOCALITY_SLUGS = [
   'ro-service-vijayanagar',
   'ro-service-nagarbhavi',
   'ro-service-kengeri',
+  'ro-service-koramangala',
+  'ro-service-indiranagar',
+  'ro-service-malleshwaram',
+  'ro-service-bommanahalli',
+  'ro-service-anjanapura',
+  'ro-service-attibele',
+  'ro-service-chandapura',
+  'ro-service-yeshwanthpur',
+  'ro-service-basavanagudi',
+  'ro-service-kalyan-nagar',
+  'ro-service-banaswadi',
+  'ro-service-sahakar-nagar',
 ] as const;
 
 interface PriorityLocality {
@@ -93,6 +113,18 @@ const PRIORITY_BENGALURU_LOCALITIES: PriorityLocality[] = [
   { slug: 'vijayanagar', name: 'Vijayanagar', zone: 'West' },
   { slug: 'nagarbhavi', name: 'Nagarbhavi', zone: 'West' },
   { slug: 'kengeri', name: 'Kengeri', zone: 'West' },
+  { slug: 'koramangala', name: 'Koramangala', zone: 'East' },
+  { slug: 'indiranagar', name: 'Indiranagar', zone: 'East' },
+  { slug: 'malleshwaram', name: 'Malleshwaram', zone: 'West' },
+  { slug: 'bommanahalli', name: 'Bommanahalli', zone: 'South' },
+  { slug: 'anjanapura', name: 'Anjanapura', zone: 'South' },
+  { slug: 'attibele', name: 'Attibele', zone: 'East' },
+  { slug: 'chandapura', name: 'Chandapura', zone: 'East' },
+  { slug: 'yeshwanthpur', name: 'Yeshwanthpur', zone: 'West' },
+  { slug: 'basavanagudi', name: 'Basavanagudi', zone: 'South' },
+  { slug: 'kalyan-nagar', name: 'Kalyan Nagar', zone: 'North' },
+  { slug: 'banaswadi', name: 'Banaswadi', zone: 'East' },
+  { slug: 'sahakar-nagar', name: 'Sahakar Nagar', zone: 'North' },
 ];
 
 interface CityServiceTemplate {
@@ -112,13 +144,13 @@ const CITY_SERVICE_TEMPLATES: CityServiceTemplate[] = [
     pathPrefix: 'commercial-ro-plant-in',
     serviceName: 'Commercial RO Plant Installation',
     description: (place, district) =>
-      `Commercial RO plant installation in ${place} for offices, restaurants, schools and businesses${district ? ` across ${district}` : ''}. Design, setup and AMC support.`,
+      `Commercial RO plant installation in ${place} — 25 LPH, 50 LPH, 500 LPH and 1000 LPH for offices, restaurants, hotels, clinics and factories${district ? ` across ${district}` : ''}. Site visit, installation, service and AMC from Bengaluru (up to 250 km).`,
   },
   {
     pathPrefix: 'water-softener-installation-in',
     serviceName: 'Water Softener Installation',
     description: (place) =>
-      `Water softener installation in ${place} for hard borewell and tanker water. Residential and commercial softener setup with maintenance support.`,
+      `New water softener installation in ${place} for hard borewell and tanker water. Homes, apartments and commercial sites — salt setup, resin service and after-sales within 250 km of Bengaluru.`,
   },
   {
     pathPrefix: 'borewell-water-filter-in',
@@ -130,7 +162,7 @@ const CITY_SERVICE_TEMPLATES: CityServiceTemplate[] = [
     pathPrefix: 'apartment-water-softener-in',
     serviceName: 'Apartment Water Softener',
     description: (place) =>
-      `Apartment water softener installation in ${place} for multi-storey buildings and gated communities. Centralized and flat-wise softener solutions.`,
+      `Apartment water softener installation in ${place} for multi-storey buildings and gated communities. New install, centralized or flat-wise softener, plus salt and resin service.`,
   },
   {
     pathPrefix: 'industrial-ro-plant-in',
@@ -228,6 +260,12 @@ export function buildCityServiceKeywords(page: CityServicePage, brandName: strin
     `${page.serviceName} ${name}`,
     `RO service ${name}`,
   ]);
+  const extra =
+    page.serviceKey === 'commercial-ro-plant'
+      ? [`25 LPH RO plant ${page.cityName}`, `50 LPH RO plant ${page.cityName}`, `500 LPH RO plant ${page.cityName}`, `1000 LPH RO plant ${page.cityName}`, `commercial RO plant ${page.cityName}`]
+      : page.serviceKey.includes('softener')
+        ? [`new water softener installation ${page.cityName}`, `water softener service ${page.cityName}`]
+        : [];
   return [
     `${page.serviceName} ${page.cityName}`,
     `${page.serviceName} ${page.cityName} Karnataka`,
@@ -235,6 +273,7 @@ export function buildCityServiceKeywords(page: CityServicePage, brandName: strin
     `water purifier ${page.cityName}`,
     `${page.district} RO service`,
     brandName,
+    ...extra,
     ...altNames,
   ].join(', ');
 }

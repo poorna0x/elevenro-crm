@@ -119,7 +119,7 @@ ${urls}
 `;
 }
 
-writeFileSync(join(root, 'public/sitemap.xml'), buildSitemap('https://hydrogenro.com'));
+writeFileSync(join(root, 'public/sitemap.xml'), buildSitemap('https://elevenro.com'));
 writeFileSync(join(root, 'public/sitemap-elevenro.xml'), buildSitemap('https://elevenro.com'));
 
 const bootstrapPath = join(root, 'public/head-seo-bootstrap.js');

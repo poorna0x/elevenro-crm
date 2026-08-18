@@ -1,6 +1,6 @@
 import { memo } from "react";
 import type { LucideIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Wrench,
   Settings,
@@ -12,6 +12,7 @@ import {
   Shield,
   AlertCircle,
   Phone,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +36,7 @@ type ServiceItem = {
   description: string;
   features: string[];
   pricing?: string;
+  href?: string;
   details: ServiceDetails;
 };
 
@@ -72,6 +74,42 @@ const services: ServiceItem[] = [
       terms: [
         "Installation (₹499) does not include extra plumbing materials, additional RO parts, or full assembly kits unless quoted.",
         "Service charge (₹399) is the visit/service fee only; filters and parts are charged separately.",
+      ],
+    },
+  },
+  {
+    icon: Building2,
+    title: "Commercial RO — 25 to 1000 LPH",
+    description:
+      "25, 50, 500 and 1000 LPH plants for offices, restaurants, hotels and factories. Based in Bengaluru, up to 250 km.",
+    features: [
+      "25 & 50 LPH office / restaurant plants",
+      "500 & 1000 LPH hotel / factory plants",
+      "New installation & commissioning",
+      "Service, repair and AMC",
+    ],
+    pricing: "Site visit + AMC from Bengaluru",
+    href: "/commercial-ro-service",
+    details: {
+      includes: [
+        "25 LPH commercial RO for small offices, clinics and pantries",
+        "50 LPH commercial RO for restaurants, larger offices and schools",
+        "500 LPH commercial RO for hotels, hostels and mid-size factories",
+        "1000 LPH commercial RO for large commercial, hospital and factory sites",
+        "Site survey and capacity recommendation before you buy",
+        "Plant supply, plumbing, electricals and commissioning",
+        "TDS check and operator briefing",
+        "Commercial AMC — Bengaluru and up to 250 km",
+      ],
+      benefits: [
+        "Same team for site visit, install and after-sales",
+        "Cover up to 250 km from Bengaluru",
+        "Sized for real occupancy, not a catalogue guess",
+        "AMC you can call for breakdowns",
+        "Home RO, commercial plants and softeners from one company",
+      ],
+      terms: [
+        "Plant price depends on capacity, raw-water TDS and site plumbing — we quote after a visit",
       ],
     },
   },
@@ -252,7 +290,7 @@ const ServicesSectionInner = () => {
           <p className="text-sm font-semibold uppercase tracking-widest text-section-label mb-3">Our Services</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground">Complete Water Purifier Care</h2>
           <p className="mt-4 text-muted-foreground leading-relaxed">
-            From installation to maintenance, we cover every aspect of water purifier service to give you pure, safe water every day.
+            Home RO, commercial 25 to 1000 LPH plants and new water softener installation — based in Bengaluru, covering up to 250 km.
           </p>
         </div>
 
@@ -279,6 +317,14 @@ const ServicesSectionInner = () => {
                     </li>
                   ))}
                 </ul>
+                {service.href && (
+                  <Link
+                    to={service.href}
+                    className="text-sm font-medium text-primary hover:underline underline-offset-2 mb-3"
+                  >
+                    View full page
+                  </Link>
+                )}
 
                 <Dialog>
                   <DialogTrigger asChild>

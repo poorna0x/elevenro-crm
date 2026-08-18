@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const HeroSection = () => {
@@ -53,7 +53,15 @@ const HeroSection = () => {
         </h1>
 
         <p className="text-lg md:text-xl text-primary-foreground/75 max-w-2xl mx-auto text-balance">
-          Expert water purifier installation, servicing, and repair. We ensure every drop you drink is safe, clean, and refreshing.
+          Home RO,{" "}
+          <Link to="/commercial-ro-service" className="text-sky-300 font-medium hover:underline underline-offset-2">
+            commercial 25 to 1000 LPH plants
+          </Link>{" "}
+          and{" "}
+          <Link to="/water-softener" className="text-sky-300 font-medium hover:underline underline-offset-2">
+            new water softener installation
+          </Link>
+          {" "}— based in Bengaluru, covering up to 250 km.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 items-center">
@@ -75,8 +83,8 @@ const HeroSection = () => {
 
         <div className="pt-6 text-sm text-primary-foreground/80 space-y-1">
           <div>Same-day service available</div>
-          <div>All brands service supported</div>
-          <div>Genuine spare parts</div>
+          <div>25, 50, 500 and 1000 LPH commercial plants</div>
+          <div>New water softener installation up to 250 km</div>
         </div>
       </div>
     </section>
