@@ -1,4 +1,3 @@
-import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/lib/supabaseConfig';
 import type { DocumentBrand } from '@/lib/service-brands';
 import { normalizeDocumentBrand } from '@/lib/service-brands';
 
@@ -9,35 +8,48 @@ export type PublicJobReviewInvite = {
   technicianFirstName: string | null;
 };
 
-/** Public get/submit must send the anon JWT so localhost (no CRM session) works. */
-async function invokePublicJobReviewRpc(
-  fn: 'get_job_review_invite' | 'submit_job_review',
+/** After hardening SQL, get/submit RPCs are service-role only — use Netlify. */
+function jobReviewPublicFunctionUrls(): string[] {
+  const host = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+  const local = '/.netlify/functions/job-review-public';
+  const hydrogen = 'https://hydrogenro.com/.netlify/functions/job-review-public';
+  if (host === 'localhost' || host === '127.0.0.1') return [local, hydrogen];
+  if (host.includes('elevenro')) return [hydrogen, local];
+  return [local, hydrogen];
+}
+
+async function invokePublicJobReviewFn(
+  action: 'get' | 'submit',
   body: Record<string, unknown>
 ): Promise<{ data: unknown; error: string | null }> {
-  if (!isSupabaseConfigured() || !supabaseUrl || !supabaseAnonKey) {
-    return { data: null, error: 'Supabase is not configured' };
-  }
-  try {
-    const res = await fetch(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/${fn}`, {
-      method: 'POST',
-      headers: {
-        apikey: supabaseAnonKey,
-        Authorization: `Bearer ${supabaseAnonKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-    const json = await res.json().catch(() => null);
-    if (!res.ok) {
-      const msg =
-        (json && typeof json === 'object' && (json as { message?: string }).message) ||
-        `HTTP ${res.status}`;
-      return { data: null, error: String(msg) };
+  let lastError: string | null = null;
+  for (const url of jobReviewPublicFunctionUrls()) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, ...body }),
+      });
+      const json = await res.json().catch(() => null);
+      if (res.status === 404) {
+        lastError = 'HTTP 404';
+        continue;
+      }
+      if (res.status === 429) {
+        return { data: null, error: 'Too many requests. Please wait a moment.' };
+      }
+      if (!res.ok) {
+        const msg =
+          (json && typeof json === 'object' && (json as { error?: string }).error) ||
+          `HTTP ${res.status}`;
+        return { data: null, error: String(msg) };
+      }
+      return { data: json, error: null };
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : 'failed';
     }
-    return { data: json, error: null };
-  } catch (err) {
-    return { data: null, error: err instanceof Error ? err.message : 'failed' };
   }
+  return { data: null, error: lastError || 'failed' };
 }
 
 export async function fetchPublicJobReviewInvite(token: string): Promise<{
@@ -47,7 +59,7 @@ export async function fetchPublicJobReviewInvite(token: string): Promise<{
   const t = String(token || '').trim();
   if (!t) return { invite: null, error: 'invalid' };
   try {
-    const { data, error } = await invokePublicJobReviewRpc('get_job_review_invite', { p_token: t });
+    const { data, error } = await invokePublicJobReviewFn('get', { token: t });
     if (error) {
       console.warn('[job-review] get failed', error);
       return { invite: null, error: 'failed' };
@@ -84,10 +96,10 @@ export async function submitPublicJobReview(opts: {
   const rating = Math.round(Number(opts.rating));
   if (!token || rating < 1 || rating > 5) return { ok: false, error: 'invalid' };
   try {
-    const { data, error } = await invokePublicJobReviewRpc('submit_job_review', {
-      p_token: token,
-      p_rating: rating,
-      p_comment: String(opts.comment || '').trim().slice(0, 1000),
+    const { data, error } = await invokePublicJobReviewFn('submit', {
+      token,
+      rating,
+      comment: String(opts.comment || '').trim().slice(0, 1000),
     });
     if (error) {
       console.warn('[job-review] submit failed', error);

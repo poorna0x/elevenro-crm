@@ -26,10 +26,18 @@
 
   var pathSegment = (location.pathname || '/').replace(/\/$/, '') || '';
   var pageUrl = origin + (pathSegment ? pathSegment : '');
+  var isReview = /^\/review(\/|$)/.test('/' + (pathSegment || ''));
   var isNoIndex =
-    /^\/(technician-id|technician\/|technician$|admin|dashboard|search|settings|calling|product-verify|review|c)(\/|$)/.test(
+    isReview ||
+    /^\/(technician-id|technician\/|technician$|admin|dashboard|search|settings|calling|product-verify|c)(\/|$)/.test(
       '/' + (pathSegment || '')
     );
+  if (isReview) {
+    title = 'Rate your visit | Eleven RO';
+    description = 'Rate your recent Eleven RO service visit.';
+    ogTitle = title;
+    ogDescription = description;
+  }
 
   w('<title>' + esc(title) + '</title>');
   w('<meta name="title" content="' + esc(title) + '" />');
