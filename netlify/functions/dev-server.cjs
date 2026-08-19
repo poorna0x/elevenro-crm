@@ -48,6 +48,7 @@ const bookingNotify = require('./booking-notify');
 const warrantyLookup = require('./warranty-lookup');
 const pdfAuthenticityOtpVerify = require('./pdf-authenticity-otp-verify');
 const pdfAuthenticityCheck = require('./pdf-authenticity-check');
+const jobReviewPublic = require('./job-review-public');
 
 const PORT = 8888;
 
@@ -111,6 +112,8 @@ const server = http.createServer((req, res) => {
     handler = pdfAuthenticityOtpVerify;
   } else if (req.url.startsWith('/.netlify/functions/pdf-authenticity-check')) {
     handler = pdfAuthenticityCheck;
+  } else if (req.url.startsWith('/.netlify/functions/job-review-public')) {
+    handler = jobReviewPublic;
   } else {
     console.log('⚠️ No handler found for:', req.url);
   }

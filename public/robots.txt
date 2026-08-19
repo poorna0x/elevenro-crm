@@ -11,6 +11,22 @@ Disallow: /technician
 Disallow: /dashboard
 Disallow: /api/
 Disallow: /search
+Disallow: /product-verify/
+Disallow: /review
+Disallow: /c/
+
+# WhatsApp / Facebook must fetch /review or the in-chat preview says the link is broken.
+User-agent: WhatsApp
+Allow: /review
+Allow: /review/
+
+User-agent: facebookexternalhit
+Allow: /review
+Allow: /review/
+
+User-agent: Facebot
+Allow: /review
+Allow: /review/
 
 Sitemap: https://elevenro.com/sitemap.xml
 
