@@ -32,8 +32,6 @@ Allow: /review/
 
 Sitemap: https://elevenro.com/sitemap.xml
 
-Sitemap: https://elevenro.com/sitemap.xml
-
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 0
