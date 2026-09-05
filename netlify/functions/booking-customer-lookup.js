@@ -21,6 +21,9 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/** Keep the stored customer pin when this booking is within 1000 m of it. */
+const KEEP_PREVIOUS_LOCATION_KM = 1;
+
 function normalizePhoneDigits(phone) {
   const digits = String(phone || '').replace(/\D/g, '');
   if (digits.length >= 12 && digits.startsWith('91')) {
@@ -187,8 +190,13 @@ exports.handler = async (event) => {
     Number.isFinite(newLng) &&
     (newLat !== 0 || newLng !== 0);
 
-  if (hasExisting && hasNew && haversineKm(existingLat, existingLng, newLat, newLng) <= 2) {
-    keepPreviousLocation = true;
+  if (hasExisting) {
+    if (!hasNew) {
+      // No usable pin on this booking — do not overwrite stored location
+      keepPreviousLocation = true;
+    } else if (haversineKm(existingLat, existingLng, newLat, newLng) <= KEEP_PREVIOUS_LOCATION_KM) {
+      keepPreviousLocation = true;
+    }
   }
 
   return {

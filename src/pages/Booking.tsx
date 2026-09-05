@@ -14,7 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ChevronLeft, ChevronRight, MapPin, Camera, Upload, Check, Phone, Mail, User, Home, Clock, Wrench, Loader2, Search, Navigation, X, ExternalLink, Info } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Camera, Upload, Check, Phone, Mail, User, Home, Clock, Wrench, Loader2, Navigation, ExternalLink, Info } from 'lucide-react';
 import {
   createBookingCustomer,
   getBookingCustomerByPhone,
@@ -46,12 +46,37 @@ import HoneypotField from '@/components/HoneypotField';
 import BehavioralTracker from '@/components/BehavioralTracker';
 import SecurityStatus from '@/components/SecurityStatus';
 import { useSecurity } from '@/contexts/SecurityContext';
-import DraggableMap from '@/components/DraggableMap';
-import { removePlusCode } from '@/lib/maps';
+import BookingLocationPicker, { type BookingLocationValue } from '@/components/BookingLocationPicker';
+import { googleMapsPinUrl, hasValidMapCoordinates, removePlusCode } from '@/lib/maps';
 import { resolveBookingVisibleAddress } from '@/lib/bookingVisibleAddress';
 
 const WEBSITE_BOOKING_SITE_KEY: 'hydrogenro' | 'elevenro' =
   (import.meta.env.VITE_WEBSITE_BOOKING_SITE_KEY as 'hydrogenro' | 'elevenro') ?? 'elevenro';
+
+function cleanBookingStreet(raw: string): string {
+  let cleanAddress = removePlusCode(raw || '');
+  if (cleanAddress.includes('localhost') || cleanAddress.includes('127.0.0.1')) {
+    const match = cleanAddress.match(/localhost[:\d]*\/(.+)/i);
+    cleanAddress = match ? decodeURIComponent(match[1].replace(/\+/g, ' ')) : '';
+  }
+  if (cleanAddress.startsWith('http://') || cleanAddress.startsWith('https://')) {
+    cleanAddress = '';
+  }
+  return cleanAddress.trim();
+}
+
+/** Full street for CRM: House/Flat, Landmark, then Google street. */
+function composeBookingStreet(houseFlat: string, landmark: string, base: string): string {
+  const detail = [houseFlat, landmark]
+    .map((part) => (part || '').trim())
+    .filter(Boolean)
+    .join(', ');
+  const street = cleanBookingStreet(base);
+  if (!detail) return street;
+  if (!street) return detail;
+  if (street.toLowerCase().startsWith(detail.toLowerCase())) return street;
+  return `${detail}, ${street}`;
+}
 
 declare global {
   interface Window {
@@ -76,7 +101,8 @@ interface FormData {
   
   // Location Information
   address: string;
-  addressDetails: string; // House / Flat / Apartment no., floor, landmark
+  addressDetails: string; // House / Flat / Apartment no.
+  landmark: string;
   coordinates: { lat: number; lng: number };
   googleMapsLink: string;
   
@@ -94,6 +120,9 @@ const Booking: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [locationTipPopupOpen, setLocationTipPopupOpen] = useState(false);
   const hasShownLocationTipRef = useRef(false);
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const [locationPickerStart, setLocationPickerStart] = useState<'search' | 'map'>('search');
+  const [locationEditing, setLocationEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -159,22 +188,7 @@ const Booking: React.FC = () => {
     resetBookingOtpSession();
   };
 
-  // Location search states for service provider
-  const [locationSearchQuery, setLocationSearchQuery] = useState('');
-  const [locationSearchResult, setLocationSearchResult] = useState<{ lat: number; lng: number } | null>(null);
-  const [distance, setDistance] = useState<{ value: number; unit: string } | null>(null);
-  const [duration, setDuration] = useState<{ value: number; unit: string } | null>(null);
-  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
-  const locationSearchInputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-
-  // Address autocomplete states and refs
-  const addressInputRef = useRef<HTMLInputElement>(null);
-  const addressAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const [currentLocationLoading, setCurrentLocationLoading] = useState(false);
   const [reviewLocationLoading, setReviewLocationLoading] = useState(false);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 12.9716, lng: 77.5946 });
-  const [mapZoom, setMapZoom] = useState<number>(15);
 
   // Fixed Navbar overlaps content without top padding; reset scroll on /book load.
   useEffect(() => {
@@ -209,6 +223,7 @@ const Booking: React.FC = () => {
       modelName: '',
       address: '',
       addressDetails: '',
+      landmark: '',
       coordinates: { lat: 0, lng: 0 },
       googleMapsLink: '',
       serviceDate: getTomorrowDate(),
@@ -238,6 +253,7 @@ const Booking: React.FC = () => {
     modelName: '',
     address: '',
     addressDetails: '',
+    landmark: '',
     coordinates: { lat: 0, lng: 0 },
     googleMapsLink: '',
     serviceDate: getTomorrowDate(),
@@ -794,123 +810,27 @@ const Booking: React.FC = () => {
     setShowModelSuggestions(false);
   };
 
-  // Initialize Google Maps for both address and location search
+  const openLocationPicker = (startOn: 'search' | 'map' = 'search') => {
+    setLocationPickerStart(startOn);
+    setLocationPickerOpen(true);
+  };
+
+  const handleLocationPickerSave = (value: BookingLocationValue) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: value.address,
+      addressDetails: value.houseFlat,
+      landmark: value.landmark,
+      coordinates: value.coordinates,
+      googleMapsLink: value.googleMapsLink,
+    }));
+    setLocationEditing(false);
+    setShowValidation(false);
+    setLocationPickerOpen(false);
+  };
+
   useEffect(() => {
-    if (currentStep !== 3) return;
-    
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    
-    if (!apiKey || apiKey === 'your_google_maps_api_key' || apiKey.length < 20) {
-      return;
-    }
-
-    let checkInterval: NodeJS.Timeout | null = null;
-
-    // Check if script is already loaded
-    if (!window.google || !window.google.maps) {
-      // Check if script already exists
-      const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-      if (!existingScript) {
-        // Load the script
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
-        script.async = true;
-        script.defer = true;
-        
-        script.onload = () => {
-          initAllAutocompletes();
-        };
-        
-        script.onerror = () => {
-          toast.error('Failed to load Google Maps. Please check your API key and billing.');
-        };
-        
-        document.head.appendChild(script);
-      } else {
-        // Script already exists, wait for it to load
-        checkInterval = setInterval(() => {
-          if (window.google && window.google.maps && window.google.maps.places) {
-            clearInterval(checkInterval as NodeJS.Timeout);
-            initAllAutocompletes();
-          }
-        }, 100);
-      }
-    } else {
-      // Google Maps already loaded, initialize immediately
-      initAllAutocompletes();
-    }
-
-    function initAllAutocompletes() {
-      // Small delay to ensure DOM is ready and refs are attached
-      setTimeout(() => {
-      // Initialize address autocomplete
-      if (addressInputRef.current && window.google?.maps?.places && !addressAutocompleteRef.current) {
-        const autocomplete = new window.google.maps.places.Autocomplete(
-          addressInputRef.current,
-          {
-            componentRestrictions: { country: 'in' },
-            fields: ['formatted_address', 'geometry']
-          }
-        );
-
-        addressAutocompleteRef.current = autocomplete;
-
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place.geometry && place.geometry.location) {
-            const location = {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng()
-            };
-            // Generate Google Maps link from coordinates
-            const googleMapsLink = `https://www.google.com/maps/place/${location.lat},${location.lng}`;
-            setFormData(prev => ({
-              ...prev,
-              address: place.formatted_address || '',
-              coordinates: location,
-              googleMapsLink: googleMapsLink
-            }));
-            setMapCenter(location);
-            toast.success('Address set!');
-          }
-        });
-      }
-
-      // Initialize location search autocomplete
-      if (locationSearchInputRef.current && window.google?.maps?.places && !autocompleteRef.current) {
-        const autocomplete = new window.google.maps.places.Autocomplete(
-          locationSearchInputRef.current,
-          {
-            componentRestrictions: { country: 'in' },
-            fields: ['formatted_address', 'geometry']
-          }
-        );
-
-        autocompleteRef.current = autocomplete;
-
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place.geometry && place.geometry.location) {
-            const location = {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng()
-            };
-            setLocationSearchResult(location);
-            setLocationSearchQuery(place.formatted_address || '');
-            toast.success('Location found!');
-          }
-        });
-      }
-      }, 100);
-    }
-
-    // Cleanup function
-    return () => {
-      if (checkInterval) {
-        clearInterval(checkInterval);
-      }
-      // Don't remove autocomplete instances as they might be used
-    };
+    if (currentStep !== 3) setLocationEditing(false);
   }, [currentStep]);
 
   // Show location tip popup once when user reaches Service Location step
@@ -920,160 +840,6 @@ const Booking: React.FC = () => {
       setLocationTipPopupOpen(true);
     }
   }, [currentStep]);
-
-  // Get current location handler
-  const handleGetCurrentLocation = () => {
-    setCurrentLocationLoading(true);
-
-    if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by your browser');
-      setCurrentLocationLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const location = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
-        
-        // Reverse geocode to get address
-        try {
-          const geocoder = new window.google.maps.Geocoder();
-          geocoder.geocode({ location }, (results, status) => {
-            setCurrentLocationLoading(false);
-            
-            if (status === window.google.maps.GeocoderStatus.OK && results && results[0]) {
-              const address = results[0].formatted_address;
-              // Generate Google Maps link from coordinates
-              const googleMapsLink = `https://www.google.com/maps/place/${location.lat},${location.lng}`;
-              setFormData(prev => ({
-                ...prev,
-                address: address,
-                coordinates: location,
-                googleMapsLink: googleMapsLink
-              }));
-              // Update the input field
-              if (addressInputRef.current) {
-                addressInputRef.current.value = address;
-              }
-              setMapCenter(location);
-              setMapZoom(19); // Zoom all the way in to current location
-              toast.success('Location captured successfully!');
-            } else {
-              toast.error('Could not get address for this location');
-            }
-          });
-        } catch (error) {
-          setCurrentLocationLoading(false);
-          toast.error('Failed to get address');
-        }
-      },
-      (error) => {
-        setCurrentLocationLoading(false);
-        let errorMsg = 'Failed to get your location';
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMsg = 'Permission denied. Please allow location access.';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMsg = 'Location information unavailable.';
-            break;
-          case error.TIMEOUT:
-            errorMsg = 'Location request timed out. Please try again.';
-            break;
-        }
-        
-        toast.error(errorMsg);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
-    );
-  };
-
-  // Calculate distance and time using Distance Matrix API
-  const calculateDistanceAndTime = async (origin: { lat: number; lng: number }, destination: { lat: number; lng: number }) => {
-    setIsCalculatingDistance(true);
-    
-    try {
-      const distanceMatrix = new window.google.maps.DistanceMatrixService();
-      
-      distanceMatrix.getDistanceMatrix(
-        {
-          origins: [origin],
-          destinations: [destination],
-          travelMode: window.google.maps.TravelMode.DRIVING,
-          unitSystem: window.google.maps.UnitSystem.METRIC,
-        },
-        (response, status) => {
-          setIsCalculatingDistance(false);
-          
-          if (status === window.google.maps.DistanceMatrixStatus.OK && response) {
-            const result = response.rows[0].elements[0];
-            
-            if (result.status === window.google.maps.DistanceMatrixElementStatus.OK) {
-              setDistance({
-                value: result.distance.value,
-                unit: result.distance.text,
-              });
-              setDuration({
-                value: result.duration.value,
-                unit: result.duration.text,
-              });
-              toast.success('Distance and time calculated!');
-            } else {
-              toast.error('Could not calculate distance');
-            }
-          } else {
-            toast.error('Error calculating distance');
-          }
-        }
-      );
-    } catch (error) {
-      setIsCalculatingDistance(false);
-      toast.error('Failed to calculate distance');
-    }
-  };
-
-  // Memoize the location change handler to prevent DraggableMap from re-rendering
-  const handleMapLocationChange = useCallback(async (location: { lat: number; lng: number }) => {
-    // Generate Google Maps link from coordinates
-    const googleMapsLink = `https://www.google.com/maps/place/${location.lat},${location.lng}`;
-    
-    setFormData(prev => ({
-      ...prev,
-      coordinates: location,
-      googleMapsLink: googleMapsLink
-    }));
-    setMapCenter(location);
-    
-    // Reverse geocode to update the address
-    if (window.google?.maps?.Geocoder) {
-      try {
-        const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode({ location }, (results, status) => {
-          if (status === window.google.maps.GeocoderStatus.OK && results && results[0]) {
-            const address = results[0].formatted_address;
-            setFormData(prev => ({
-              ...prev,
-              address: address
-            }));
-            // Update the input field
-            if (addressInputRef.current) {
-              addressInputRef.current.value = address;
-            }
-          }
-        });
-      } catch (error) {
-        // Reverse geocoding failed, continue without updating address
-      }
-    }
-  }, []);
 
   // Check if security step should be shown (fallback if auto-verification fails)
   // Start background ALTCHA verification when reaching step 5
@@ -1124,8 +890,13 @@ const Booking: React.FC = () => {
             else if (formData.service === 'Other' && !formData.customService) { firstMissingField = 'customService'; }
             break;
           case 3:
-            if (!formData.address) { firstMissingField = 'address'; }
-            else if (!formData.addressDetails.trim()) { firstMissingField = 'addressDetails'; }
+            if (!hasValidMapCoordinates(formData.coordinates) || !formData.address) {
+              firstMissingField = 'booking-location-search';
+              setLocationEditing(true);
+            } else if (!formData.addressDetails.trim()) {
+              firstMissingField = 'booking-location-card';
+              openLocationPicker('map');
+            }
             break;
           case 4:
             if (!formData.serviceDate) { firstMissingField = 'serviceDate'; }
@@ -1390,7 +1161,7 @@ const Booking: React.FC = () => {
         setFormData(prev => ({
           ...prev,
           coordinates: location,
-          googleMapsLink: `https://www.google.com/maps/place/${location.lat},${location.lng}`
+          googleMapsLink: googleMapsPinUrl(location.lat, location.lng)
         }));
         toast.success('Location added to your booking!');
       },
@@ -1657,7 +1428,7 @@ const Booking: React.FC = () => {
       // Check if customer already exists by phone number
       let customer;
       let isExistingCustomer = false;
-      let keepPreviousLocation = false; // true when existing customer and new location is same or within 2 km
+      let keepPreviousLocation = false; // true when existing customer pin is within 1000 m
 
       let existingCustomer = null;
       let findError = null;
@@ -1671,10 +1442,37 @@ const Booking: React.FC = () => {
         altchaPayload: altchaPayload || undefined,
       };
 
-      const addressDetail = (formData.addressDetails || '').trim();
-      const composeStreet = (base: string) =>
-        [addressDetail, base].filter((p) => p && p.trim()).join(', ');
-      
+      const fullStreet = composeBookingStreet(
+        formData.addressDetails,
+        formData.landmark,
+        formData.address
+      );
+      const pinUrl = hasValidMapCoordinates(formData.coordinates)
+        ? googleMapsPinUrl(formData.coordinates.lat, formData.coordinates.lng)
+        : isLikelyMapsLink(formData.googleMapsLink)
+          ? formData.googleMapsLink
+          : '';
+      const shortLocation = await resolveBookingVisibleAddress({
+        address: formData.address,
+        lat: formData.coordinates?.lat,
+        lng: formData.coordinates?.lng,
+      });
+      const bookingServiceAddress = {
+        street: fullStreet,
+        area: 'Bangalore',
+        city: 'Bangalore',
+        state: 'Karnataka',
+        pincode: '560001',
+        ...(formData.landmark.trim() ? { landmark: formData.landmark.trim() } : {}),
+        ...(shortLocation ? { visible_address: shortLocation } : {}),
+      };
+      const bookingServiceLocation = {
+        latitude: formData.coordinates.lat,
+        longitude: formData.coordinates.lng,
+        formattedAddress: fullStreet,
+        googleLocation: pinUrl || null,
+      };
+
       try {
         const prefetch = customerLookupRef.current;
         const canUsePrefetch =
@@ -1714,11 +1512,13 @@ const Booking: React.FC = () => {
         // Customer exists — update their information
         isExistingCustomer = true;
 
-        // Same or within 2 km: keep previous address/location (server-computed when possible)
+        // Same or within 1000 m: keep previous address/location (server-computed when possible)
         const keepPreviousLocationValue =
           (existingCustomer as { keepPreviousLocation?: boolean }).keepPreviousLocation ===
           true;
         keepPreviousLocation = keepPreviousLocationValue;
+        const hasValidNewCoords = hasValidMapCoordinates(formData.coordinates);
+        const shouldUpdateLocation = !keepPreviousLocationValue && hasValidNewCoords;
 
         const updateData: Record<string, unknown> = {
           full_name: formData.fullName,
@@ -1729,44 +1529,12 @@ const Booking: React.FC = () => {
           updated_at: new Date().toISOString(),
         };
 
-        if (!keepPreviousLocationValue) {
-          const shortLocation = await resolveBookingVisibleAddress({
-            address: formData.address,
-            lat: formData.coordinates?.lat,
-            lng: formData.coordinates?.lng,
-          });
+        if (shouldUpdateLocation) {
           if (shortLocation) {
             updateData.visible_address = shortLocation;
           }
-          updateData.address = {
-            street: composeStreet(formData.address),
-            area: 'Bangalore',
-            city: 'Bangalore',
-            state: 'Karnataka',
-            pincode: '560001',
-          };
-          updateData.location = {
-            latitude: formData.coordinates.lat,
-            longitude: formData.coordinates.lng,
-            formattedAddress: (() => {
-              let cleanAddress = formData.address || '';
-              if (cleanAddress.includes('localhost') || cleanAddress.includes('127.0.0.1')) {
-                const match = cleanAddress.match(/localhost[:\d]*\/(.+)/i);
-                if (match) {
-                  cleanAddress = decodeURIComponent(match[1].replace(/\+/g, ' '));
-                } else {
-                  cleanAddress = '';
-                }
-              }
-              if (cleanAddress.startsWith('http://') || cleanAddress.startsWith('https://')) {
-                cleanAddress = '';
-              }
-              return composeStreet(cleanAddress);
-            })(),
-            googleLocation: formData.coordinates.lat !== 0 && formData.coordinates.lng !== 0
-              ? `https://www.google.com/maps/place/${formData.coordinates.lat},${formData.coordinates.lng}`
-              : null
-          };
+          updateData.address = bookingServiceAddress;
+          updateData.location = bookingServiceLocation;
         }
 
         let updatedCustomer = null;
@@ -1814,51 +1582,13 @@ const Booking: React.FC = () => {
         customer = updatedCustomer;
       } else {
         // Customer doesn't exist, create new one
-        const shortLocation = await resolveBookingVisibleAddress({
-          address: formData.address,
-          lat: formData.coordinates?.lat,
-          lng: formData.coordinates?.lng,
-        });
         const customerData = {
           full_name: formData.fullName,
           phone: formData.phone,
           email: formData.email,
           alternate_phone: formData.alternatePhone,
-          address: {
-            street: composeStreet(removePlusCode(formData.address)),
-            area: 'Bangalore',
-            city: 'Bangalore',
-            state: 'Karnataka',
-            pincode: '560001',
-          },
-          location: {
-            latitude: formData.coordinates.lat,
-            longitude: formData.coordinates.lng,
-            formattedAddress: (() => {
-              // Clean the address - remove any URL prefixes
-              let cleanAddress = formData.address || '';
-              // Remove localhost URLs
-              if (cleanAddress.includes('localhost') || cleanAddress.includes('127.0.0.1')) {
-                // Extract just the address part after the URL
-                const match = cleanAddress.match(/localhost[:\d]*\/(.+)/i);
-                if (match) {
-                  cleanAddress = decodeURIComponent(match[1].replace(/\+/g, ' '));
-                } else {
-                  cleanAddress = '';
-                }
-              }
-              // Remove any http/https URLs
-              if (cleanAddress.startsWith('http://') || cleanAddress.startsWith('https://')) {
-                cleanAddress = '';
-              }
-              return composeStreet(cleanAddress);
-            })(),
-            googleLocation: formData.coordinates.lat !== 0 && formData.coordinates.lng !== 0
-              ? `https://www.google.com/maps/place/${formData.coordinates.lat},${formData.coordinates.lng}`
-              : (isLikelyMapsLink(formData.googleMapsLink)
-                  ? formData.googleMapsLink 
-                  : null)
-          },
+          address: bookingServiceAddress,
+          location: bookingServiceLocation,
           ...(shortLocation ? { visible_address: shortLocation } : {}),
           service_type: formData.serviceType,
           brand: formData.brandName || 'Not specified',
@@ -1910,58 +1640,10 @@ const Booking: React.FC = () => {
         customer = newCustomer;
       }
 
-      // Create job record (use existing customer address/location when same or within 2 km)
-      const custAddr = keepPreviousLocation && customer ? (customer as any).address : null;
-      const custLoc = keepPreviousLocation && customer ? (customer as any).location : null;
-      const jobServiceAddress = custAddr
-        ? {
-            street: composeStreet(removePlusCode(custAddr.street || custAddr.visible_address || '')),
-            area: custAddr.area || 'Bangalore',
-            city: custAddr.city || 'Bangalore',
-            state: custAddr.state || 'Karnataka',
-            pincode: custAddr.pincode || '560001',
-          }
-        : {
-            street: composeStreet(removePlusCode(formData.address)),
-            area: 'Bangalore',
-            city: 'Bangalore',
-            state: 'Karnataka',
-            pincode: '560001',
-          };
-      const jobServiceLocation = custLoc &&
-        (typeof (custLoc.latitude ?? custLoc.lat) === 'number') &&
-        (typeof (custLoc.longitude ?? custLoc.lng) === 'number')
-        ? {
-            latitude: custLoc.latitude ?? custLoc.lat,
-            longitude: custLoc.longitude ?? custLoc.lng,
-            formattedAddress: custLoc.formattedAddress || custLoc.formatted_address || '',
-            googleLocation: custLoc.googleLocation || custLoc.google_location ||
-              `https://www.google.com/maps/place/${custLoc.latitude ?? custLoc.lat},${custLoc.longitude ?? custLoc.lng}`,
-          }
-        : {
-            latitude: formData.coordinates.lat,
-            longitude: formData.coordinates.lng,
-            formattedAddress: (() => {
-              let cleanAddress = formData.address || '';
-              if (cleanAddress.includes('localhost') || cleanAddress.includes('127.0.0.1')) {
-                const match = cleanAddress.match(/localhost[:\d]*\/(.+)/i);
-                if (match) {
-                  cleanAddress = decodeURIComponent(match[1].replace(/\+/g, ' '));
-                } else {
-                  cleanAddress = '';
-                }
-              }
-              if (cleanAddress.startsWith('http://') || cleanAddress.startsWith('https://')) {
-                cleanAddress = '';
-              }
-              return composeStreet(cleanAddress);
-            })(),
-            googleLocation: formData.coordinates.lat !== 0 && formData.coordinates.lng !== 0
-              ? `https://www.google.com/maps/place/${formData.coordinates.lat},${formData.coordinates.lng}`
-              : (isLikelyMapsLink(formData.googleMapsLink)
-                  ? formData.googleMapsLink
-                  : null)
-          };
+      // Job always stores this visit (flat-first address + pin URL).
+      // Customer pin is left unchanged when the new pin is within 1000 m (keepPreviousLocation).
+      const jobServiceAddress = bookingServiceAddress;
+      const jobServiceLocation = bookingServiceLocation;
 
       const hostname = window.location.hostname.toLowerCase();
       const bookingSource =
@@ -2062,12 +1744,8 @@ const Booking: React.FC = () => {
         // ignore
       }
 
-      const displayAddress = keepPreviousLocation && customer
-        ? (jobServiceLocation?.formattedAddress || jobServiceAddress.street || (customer as any).address?.street || formData.address)
-        : composeStreet(formData.address);
-      const displayMapsLink = keepPreviousLocation && customer && jobServiceLocation
-        ? (jobServiceLocation.googleLocation || formData.googleMapsLink)
-        : formData.googleMapsLink;
+      const displayAddress = fullStreet;
+      const displayMapsLink = pinUrl || formData.googleMapsLink;
 
       const emailDocumentBrand: 'hydrogenro' | 'elevenro' =
         bookingSource === 'elevenro' || bookingSource === 'hydrogenro'
@@ -2424,10 +2102,22 @@ const Booking: React.FC = () => {
           </div>
         );
 
-      case 3:
+      case 3: {
+        const savedFullAddress = composeBookingStreet(
+          formData.addressDetails,
+          formData.landmark,
+          formData.address
+        );
+        const savedTitle = [
+          formData.addressDetails.trim(),
+          removePlusCode(formData.address).split(',')[0].trim(),
+        ]
+          .filter(Boolean)
+          .filter((part, index, parts) => index === 0 || part.toLowerCase() !== parts[0].toLowerCase())
+          .join(', ');
         return (
           <div className="space-y-6">
-            <div className="text-center mb-6">
+            <div className={`mb-6 text-center ${locationPickerOpen ? 'px-4 sm:px-6' : ''}`}>
               <MapPin className="w-12 h-12 mx-auto mb-3 text-primary" />
               <h3 className="text-xl font-semibold text-foreground">Service Location</h3>
               <p className="text-muted-foreground">Where should we come?</p>
@@ -2453,124 +2143,75 @@ const Booking: React.FC = () => {
             </Dialog>
             
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="address">Service Address *</Label>
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Input
-                      ref={addressInputRef}
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      placeholder="Search your address..."
-                      className={`pr-10 ${
-                        showValidation && !formData.address 
-                          ? 'border-2 border-black dark:border-white' 
-                          : ''
-                      }`}
-                      disabled={currentLocationLoading}
-                    />
-                    {formData.address ? (
+              <div id="booking-location-card">
+                {hasValidMapCoordinates(formData.coordinates) && formData.address && !locationEditing ? (
+                  <div
+                    className={`rounded-2xl border bg-white p-4 shadow-sm dark:bg-card ${
+                      showValidation && !formData.addressDetails.trim()
+                        ? 'border-red-500'
+                        : 'border-neutral-200 dark:border-border'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
                       <button
                         type="button"
-                        onClick={() => {
-                          handleInputChange('address', '');
-                          if (addressInputRef.current) {
-                            addressInputRef.current.value = '';
-                          }
-                        }}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => openLocationPicker('map')}
+                        className="min-w-0 flex-1 cursor-pointer text-left"
                       >
-                        <X className="w-4 h-4" />
+                        <p className="truncate text-[17px] font-semibold text-foreground">
+                          {savedTitle || savedFullAddress}
+                        </p>
+                        <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
+                          {savedFullAddress}
+                        </p>
                       </button>
-                    ) : (
-                      <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    )}
+                      <button
+                        type="button"
+                        onClick={() => setLocationEditing(true)}
+                        className="mt-0.5 min-h-11 shrink-0 cursor-pointer rounded-lg border border-primary px-3.5 py-1.5 text-sm font-medium text-primary transition-colors duration-200 hover:bg-primary/5"
+                      >
+                        Change
+                      </button>
+                    </div>
                   </div>
-                  <Button
-                    type="button"
-                    onClick={handleGetCurrentLocation}
-                    disabled={currentLocationLoading}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    {currentLocationLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Getting Location...
-                      </>
-                    ) : (
-                      <>
-                        <MapPin className="w-4 h-4 mr-2" />
-                        Use Current Location
-                      </>
-                    )}
-                  </Button>
-                  {showValidation && !formData.address && (
-                    <p className="text-sm text-red-600 dark:text-red-400 flex items-start gap-1.5">
-                      <span aria-hidden>⚠️</span>
-                      <span>
-                        Please search your address or tap <strong>Use Current Location</strong> so we can map where to come. A flat/house number alone isn&apos;t enough.
-                      </span>
-                    </p>
-                  )}
-                </div>
-              </div>
+                ) : null}
 
-              <div>
-                <Label htmlFor="addressDetails">House / Flat / Apartment No. &amp; Floor *</Label>
-                <Input
-                  id="addressDetails"
-                  value={formData.addressDetails}
-                  onChange={(e) => handleInputChange('addressDetails', e.target.value)}
-                  placeholder="e.g. Flat 302, 3rd Floor, Sai Apartments (near…)"
-                  className={`mt-1 ${
-                    showValidation && !formData.addressDetails.trim()
-                      ? 'border-red-500 focus-visible:ring-red-500'
-                      : ''
-                  }`}
-                  aria-invalid={showValidation && !formData.addressDetails.trim()}
-                  maxLength={150}
+                <BookingLocationPicker
+                  open={locationPickerOpen}
+                  onOpenChange={setLocationPickerOpen}
+                  startOn={locationPickerStart}
+                  inlineSearch={!hasValidMapCoordinates(formData.coordinates) || !formData.address || locationEditing}
+                  invalid={
+                    showValidation &&
+                    (!hasValidMapCoordinates(formData.coordinates) || !formData.address)
+                  }
+                  showCancel={
+                    Boolean(hasValidMapCoordinates(formData.coordinates) && formData.address && locationEditing)
+                  }
+                  onCancelSearch={() => setLocationEditing(false)}
+                  onRequestSearch={() => setLocationEditing(true)}
+                  initial={{
+                    address: formData.address,
+                    coordinates: formData.coordinates,
+                    houseFlat: formData.addressDetails,
+                    landmark: formData.landmark,
+                  }}
+                  onSave={handleLocationPickerSave}
                 />
-                {showValidation && !formData.addressDetails.trim() ? (
-                  <p className="text-sm text-red-600 dark:text-red-400 mt-1 flex items-start gap-1.5">
-                    <span aria-hidden>⚠️</span>
-                    <span>
-                      Please enter your house / flat / apartment number and floor so the technician reaches the exact door.
-                    </span>
+
+                {showValidation && (!hasValidMapCoordinates(formData.coordinates) || !formData.address) ? (
+                  <p className="mt-2 px-4 text-sm text-red-600 dark:text-red-400 sm:px-6">
+                    Please search your location or use current location so we can pin where to come.
                   </p>
-                ) : formData.addressDetails.trim() && !formData.address ? (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-start gap-1.5">
-                    <span aria-hidden>💡</span>
-                    <span>
-                      Got your flat details. Now search your location or tap <strong>Use Current Location</strong> above so we can pin it on the map.
-                    </span>
+                ) : null}
+                {showValidation && hasValidMapCoordinates(formData.coordinates) && formData.address && !formData.addressDetails.trim() ? (
+                  <p className="mt-2 px-4 text-sm text-red-600 dark:text-red-400 sm:px-6">
+                    Please enter your house / flat number so the technician reaches the exact door.
                   </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Add your flat / house number, floor and any nearby landmark so the technician reaches the exact door.
-                  </p>
-                )}
+                ) : null}
               </div>
 
-              {/* Draggable Map */}
-              {formData.coordinates.lat !== 0 && formData.coordinates.lng !== 0 && (
-                <div className="mt-4">
-                  <Label className="mb-2 block">Confirm Your Location on Map</Label>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    💡 Drag the marker to adjust your exact location
-                  </p>
-                  <div className="rounded-lg overflow-hidden border">
-                    <DraggableMap
-                      center={mapCenter}
-                      onLocationChange={handleMapLocationChange}
-                      zoom={mapZoom}
-                      height="300px"
-                    />
-                  </div>
-                </div>
-              )}
-
+              <div className={locationPickerOpen ? 'px-4 sm:px-6' : ''}>
               <div>
                 <Label>Upload Images (Optional)</Label>
                 
@@ -2872,9 +2513,12 @@ const Booking: React.FC = () => {
                   )}
                 </div>
               </div>
+              </div>
             </div>
           </div>
         );
+      }
+
 
       case 4:
         return (
@@ -3095,7 +2739,7 @@ const Booking: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
-                  <div><strong>Address:</strong> {formData.address}</div>
+                  <div><strong>Address:</strong> {composeBookingStreet(formData.addressDetails, formData.landmark, formData.address)}</div>
                   {formData.googleMapsLink && (
                     <div>
                       <strong>Google Maps Link:</strong> 
@@ -3327,7 +2971,11 @@ const Booking: React.FC = () => {
         return serviceValid; // Brand name and model name are now optional
       }
       case 3:
-        return formData.address && formData.addressDetails.trim();
+        return (
+          hasValidMapCoordinates(formData.coordinates) &&
+          Boolean(formData.address) &&
+          Boolean(formData.addressDetails.trim())
+        );
       case 4:
         return formData.serviceDate && formData.preferredTime;
       case 5:
@@ -3735,8 +3383,12 @@ const Booking: React.FC = () => {
 
             {/* Form Content */}
             <BehavioralTracker>
-              <Card className="mb-6">
-                <CardContent className="p-6">
+              <Card className={`mb-6 ${currentStep === 3 ? 'overflow-hidden' : ''}`}>
+                <CardContent
+                  className={
+                    currentStep === 3 && locationPickerOpen ? 'px-0 py-4 sm:py-6' : 'p-6'
+                  }
+                >
                   {/* Honeypot field - hidden from users */}
                   <HoneypotField />
                   

@@ -17,6 +17,26 @@ export interface AddressData {
   fullAddress?: string;
 }
 
+/** Pin URL that opens Google Maps on the exact coordinates (no short-link resolve). */
+export function googleMapsPinUrl(lat: number, lng: number): string {
+  return `https://www.google.com/maps?q=${lat},${lng}`;
+}
+
+/** True when lat/lng are finite and not the default 0,0 placeholder. */
+export function hasValidMapCoordinates(
+  coords: { lat?: number; lng?: number } | null | undefined
+): boolean {
+  const lat = coords?.lat;
+  const lng = coords?.lng;
+  return (
+    typeof lat === 'number' &&
+    typeof lng === 'number' &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    (lat !== 0 || lng !== 0)
+  );
+}
+
 /**
  * Generate Google Maps URL for a location
  */
@@ -24,8 +44,7 @@ export const generateGoogleMapsUrl = (location: LocationData, address?: string):
   const { latitude, longitude } = location;
   // Always use coordinates for exact location, only use address as fallback if no coordinates
   if (latitude && longitude) {
-    // Use the place parameter for exact coordinates - most reliable format
-    return `https://www.google.com/maps/place/${latitude},${longitude}`;
+    return googleMapsPinUrl(latitude, longitude);
   }
   // Fallback to address if no coordinates available
   const query = address || 'Unknown Location';
