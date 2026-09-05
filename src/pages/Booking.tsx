@@ -827,6 +827,8 @@ const Booking: React.FC = () => {
     setLocationEditing(false);
     setShowValidation(false);
     setLocationPickerOpen(false);
+    setCurrentStep((step) => (step === 3 ? 4 : step));
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
   };
 
   useEffect(() => {
@@ -2089,130 +2091,6 @@ const Booking: React.FC = () => {
               </div>
               
               <div>
-                <Label htmlFor="description">Additional Details</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Describe the issue or any specific requirements..."
-                  className="mt-1 min-h-[100px]"
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case 3: {
-        const savedFullAddress = composeBookingStreet(
-          formData.addressDetails,
-          formData.landmark,
-          formData.address
-        );
-        const savedTitle = [
-          formData.addressDetails.trim(),
-          removePlusCode(formData.address).split(',')[0].trim(),
-        ]
-          .filter(Boolean)
-          .filter((part, index, parts) => index === 0 || part.toLowerCase() !== parts[0].toLowerCase())
-          .join(', ');
-        return (
-          <div className="space-y-6">
-            <div className={`mb-6 text-center ${locationPickerOpen ? 'px-4 sm:px-6' : ''}`}>
-              <MapPin className="w-12 h-12 mx-auto mb-3 text-primary" />
-              <h3 className="text-xl font-semibold text-foreground">Service Location</h3>
-              <p className="text-muted-foreground">Where should we come?</p>
-            </div>
-
-            <Dialog open={locationTipPopupOpen} onOpenChange={setLocationTipPopupOpen}>
-              <DialogContent className="sm:max-w-md bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-lg">
-                    <span>💡</span> Location tip
-                  </DialogTitle>
-                  <DialogDescription asChild>
-                    <div className="text-foreground/90 leading-relaxed pt-1 space-y-2">
-                      <p>Can&apos;t find your exact spot? Search for a nearby landmark or tap &quot;Use Current Location&quot;. That&apos;s okay — we&apos;ll confirm the location with you before we come.</p>
-                      <p className="text-sm font-medium text-primary">At the bottom, please share your purifier photo too.</p>
-                    </div>
-                  </DialogDescription>
-                </DialogHeader>
-                <Button onClick={() => setLocationTipPopupOpen(false)} className="mt-2">
-                  Got it
-                </Button>
-              </DialogContent>
-            </Dialog>
-            
-            <div className="space-y-4">
-              <div id="booking-location-card">
-                {hasValidMapCoordinates(formData.coordinates) && formData.address && !locationEditing ? (
-                  <div
-                    className={`rounded-2xl border bg-white p-4 shadow-sm dark:bg-card ${
-                      showValidation && !formData.addressDetails.trim()
-                        ? 'border-red-500'
-                        : 'border-neutral-200 dark:border-border'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <button
-                        type="button"
-                        onClick={() => openLocationPicker('map')}
-                        className="min-w-0 flex-1 cursor-pointer text-left"
-                      >
-                        <p className="truncate text-[17px] font-semibold text-foreground">
-                          {savedTitle || savedFullAddress}
-                        </p>
-                        <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
-                          {savedFullAddress}
-                        </p>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setLocationEditing(true)}
-                        className="mt-0.5 min-h-11 shrink-0 cursor-pointer rounded-lg border border-primary px-3.5 py-1.5 text-sm font-medium text-primary transition-colors duration-200 hover:bg-primary/5"
-                      >
-                        Change
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                <BookingLocationPicker
-                  open={locationPickerOpen}
-                  onOpenChange={setLocationPickerOpen}
-                  startOn={locationPickerStart}
-                  inlineSearch={!hasValidMapCoordinates(formData.coordinates) || !formData.address || locationEditing}
-                  invalid={
-                    showValidation &&
-                    (!hasValidMapCoordinates(formData.coordinates) || !formData.address)
-                  }
-                  showCancel={
-                    Boolean(hasValidMapCoordinates(formData.coordinates) && formData.address && locationEditing)
-                  }
-                  onCancelSearch={() => setLocationEditing(false)}
-                  onRequestSearch={() => setLocationEditing(true)}
-                  initial={{
-                    address: formData.address,
-                    coordinates: formData.coordinates,
-                    houseFlat: formData.addressDetails,
-                    landmark: formData.landmark,
-                  }}
-                  onSave={handleLocationPickerSave}
-                />
-
-                {showValidation && (!hasValidMapCoordinates(formData.coordinates) || !formData.address) ? (
-                  <p className="mt-2 px-4 text-sm text-red-600 dark:text-red-400 sm:px-6">
-                    Please search your location or use current location so we can pin where to come.
-                  </p>
-                ) : null}
-                {showValidation && hasValidMapCoordinates(formData.coordinates) && formData.address && !formData.addressDetails.trim() ? (
-                  <p className="mt-2 px-4 text-sm text-red-600 dark:text-red-400 sm:px-6">
-                    Please enter your house / flat number so the technician reaches the exact door.
-                  </p>
-                ) : null}
-              </div>
-
-              <div className={locationPickerOpen ? 'px-4 sm:px-6' : ''}>
-              <div>
                 <Label>Upload Images (Optional)</Label>
                 
                 {/* Note about RO and problem images */}
@@ -2513,7 +2391,130 @@ const Booking: React.FC = () => {
                   )}
                 </div>
               </div>
+
+
+              <div>
+                <Label htmlFor="description">Additional Details</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="Describe the issue or any specific requirements..."
+                  className="mt-1 min-h-[100px]"
+                />
               </div>
+            </div>
+          </div>
+        );
+
+      case 3: {
+        const savedFullAddress = composeBookingStreet(
+          formData.addressDetails,
+          formData.landmark,
+          formData.address
+        );
+        const savedTitle = [
+          formData.addressDetails.trim(),
+          removePlusCode(formData.address).split(',')[0].trim(),
+        ]
+          .filter(Boolean)
+          .filter((part, index, parts) => index === 0 || part.toLowerCase() !== parts[0].toLowerCase())
+          .join(', ');
+        return (
+          <div className="space-y-6">
+            <div className={`mb-6 text-center ${locationPickerOpen ? 'px-4 sm:px-6' : ''}`}>
+              <MapPin className="w-12 h-12 mx-auto mb-3 text-primary" />
+              <h3 className="text-xl font-semibold text-foreground">Service Location</h3>
+              <p className="text-muted-foreground">Where should we come?</p>
+            </div>
+
+            <Dialog open={locationTipPopupOpen} onOpenChange={setLocationTipPopupOpen}>
+              <DialogContent className="sm:max-w-md bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-lg">
+                    <span>💡</span> Location tip
+                  </DialogTitle>
+                  <DialogDescription asChild>
+                    <div className="text-foreground/90 leading-relaxed pt-1 space-y-2">
+                      <p>Can&apos;t find your exact spot? Search for a nearby landmark or tap &quot;Use Current Location&quot;. That&apos;s okay — we&apos;ll confirm the location with you before we come.</p>
+                    </div>
+                  </DialogDescription>
+                </DialogHeader>
+                <Button onClick={() => setLocationTipPopupOpen(false)} className="mt-2">
+                  Got it
+                </Button>
+              </DialogContent>
+            </Dialog>
+            
+            <div className="space-y-4">
+              <div id="booking-location-card">
+                {hasValidMapCoordinates(formData.coordinates) && formData.address && !locationEditing ? (
+                  <div
+                    className={`rounded-2xl border bg-white p-4 shadow-sm dark:bg-card ${
+                      showValidation && !formData.addressDetails.trim()
+                        ? 'border-red-500'
+                        : 'border-neutral-200 dark:border-border'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => openLocationPicker('map')}
+                        className="min-w-0 flex-1 cursor-pointer text-left"
+                      >
+                        <p className="truncate text-[17px] font-semibold text-foreground">
+                          {savedTitle || savedFullAddress}
+                        </p>
+                        <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
+                          {savedFullAddress}
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLocationEditing(true)}
+                        className="mt-0.5 min-h-11 shrink-0 cursor-pointer rounded-lg border border-primary px-3.5 py-1.5 text-sm font-medium text-primary transition-colors duration-200 hover:bg-primary/5"
+                      >
+                        Change
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <BookingLocationPicker
+                  open={locationPickerOpen}
+                  onOpenChange={setLocationPickerOpen}
+                  startOn={locationPickerStart}
+                  inlineSearch={!hasValidMapCoordinates(formData.coordinates) || !formData.address || locationEditing}
+                  invalid={
+                    showValidation &&
+                    (!hasValidMapCoordinates(formData.coordinates) || !formData.address)
+                  }
+                  showCancel={
+                    Boolean(hasValidMapCoordinates(formData.coordinates) && formData.address && locationEditing)
+                  }
+                  onCancelSearch={() => setLocationEditing(false)}
+                  onRequestSearch={() => setLocationEditing(true)}
+                  initial={{
+                    address: formData.address,
+                    coordinates: formData.coordinates,
+                    houseFlat: formData.addressDetails,
+                    landmark: formData.landmark,
+                  }}
+                  onSave={handleLocationPickerSave}
+                />
+
+                {showValidation && (!hasValidMapCoordinates(formData.coordinates) || !formData.address) ? (
+                  <p className="mt-2 px-4 text-sm text-red-600 dark:text-red-400 sm:px-6">
+                    Please search your location or use current location so we can pin where to come.
+                  </p>
+                ) : null}
+                {showValidation && hasValidMapCoordinates(formData.coordinates) && formData.address && !formData.addressDetails.trim() ? (
+                  <p className="mt-2 px-4 text-sm text-red-600 dark:text-red-400 sm:px-6">
+                    Please enter your house / flat number so the technician reaches the exact door.
+                  </p>
+                ) : null}
+              </div>
+
             </div>
           </div>
         );
