@@ -156,6 +156,7 @@ const Services = () => {
         )}
 
         {!productKind && (
+          <>
         {/* Why Choose Section */}
         <section className="py-16 px-2 md:px-12 bg-background">
           <div className="max-w-6xl mx-auto">
@@ -224,6 +225,7 @@ const Services = () => {
             </div>
           </div>
         </section>
+          </>
         )}
 
         {/* Main Services */}
