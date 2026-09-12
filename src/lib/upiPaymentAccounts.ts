@@ -62,6 +62,8 @@ export type UpiPayLinkRecord = {
   note: string;
   phone: string;
   brand: 'hydrogenro' | 'elevenro';
+  qrCodeUrl?: string;
+  dynamicUpiEnabled?: boolean;
 };
 
 /** Public: resolve short /p/{code} pay link. */
@@ -81,7 +83,9 @@ export async function fetchUpiPayShortLink(code: string): Promise<UpiPayLinkReco
     if (!row || typeof row !== 'object') return null;
     const r = row as Record<string, unknown>;
     const upiId = normalizeUpiId(typeof r.upi_id === 'string' ? r.upi_id : '');
-    if (!isValidUpiId(upiId)) return null;
+    const rawQr = typeof r.qr_code_url === 'string' ? r.qr_code_url.trim() : '';
+    const qrCodeUrl = rawQr && rawQr !== '[object Object]' ? rawQr : '';
+    if (!isValidUpiId(upiId) && !qrCodeUrl) return null;
     const amountRaw = r.amount;
     const amount =
       typeof amountRaw === 'number'
@@ -89,6 +93,7 @@ export async function fetchUpiPayShortLink(code: string): Promise<UpiPayLinkReco
         : amountRaw != null && amountRaw !== ''
           ? Number(amountRaw)
           : null;
+    const dynamicUpiEnabled = r.dynamic_upi_enabled !== false;
     return {
       code: typeof r.code === 'string' ? r.code : c,
       upiId,
@@ -97,6 +102,8 @@ export async function fetchUpiPayShortLink(code: string): Promise<UpiPayLinkReco
       note: typeof r.note === 'string' ? r.note : '',
       phone: normalizePaymentPhone(typeof r.phone === 'string' ? r.phone : ''),
       brand: r.brand === 'elevenro' ? 'elevenro' : 'hydrogenro',
+      qrCodeUrl,
+      dynamicUpiEnabled,
     };
   } catch (e) {
     console.warn('[upi] get_upi_pay_link error', e);
