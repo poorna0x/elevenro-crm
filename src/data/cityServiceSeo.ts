@@ -31,7 +31,7 @@ export const PRIORITY_CITIES: PriorityCity[] = [
   { slug: 'shivamogga', name: 'Shivamogga', tier: 2, district: 'Shivamogga', alternateNames: ['Shimoga'] },
   { slug: 'davanagere', name: 'Davanagere', tier: 2, district: 'Davanagere' },
   { slug: 'kalaburagi', name: 'Kalaburagi', tier: 2, district: 'Kalaburagi', alternateNames: ['Gulbarga'] },
-  { slug: 'udupi', name: 'Udupi', tier: 3, district: 'Udupi' },
+  { slug: 'udupi', name: 'Udupi', tier: 2, district: 'Udupi' },
 ];
 
 export const PRIORITY_CITY_SLUGS = new Set(PRIORITY_CITIES.map((c) => c.slug));
@@ -327,11 +327,11 @@ export const CITY_SERVICE_HUB_GROUPS: { title: string; pages: CityServicePage[] 
     pages: cityServicePageList.filter((p) => p.cityTier === 1),
   },
   {
-    title: 'Tier 2 — Hubballi, Belagavi, Tumakuru & more',
+    title: 'Tier 2 — Hubballi, Belagavi, Tumakuru, Hassan, Udupi & more',
     pages: cityServicePageList.filter((p) => p.cityTier === 2),
   },
   {
-    title: 'Tier 3 — Udupi & expanding markets',
+    title: 'Tier 3 — Expanding markets',
     pages: cityServicePageList.filter((p) => p.cityTier === 3),
   },
 ];
