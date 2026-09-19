@@ -48,6 +48,18 @@ import SecurityStatus from '@/components/SecurityStatus';
 import { useSecurity } from '@/contexts/SecurityContext';
 import BookingLocationPicker, { type BookingLocationValue } from '@/components/BookingLocationPicker';
 import { googleMapsPinUrl, hasValidMapCoordinates, removePlusCode } from '@/lib/maps';
+import {
+  fetchBookingServiceHubs,
+  formatOutOfServiceAreaMessage,
+  matchPointToServiceHubs,
+  type BookingServiceHub,
+  type HubMatchResult,
+} from '@/lib/bookingServiceHubs';
+import {
+  bookingCustomHoursForPeriod,
+  clampBookingCustomTime,
+  isBookingCustomTimeAllowed,
+} from '@/lib/bookingCustomTime';
 import { resolveBookingVisibleAddress } from '@/lib/bookingVisibleAddress';
 
 const WEBSITE_BOOKING_SITE_KEY: 'hydrogenro' | 'elevenro' =
@@ -123,6 +135,8 @@ const Booking: React.FC = () => {
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [locationPickerStart, setLocationPickerStart] = useState<'search' | 'map'>('search');
   const [locationEditing, setLocationEditing] = useState(false);
+  const [serviceHubs, setServiceHubs] = useState<BookingServiceHub[]>([]);
+  const [hubMatch, setHubMatch] = useState<HubMatchResult>({ ok: true, enforced: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -810,12 +824,49 @@ const Booking: React.FC = () => {
     setShowModelSuggestions(false);
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    void fetchBookingServiceHubs().then((result) => {
+      if (cancelled) return;
+      setServiceHubs(result.hubs);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasValidMapCoordinates(formData.coordinates)) {
+      setHubMatch({ ok: true, enforced: false });
+      return;
+    }
+    setHubMatch(
+      matchPointToServiceHubs(
+        formData.coordinates.lat,
+        formData.coordinates.lng,
+        serviceHubs
+      )
+    );
+  }, [formData.coordinates.lat, formData.coordinates.lng, serviceHubs]);
+
+  useEffect(() => {
+    if (!hubMatch.ok && currentStep > 3) {
+      setCurrentStep(3);
+    }
+  }, [hubMatch, currentStep]);
+
   const openLocationPicker = (startOn: 'search' | 'map' = 'search') => {
     setLocationPickerStart(startOn);
     setLocationPickerOpen(true);
   };
 
   const handleLocationPickerSave = (value: BookingLocationValue) => {
+    const coverage = matchPointToServiceHubs(
+      value.coordinates.lat,
+      value.coordinates.lng,
+      serviceHubs
+    );
+    setHubMatch(coverage);
     setFormData((prev) => ({
       ...prev,
       address: value.address,
@@ -827,6 +878,10 @@ const Booking: React.FC = () => {
     setLocationEditing(false);
     setShowValidation(false);
     setLocationPickerOpen(false);
+    if (!coverage.ok) {
+      toast.error(formatOutOfServiceAreaMessage(coverage));
+      return;
+    }
     setCurrentStep((step) => (step === 3 ? 4 : step));
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
   };
@@ -835,6 +890,9 @@ const Booking: React.FC = () => {
     coordinates: { lat: number; lng: number };
     googleMapsLink: string;
   }) => {
+    setHubMatch(
+      matchPointToServiceHubs(value.coordinates.lat, value.coordinates.lng, serviceHubs)
+    );
     setFormData((prev) => ({
       ...prev,
       coordinates: value.coordinates,
@@ -909,11 +967,19 @@ const Booking: React.FC = () => {
             } else if (!formData.addressDetails.trim()) {
               firstMissingField = 'booking-location-card';
               openLocationPicker('map');
+            } else if (!hubMatch.ok) {
+              firstMissingField = 'booking-hub-coverage';
             }
             break;
           case 4:
             if (!formData.serviceDate) { firstMissingField = 'serviceDate'; }
             else if (!formData.preferredTime) { firstMissingField = 'preferredTime'; }
+            else if (
+              formData.preferredTime === 'CUSTOM' &&
+              !isBookingCustomTimeAllowed(formData.preferredTimeCustom)
+            ) {
+              firstMissingField = 'preferredTimeCustom';
+            }
             break;
         }
         
@@ -1462,6 +1528,20 @@ const Booking: React.FC = () => {
       );
       if (!hasValidMapCoordinates(formData.coordinates)) {
         throw new Error('Please pin your location on the map before submitting.');
+      }
+      const coverage = matchPointToServiceHubs(
+        formData.coordinates.lat,
+        formData.coordinates.lng,
+        serviceHubs
+      );
+      if (!coverage.ok) {
+        throw new Error(formatOutOfServiceAreaMessage(coverage));
+      }
+      if (
+        formData.preferredTime === 'CUSTOM' &&
+        !isBookingCustomTimeAllowed(formData.preferredTimeCustom)
+      ) {
+        throw new Error('Please choose a custom time between 9:00 AM and 6:00 PM.');
       }
       const pinUrl = googleMapsPinUrl(formData.coordinates.lat, formData.coordinates.lng);
       const shortLocation = await resolveBookingVisibleAddress({
@@ -2514,6 +2594,13 @@ const Booking: React.FC = () => {
                     Please enter your house / flat number so the technician reaches the exact door.
                   </p>
                 ) : null}
+                {!hubMatch.ok ? (
+                  <Alert id="booking-hub-coverage" className="mt-3 border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+                    <AlertDescription>
+                      {formatOutOfServiceAreaMessage(hubMatch)}
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
               </div>
 
             </div>
@@ -2556,9 +2643,14 @@ const Booking: React.FC = () => {
               <div>
                 <Label htmlFor="preferredTime">Time Slot *</Label>
                 <Select value={formData.preferredTime} onValueChange={(value: 'FIRST_HALF' | 'SECOND_HALF' | 'CUSTOM') => {
-                  // Clear custom time when CUSTOM is selected
                   if (value === 'CUSTOM') {
-                    setFormData(prev => ({ ...prev, preferredTime: value, preferredTimeCustom: '' }));
+                    setFormData(prev => ({
+                      ...prev,
+                      preferredTime: value,
+                      preferredTimeCustom: prev.preferredTimeCustom && isBookingCustomTimeAllowed(prev.preferredTimeCustom)
+                        ? prev.preferredTimeCustom
+                        : '10:00',
+                    }));
                   } else {
                     handleInputChange('preferredTime', value);
                   }
@@ -2573,19 +2665,18 @@ const Booking: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="FIRST_HALF">Morning (9 AM - 1 PM)</SelectItem>
                     <SelectItem value="SECOND_HALF">Afternoon (1 PM - 6 PM)</SelectItem>
-                    <SelectItem value="CUSTOM">Custom Time</SelectItem>
+                    <SelectItem value="CUSTOM">Custom Time (9 AM - 6 PM)</SelectItem>
                   </SelectContent>
                 </Select>
                 {formData.preferredTime === 'CUSTOM' && (() => {
-                  // Parse 24-hour format (HH:MM) to 12-hour format components
                   const parseTime = (time24: string) => {
                     if (!time24 || !time24.includes(':')) {
-                      return { hour: undefined, minute: undefined, period: 'AM' };
+                      return { hour: undefined, minute: undefined, period: 'AM' as const };
                     }
                     const [hours, minutes] = time24.split(':');
                     const hour24 = parseInt(hours, 10);
                     if (isNaN(hour24)) {
-                      return { hour: undefined, minute: undefined, period: 'AM' };
+                      return { hour: undefined, minute: undefined, period: 'AM' as const };
                     }
                     let hour12 = hour24 % 12;
                     if (hour12 === 0) hour12 = 12;
@@ -2593,11 +2684,10 @@ const Booking: React.FC = () => {
                     return {
                       hour: String(hour12),
                       minute: minutes || '00',
-                      period
+                      period: period as 'AM' | 'PM'
                     };
                   };
 
-                  // Convert 12-hour format components to 24-hour format (HH:MM)
                   const formatTime24 = (hour: string | undefined, minute: string | undefined, period: string) => {
                     if (!hour || !minute) return '';
                     let hour24 = parseInt(hour, 10);
@@ -2607,27 +2697,39 @@ const Booking: React.FC = () => {
                     } else if (period === 'AM' && hour24 === 12) {
                       hour24 = 0;
                     }
-                    return `${String(hour24).padStart(2, '0')}:${minute.padStart(2, '0')}`;
+                    return clampBookingCustomTime(
+                      `${String(hour24).padStart(2, '0')}:${minute.padStart(2, '0')}`
+                    );
                   };
 
-                  const timeParts = parseTime(formData.preferredTimeCustom || '');
+                  const timeParts = parseTime(formData.preferredTimeCustom || '10:00');
+                  const hoursForPeriod = bookingCustomHoursForPeriod(timeParts.period);
+                  const minuteOptions =
+                    timeParts.period === 'PM' && timeParts.hour === '6'
+                      ? ['00']
+                      : Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+
+                  const setCustomTime = (hour: string | undefined, minute: string | undefined, period: 'AM' | 'PM') => {
+                    const allowedHours = bookingCustomHoursForPeriod(period);
+                    const hourNum = hour ? parseInt(hour, 10) : NaN;
+                    const nextHour = allowedHours.includes(hourNum) ? String(hourNum) : String(allowedHours[0]);
+                    const nextMinute = period === 'PM' && nextHour === '6' ? '00' : (minute || '00');
+                    handleInputChange('preferredTimeCustom', formatTime24(nextHour, nextMinute, period));
+                  };
 
                   return (
-                    <div className="mt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div id="preferredTimeCustom" className="mt-2 space-y-2">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        {/* Hour Select */}
                         <Select
                           value={timeParts.hour || ''}
-                          onValueChange={(hour) => {
-                            const newTime = formatTime24(hour, timeParts.minute || '00', timeParts.period);
-                            handleInputChange('preferredTimeCustom', newTime);
-                          }}
+                          onValueChange={(hour) => setCustomTime(hour, timeParts.minute || '00', timeParts.period)}
                         >
                           <SelectTrigger className="flex-1 sm:flex-none sm:w-20 min-w-0">
                             <SelectValue placeholder="Hour" />
                           </SelectTrigger>
                           <SelectContent>
-                            {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                            {hoursForPeriod.map((h) => (
                               <SelectItem key={h} value={String(h)}>
                                 {h}
                               </SelectItem>
@@ -2637,19 +2739,19 @@ const Booking: React.FC = () => {
 
                         <span className="text-lg font-semibold flex-shrink-0">:</span>
 
-                        {/* Minute Select */}
                         <Select
-                          value={timeParts.minute || ''}
-                          onValueChange={(minute) => {
-                            const newTime = formatTime24(timeParts.hour || '12', minute, timeParts.period);
-                            handleInputChange('preferredTimeCustom', newTime);
-                          }}
+                          value={
+                            minuteOptions.includes(timeParts.minute || '')
+                              ? timeParts.minute
+                              : '00'
+                          }
+                          onValueChange={(minute) => setCustomTime(timeParts.hour || String(hoursForPeriod[0]), minute, timeParts.period)}
                         >
                           <SelectTrigger className="flex-1 sm:flex-none sm:w-20 min-w-0">
                             <SelectValue placeholder="Min" />
                           </SelectTrigger>
                           <SelectContent>
-                            {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map((m) => (
+                            {minuteOptions.map((m) => (
                               <SelectItem key={m} value={m}>
                                 {m}
                               </SelectItem>
@@ -2657,13 +2759,15 @@ const Booking: React.FC = () => {
                           </SelectContent>
                         </Select>
 
-                        {/* AM/PM Select */}
                         <Select
                           value={timeParts.period}
-                          onValueChange={(period) => {
-                            const newTime = formatTime24(timeParts.hour || '12', timeParts.minute || '00', period);
-                            handleInputChange('preferredTimeCustom', newTime);
-                          }}
+                          onValueChange={(period) =>
+                            setCustomTime(
+                              timeParts.hour,
+                              timeParts.minute || '00',
+                              period === 'PM' ? 'PM' : 'AM'
+                            )
+                          }
                         >
                           <SelectTrigger className="flex-1 sm:flex-none sm:w-20 min-w-0">
                             <SelectValue />
@@ -2674,6 +2778,15 @@ const Booking: React.FC = () => {
                           </SelectContent>
                         </Select>
                       </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Custom times are 9:00 AM to 6:00 PM only.
+                      </p>
+                      {showValidation && !isBookingCustomTimeAllowed(formData.preferredTimeCustom) ? (
+                        <p className="text-sm text-red-600 dark:text-red-400">
+                          Please choose a time between 9:00 AM and 6:00 PM.
+                        </p>
+                      ) : null}
                     </div>
                   );
                 })()}
@@ -2976,10 +3089,16 @@ const Booking: React.FC = () => {
         return (
           hasValidMapCoordinates(formData.coordinates) &&
           Boolean(formData.address) &&
-          Boolean(formData.addressDetails.trim())
+          Boolean(formData.addressDetails.trim()) &&
+          hubMatch.ok
         );
       case 4:
-        return formData.serviceDate && formData.preferredTime;
+        return Boolean(
+          formData.serviceDate &&
+            formData.preferredTime &&
+            (formData.preferredTime !== 'CUSTOM' ||
+              isBookingCustomTimeAllowed(formData.preferredTimeCustom))
+        );
       case 5:
         if (OTP_ENABLED) {
           return acceptLegal && otpVerified;
