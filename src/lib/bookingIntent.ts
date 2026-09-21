@@ -8,6 +8,8 @@ export interface WebsiteBookingIntentRow {
   site_key: 'hydrogenro' | 'elevenro';
   location_label?: string | null;
   location_maps_url?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
 }
 
 async function bookingIntentFetch(
@@ -51,6 +53,8 @@ export async function pushWebsiteBookingIntent(
       site_key: row.site_key,
       location_label: row.location_label || undefined,
       location_maps_url: row.location_maps_url || undefined,
+      location_lat: row.location_lat ?? undefined,
+      location_lng: row.location_lng ?? undefined,
       altchaLoginToken: ctx.altchaLoginToken,
       altchaPayload: ctx.altchaPayload,
     },
