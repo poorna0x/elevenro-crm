@@ -48,6 +48,7 @@ import SecurityStatus from '@/components/SecurityStatus';
 import { useSecurity } from '@/contexts/SecurityContext';
 import BookingLocationPicker, {
   BookingCoverageNotice,
+  type BookingLocationPickerHandle,
   type BookingLocationValue,
 } from '@/components/BookingLocationPicker';
 import { googleMapsPinUrl, hasValidMapCoordinates, removePlusCode } from '@/lib/maps';
@@ -171,6 +172,7 @@ const Booking: React.FC = () => {
   const [locationTipPopupOpen, setLocationTipPopupOpen] = useState(false);
   const hasShownLocationTipRef = useRef(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const locationPickerRef = useRef<BookingLocationPickerHandle>(null);
   const [locationPickerStart, setLocationPickerStart] = useState<'search' | 'map'>('search');
   const [locationEditing, setLocationEditing] = useState(false);
   const [serviceHubs, setServiceHubs] = useState<BookingServiceHub[]>([]);
@@ -1030,6 +1032,11 @@ const Booking: React.FC = () => {
   }, [currentStep, isCaptchaVerified, backgroundVerificationFailed]);
 
   const nextStep = () => {
+    if (currentStep === 3 && locationPickerOpen) {
+      setShowValidation(true);
+      locationPickerRef.current?.trySave();
+      return;
+    }
     if (currentStep < totalSteps) {
       if (canProceed()) {
         setCurrentStep(currentStep + 1);
@@ -1054,7 +1061,7 @@ const Booking: React.FC = () => {
               firstMissingField = 'booking-location-search';
               setLocationEditing(true);
             } else if (!formData.addressDetails.trim()) {
-              firstMissingField = 'booking-location-card';
+              firstMissingField = 'booking-house-flat';
               openLocationPicker('map');
             } else if (!hubMatch.ok) {
               firstMissingField = 'booking-hub-coverage';
@@ -2650,6 +2657,7 @@ const Booking: React.FC = () => {
                 ) : null}
 
                 <BookingLocationPicker
+                  ref={locationPickerRef}
                   open={locationPickerOpen}
                   onOpenChange={setLocationPickerOpen}
                   startOn={locationPickerStart}
@@ -3648,7 +3656,7 @@ const Booking: React.FC = () => {
                 Previous
               </Button>
 
-              {currentStep < totalSteps ? (
+              {currentStep === 3 && locationPickerOpen ? null : currentStep < totalSteps ? (
                 <Button
                   onClick={nextStep}
                   className={`flex items-center hover:scale-105 transition-transform ${
