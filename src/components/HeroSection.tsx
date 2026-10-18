@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { markWebsiteBookDoor } from "@/lib/websiteBookingDoor";
 import { Button } from "@/components/ui/button";
 
 const HeroSection = () => {
@@ -12,6 +13,7 @@ const HeroSection = () => {
   }, []);
 
   const handleBookService = () => {
+    markWebsiteBookDoor();
     navigate("/book");
   };
 

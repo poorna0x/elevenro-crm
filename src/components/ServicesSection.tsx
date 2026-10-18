@@ -1,6 +1,7 @@
 import { memo } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { markWebsiteBookDoor } from "@/lib/websiteBookingDoor";
 import {
   Wrench,
   Settings,
@@ -313,6 +314,7 @@ const ServicesSectionInner = () => {
   const navigate = useNavigate();
 
   const handleBookService = () => {
+    markWebsiteBookDoor();
     navigate("/book");
   };
 

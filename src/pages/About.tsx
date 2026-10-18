@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { markWebsiteBookDoor } from "@/lib/websiteBookingDoor";
 import { Users, Target, Award, Droplets, ArrowRight } from "lucide-react";
 
 const stats = [
@@ -110,7 +111,7 @@ const AboutPage = () => {
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Join the ElevenRO Family</h2>
           <p className="text-muted-foreground mb-8 max-w-md mx-auto">Experience the difference that trusted, professional water purifier service makes.</p>
-          <Link to="/book">
+          <Link to="/book" onClick={() => markWebsiteBookDoor()}>
             <Button variant="hero" size="lg" className="text-base px-10">
               Book a Service <ArrowRight className="h-5 w-5 ml-2" />
             </Button>

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { markWebsiteBookDoor } from "@/lib/websiteBookingDoor";
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, Mail } from "lucide-react";
 
@@ -50,7 +51,7 @@ const CTASection = () => {
         </div>
 
         <div className="text-center">
-          <Link to="/book">
+          <Link to="/book" onClick={() => markWebsiteBookDoor()}>
             <Button variant="hero" size="lg" className="text-base px-10">
               Schedule a Visit
             </Button>

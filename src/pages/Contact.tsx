@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { markWebsiteBookDoor } from "@/lib/websiteBookingDoor";
 
 type ContactItem =
   | { icon: LucideIcon; label: string; value: string; href?: string; external?: boolean }
@@ -84,7 +85,7 @@ const ContactPage = () => {
                 <p className="text-muted-foreground mb-8">
                   Use our booking page to submit your request. It is connected to the same backend/database.
                 </p>
-                <Link to="/book">
+                <Link to="/book" onClick={() => markWebsiteBookDoor()}>
                   <Button variant="hero" size="lg" className="w-full text-base">
                     Go to Booking Page
                   </Button>

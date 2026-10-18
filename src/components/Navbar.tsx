@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { markWebsiteBookDoor } from "@/lib/websiteBookingDoor";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Droplets } from "lucide-react";
 
@@ -39,7 +40,7 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
-            <Link to="/book">
+            <Link to="/book" onClick={() => markWebsiteBookDoor()}>
               <Button variant="hero" size="sm">
                 Book Service
               </Button>
@@ -75,7 +76,7 @@ const Navbar = () => {
               ))}
             </div>
             <div className="mt-6 pt-5 border-t border-border/60">
-              <Link to="/book" onClick={() => setIsOpen(false)} className="block">
+              <Link to="/book" onClick={() => { markWebsiteBookDoor(); setIsOpen(false); }} className="block">
                 <Button
                   variant="hero"
                   className="w-full h-11 rounded-xl text-sm font-medium shadow-sm hover:shadow-md hover:scale-100 active:scale-[0.99] transition-all duration-200"
