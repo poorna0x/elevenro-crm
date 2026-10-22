@@ -1,0 +1,274 @@
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
+
+/**
+ * Cloudflare Turnstile widget — captures a token Supabase will verify server-side
+ * when "Bot and Abuse Protection" is enabled in Auth settings. This is the only
+ * mechanism that stops brute force against the raw /auth/v1/token endpoint, which
+ * sits in front of Supabase and bypasses our /.netlify/functions/secure-auth-login
+ * proxy entirely (the proxy still gates ALTCHA + IP/email limits + lockout).
+ *
+ * Soft-deployable: if VITE_TURNSTILE_SITE_KEY is not set, this component renders
+ * nothing and reports verified=true so the existing login flow is unchanged. Once
+ * the env var is set AND Supabase Dashboard → Authentication → Bot and Abuse
+ * Protection is configured with the matching secret, login MUST carry a token.
+ */
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        container: string | HTMLElement,
+        options: {
+          sitekey: string;
+          callback?: (token: string) => void;
+          'error-callback'?: () => void;
+          'expired-callback'?: () => void;
+          'timeout-callback'?: () => void;
+          theme?: 'light' | 'dark' | 'auto';
+          size?: 'normal' | 'compact' | 'flexible' | 'invisible';
+          appearance?: 'always' | 'execute' | 'interaction-only';
+          action?: string;
+        }
+      ) => string;
+      reset: (widgetId?: string) => void;
+      remove: (widgetId?: string) => void;
+      getResponse: (widgetId?: string) => string | undefined;
+    };
+    __turnstileScriptLoading?: Promise<void>;
+  }
+}
+
+const TURNSTILE_SCRIPT_URL =
+  'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+
+function loadTurnstileScript(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (window.turnstile) return Promise.resolve();
+  if (window.__turnstileScriptLoading) return window.__turnstileScriptLoading;
+
+  window.__turnstileScriptLoading = new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src^="${TURNSTILE_SCRIPT_URL.split('?')[0]}"]`
+    );
+    if (existing) {
+      // Script tag may already be loaded (e.g. remount) — don't wait forever on 'load'.
+      if (window.turnstile) {
+        resolve();
+        return;
+      }
+      const ready =
+        existing.complete ||
+        existing.readyState === 'complete' ||
+        existing.readyState === 'loaded';
+      if (ready) {
+        resolve();
+        return;
+      }
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error('Turnstile load failed')), {
+        once: true,
+      });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = TURNSTILE_SCRIPT_URL;
+    script.async = true;
+    script.defer = true;
+    script.addEventListener('load', () => resolve(), { once: true });
+    script.addEventListener('error', () => reject(new Error('Turnstile load failed')), {
+      once: true,
+    });
+    document.head.appendChild(script);
+  });
+
+  return window.__turnstileScriptLoading;
+}
+
+interface TurnstileWidgetProps {
+  /** Fires with the token on solve, '' on reset / expire / error. */
+  onToken: (token: string) => void;
+  /** Optional Cloudflare 'action' tag (analytics + per-action rules). */
+  action?: string;
+  className?: string;
+  size?: 'normal' | 'compact' | 'flexible';
+  theme?: 'light' | 'dark' | 'auto';
+}
+
+export interface TurnstileWidgetHandle {
+  /** Clear token and re-challenge (e.g. after failed login). */
+  reset: () => void;
+}
+
+function readSiteKey(): string {
+  const key = (import.meta as ImportMeta & { env: { VITE_TURNSTILE_SITE_KEY?: string } })
+    .env.VITE_TURNSTILE_SITE_KEY;
+  return typeof key === 'string' ? key.trim() : '';
+}
+
+const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
+  function TurnstileWidget(
+    { onToken, action, className = '', size = 'flexible', theme = 'light' },
+    ref
+  ) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const widgetIdRef = useRef<string | null>(null);
+    const onTokenRef = useRef(onToken);
+    const siteKey = readSiteKey();
+    const [error, setError] = useState<string | null>(null);
+    // Cloudflare often errors/times out on the very first challenge (cold start,
+    // webview network not ready). Silently reset a few times before falling back
+    // to the manual Retry button so users don't have to tap it themselves.
+    const autoRetryRef = useRef(0);
+    const autoRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const MAX_AUTO_RETRIES = 3;
+
+    useEffect(() => {
+      onTokenRef.current = onToken;
+    }, [onToken]);
+
+    useEffect(() => {
+      if (!siteKey) {
+        onTokenRef.current('');
+      }
+    }, [siteKey]);
+
+    const renderWidget = useCallback(async () => {
+      if (!siteKey || !containerRef.current) return;
+      try {
+        await loadTurnstileScript();
+        if (!window.turnstile || !containerRef.current) return;
+
+        if (widgetIdRef.current) {
+          window.turnstile.remove(widgetIdRef.current);
+          widgetIdRef.current = null;
+        }
+
+        // Silent auto-recovery: reset the widget itself rather than asking the
+        // user to tap Retry. Only surface the manual button once retries run out.
+        const recover = (message: string) => {
+          onTokenRef.current('');
+          if (autoRetryRef.current < MAX_AUTO_RETRIES) {
+            autoRetryRef.current += 1;
+            if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
+            autoRetryTimerRef.current = setTimeout(() => {
+              try {
+                if (widgetIdRef.current && window.turnstile) {
+                  window.turnstile.reset(widgetIdRef.current);
+                } else {
+                  void renderWidget();
+                }
+              } catch {
+                void renderWidget();
+              }
+            }, 600 * autoRetryRef.current);
+            return;
+          }
+          setError(message);
+        };
+
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+          sitekey: siteKey,
+          action,
+          theme,
+          size,
+          appearance: 'always',
+          callback: (token: string) => {
+            setError(null);
+            autoRetryRef.current = 0;
+            onTokenRef.current(token);
+          },
+          'error-callback': () => {
+            recover('Security check failed. Tap Retry below.');
+          },
+          'expired-callback': () => {
+            recover('Security check expired. Tap Retry below.');
+          },
+          'timeout-callback': () => {
+            recover('Security check timed out. Tap Retry below.');
+          },
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Failed to load security check';
+        setError(msg);
+        onTokenRef.current('');
+      }
+    }, [siteKey, action, theme, size]);
+
+    const resetWidget = useCallback(() => {
+      onTokenRef.current('');
+      setError(null);
+      autoRetryRef.current = 0;
+      if (autoRetryTimerRef.current) {
+        clearTimeout(autoRetryTimerRef.current);
+        autoRetryTimerRef.current = null;
+      }
+      if (widgetIdRef.current && window.turnstile) {
+        try {
+          window.turnstile.reset(widgetIdRef.current);
+        } catch {
+          void renderWidget();
+        }
+      } else if (siteKey) {
+        void renderWidget();
+      }
+    }, [renderWidget, siteKey]);
+
+    useImperativeHandle(ref, () => ({ reset: resetWidget }), [resetWidget]);
+
+    useEffect(() => {
+      void renderWidget();
+      return () => {
+        if (autoRetryTimerRef.current) {
+          clearTimeout(autoRetryTimerRef.current);
+          autoRetryTimerRef.current = null;
+        }
+        if (widgetIdRef.current && window.turnstile) {
+          try {
+            window.turnstile.remove(widgetIdRef.current);
+          } catch {
+            /* widget already gone */
+          }
+          widgetIdRef.current = null;
+        }
+      };
+    }, [renderWidget]);
+
+    if (!siteKey) {
+      return null;
+    }
+
+    return (
+      <div className={`flex flex-col items-center w-full ${className}`}>
+        <div ref={containerRef} className="cf-turnstile-container" />
+        {error && (
+          <div className="mt-2 flex flex-col items-center gap-1.5">
+            <p className="text-xs text-destructive text-center" role="alert">
+              {error}
+            </p>
+            <button
+              type="button"
+              className="text-xs font-medium text-sky-700 underline underline-offset-2"
+              onClick={() => resetWidget()}
+            >
+              Retry security check
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+/** True when Turnstile is enabled for this build (site key present). */
+export function isTurnstileEnabled(): boolean {
+  return readSiteKey().length > 0;
+}
+
+export default TurnstileWidget;
