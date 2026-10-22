@@ -138,6 +138,7 @@ const CareersPage = () => {
           hasLicence,
           fieldWorkOk,
           note,
+          brand: 'elevenro',
           company_website: companyWebsite,
         }),
       });
