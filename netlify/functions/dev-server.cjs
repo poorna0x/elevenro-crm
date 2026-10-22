@@ -102,6 +102,9 @@ const server = http.createServer((req, res) => {
     handler = bookingJobCreate;
   } else if (req.url.startsWith('/.netlify/functions/privacy-request')) {
     handler = privacyRequest;
+  } else if (req.url.startsWith('/.netlify/functions/job-application')) {
+    delete require.cache[require.resolve('./job-application')];
+    handler = require('./job-application');
   } else if (req.url.startsWith('/.netlify/functions/booking-intent')) {
     delete require.cache[require.resolve('./booking-intent')];
     handler = require('./booking-intent');

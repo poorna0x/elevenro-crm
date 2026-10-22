@@ -15,6 +15,9 @@ const Footer = () => {
           className="grid w-full max-w-md grid-cols-2 gap-x-5 gap-y-3 justify-items-center text-center text-sm text-primary-foreground sm:flex sm:max-w-none sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-5 sm:gap-y-2"
           aria-label="Footer"
         >
+          <Link to="/careers" className="underline-offset-4 hover:underline">
+            Careers
+          </Link>
           <Link to="/privacy-policy" className="underline-offset-4 hover:underline">
             Privacy Policy
           </Link>
