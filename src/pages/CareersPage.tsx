@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { Bike, Check, Home, MapPin } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -128,7 +128,7 @@ function Choice({
           ? 'border-primary bg-primary text-primary-foreground'
           : invalid
             ? 'border-red-500 bg-red-50 text-foreground'
-            : 'border-border bg-background text-foreground hover:border-primary/40'
+            : 'border-primary/15 bg-white text-foreground hover:border-primary/40'
       }`}
     >
       {label}
@@ -138,12 +138,68 @@ function Choice({
 
 function controlClass(invalid: boolean) {
   return [
-    'h-12 w-full rounded-xl border bg-background px-3.5 text-base text-foreground transition-colors',
-    'focus-visible:outline-none focus-visible:ring-2',
+    'h-12 w-full rounded-xl border bg-white px-3.5 text-base text-foreground shadow-sm transition-colors',
+    'placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2',
     invalid
       ? 'border-destructive focus-visible:ring-destructive/40'
-      : 'border-input focus-visible:ring-ring',
+      : 'border-primary/20 focus-visible:border-primary focus-visible:ring-primary/30',
   ].join(' ');
+}
+
+const ROLE_POINTS = [
+  { icon: MapPin, title: 'Based in Bengaluru', text: 'Be ready to move here for the job.' },
+  { icon: Home, title: 'Stay is provided', text: 'A place to stay comes with the role.' },
+  { icon: Bike, title: 'Your own 2-wheeler', text: 'You ride between customer visits.' },
+] as const;
+
+function RoleIntro({ accent }: { accent: 'brand' | 'sky' }) {
+  const pill =
+    accent === 'sky'
+      ? 'bg-sky-100 text-sky-800'
+      : 'bg-primary/10 text-primary';
+  const iconWrap =
+    accent === 'sky'
+      ? 'bg-sky-100 text-sky-800'
+      : 'bg-primary/10 text-primary';
+  return (
+    <header className="lg:sticky lg:top-24">
+      <p className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${pill}`}>
+        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+        Careers
+      </p>
+      <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-foreground">
+        Service Technician
+      </h1>
+      <p className="mt-3 max-w-md text-base leading-relaxed text-muted-foreground">
+        A short application. We read every one, and we will call if there is a fit.
+      </p>
+      <ul className="mt-6 space-y-3">
+        {ROLE_POINTS.map((point) => (
+          <li key={point.title} className="flex items-start gap-3 rounded-2xl border border-white/70 bg-white/80 px-3.5 py-3 shadow-sm">
+            <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconWrap}`}>
+              <point.icon className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-foreground">{point.title}</span>
+              <span className="mt-0.5 block text-sm leading-snug text-muted-foreground">{point.text}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </header>
+  );
+}
+
+function SectionLabel({ step, title, accent }: { step: string; title: string; accent: 'brand' | 'sky' }) {
+  const badge = accent === 'sky' ? 'bg-sky-700 text-white' : 'bg-primary text-primary-foreground';
+  return (
+    <h2 className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
+      <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${badge}`}>
+        {step}
+      </span>
+      {title}
+    </h2>
+  );
 }
 
 const CareersPage = () => {
@@ -286,18 +342,17 @@ const CareersPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="px-4 pb-16 pt-8 sm:px-6">
-        <div className="mx-auto w-full max-w-lg">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Careers</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Service Technician
-          </h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            A short application. Fields marked * are required.
-          </p>
+      <main className="relative px-4 pb-16 pt-8 sm:px-6 lg:pt-12">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.18),transparent_68%)]"
+          aria-hidden="true"
+        />
+        <div className="relative mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.15fr)] lg:items-start lg:gap-12">
+          <RoleIntro accent="brand" />
+          <div>
 
           {loadState === 'loading' ? (
-            <div className="mt-8 space-y-3 rounded-3xl border border-border/80 bg-card p-5 shadow-sm" aria-hidden="true">
+            <div className="space-y-3 rounded-3xl border border-border/80 bg-card p-5 shadow-sm" aria-hidden="true">
               <div className="h-4 w-24 animate-pulse rounded-full bg-muted" />
               <div className="h-12 animate-pulse rounded-xl bg-muted" />
               <div className="h-12 animate-pulse rounded-xl bg-muted" />
@@ -306,7 +361,7 @@ const CareersPage = () => {
           ) : null}
 
           {loadState === 'error' ? (
-            <div className="mt-8 rounded-3xl border border-border/80 bg-card p-6 shadow-sm">
+            <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-sm">
               <p className="text-base font-medium text-foreground">This page could not load.</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 Check your connection and refresh. For a service visit, you can still book online.
@@ -320,7 +375,7 @@ const CareersPage = () => {
           ) : null}
 
           {loadState === 'closed' ? (
-            <div className="mt-8 rounded-3xl border border-border/80 bg-card px-6 py-10 text-center shadow-sm">
+            <div className="rounded-3xl border border-border/80 bg-card px-6 py-10 text-center shadow-sm">
               <h2 className="text-xl font-semibold text-foreground">
                 We are not looking for new hires right now
               </h2>
@@ -338,7 +393,7 @@ const CareersPage = () => {
           ) : null}
 
           {loadState === 'open' ? (
-            <section className="mt-8 rounded-3xl border border-border/80 bg-card p-4 shadow-sm sm:p-6">
+            <section className="rounded-[28px] border border-white bg-white p-4 shadow-[0_24px_60px_-32px_rgba(12,74,110,0.45)] sm:p-7">
               {sent ? (
                 <div className="px-2 py-8 text-center">
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
@@ -360,9 +415,8 @@ const CareersPage = () => {
                   ) : null}
 
                   <section className="space-y-4">
-                    <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      About you
-                    </h2>
+                    <SectionLabel step="1" title="About you" accent="brand" />
+                    <div className="grid gap-4 sm:grid-cols-2">
                     <Field id="career-fullName" label="Full name" error={show('fullName', errors.fullName || null)}>
                       <Input
                         value={fullName}
@@ -420,12 +474,11 @@ const CareersPage = () => {
                         aria-describedby={show('area', errors.area || null) ? 'career-area-error' : undefined}
                       />
                     </Field>
+                    </div>
                   </section>
 
                   <section className="space-y-4">
-                    <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      Background
-                    </h2>
+                    <SectionLabel step="2" title="Background" accent="brand" />
                     <div id="career-experience" className="scroll-mt-28">
                       <fieldset>
                         <legend className="text-sm font-medium text-foreground">
@@ -482,9 +535,7 @@ const CareersPage = () => {
                   </section>
 
                   <section className="space-y-4">
-                    <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      Getting around
-                    </h2>
+                    <SectionLabel step="3" title="Getting around" accent="brand" />
                     <YesNo
                       id="career-twoWheeler"
                       label="Do you have your own 2-wheeler?"
@@ -575,6 +626,7 @@ const CareersPage = () => {
               )}
             </section>
           ) : null}
+          </div>
         </div>
       </main>
       <Footer />
