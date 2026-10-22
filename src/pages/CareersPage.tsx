@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Bike, Check, Home, MapPin } from 'lucide-react';
+import { Bike, Check, Home, Loader2, MapPin } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -298,6 +298,7 @@ const CareersPage = () => {
   };
   const visibleErrors = FIELD_ORDER.filter((key) => show(key, errors[key] || null));
   const missingCount = FIELD_ORDER.filter((key) => errors[key]).length;
+  const securityReady = Boolean(altchaToken) && (!isTurnstileEnabled() || Boolean(turnstileToken));
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -307,14 +308,6 @@ const CareersPage = () => {
     if (first) {
       setConfirming(false);
       setFocusKey(first);
-      return;
-    }
-    if (!altchaToken) {
-      setServerError('Security check is still running. Wait a moment, then try again.');
-      return;
-    }
-    if (isTurnstileEnabled() && !turnstileToken) {
-      setServerError('Complete the security check, then try again.');
       return;
     }
     setConfirming(true);
@@ -655,9 +648,17 @@ const CareersPage = () => {
                           variant="hero"
                           className="h-12 cursor-pointer rounded-xl hover:scale-100"
                           onClick={sendApplication}
-                          disabled={submitting}
+                          disabled={submitting || !securityReady}
+                          aria-busy={submitting || !securityReady}
                         >
-                          {submitting ? 'Sending…' : 'Send application'}
+                          {submitting || !securityReady ? (
+                            <span className="inline-flex items-center justify-center gap-2">
+                              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                              {submitting ? 'Sending…' : 'Please wait…'}
+                            </span>
+                          ) : (
+                            'Send application'
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -665,12 +666,18 @@ const CareersPage = () => {
                     <Button
                       type="submit"
                       variant="hero"
-                      disabled={submitting || !altchaToken || (isTurnstileEnabled() && !turnstileToken)}
+                      disabled={submitting}
+                      aria-busy={!securityReady}
                       className="h-12 w-full cursor-pointer rounded-xl text-base font-semibold hover:scale-100"
                     >
-                      {!altchaToken || (isTurnstileEnabled() && !turnstileToken)
-                        ? 'Checking…'
-                        : 'Submit application'}
+                      {!securityReady ? (
+                        <span className="inline-flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                          Checking…
+                        </span>
+                      ) : (
+                        'Submit application'
+                      )}
                     </Button>
                   )}
                   {visibleErrors.length > 0 ? <span className="sr-only">{visibleErrors.length} fields need attention</span> : null}
