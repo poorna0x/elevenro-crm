@@ -192,6 +192,10 @@ const PayUpi = () => {
   );
 
   const upiLink = useMemo(
+    () => (isDynamicUpi && validUpi ? buildUpiPayDeepLink(payInput, { lean: true }) : null),
+    [isDynamicUpi, validUpi, payInput]
+  );
+  const upiQrLink = useMemo(
     () => (isDynamicUpi && validUpi ? buildUpiPayDeepLink(payInput) : null),
     [isDynamicUpi, validUpi, payInput]
   );
@@ -214,7 +218,7 @@ const PayUpi = () => {
   // looks like a broken Pay button. Customer must tap Open UPI / GPay / Paytm.
 
   useEffect(() => {
-    if (!upiLink || !qrRef.current) return;
+    if (!upiQrLink || !qrRef.current) return;
     let cancelled = false;
     setQrReady(false);
     qrInstanceRef.current = null;
@@ -230,7 +234,7 @@ const PayUpi = () => {
           width: 176,
           height: 176,
           type: 'canvas',
-          data: upiLink,
+          data: upiQrLink,
           margin: 6,
           qrOptions: { errorCorrectionLevel: 'M' },
           dotsOptions: { color: '#000000', type: 'square' },
@@ -252,7 +256,7 @@ const PayUpi = () => {
       qrInstanceRef.current = null;
       host.innerHTML = '';
     };
-  }, [upiLink]);
+  }, [upiQrLink]);
 
   const amountLabel =
     Number.isFinite(am) && am > 0
