@@ -75,6 +75,7 @@ export function detectPayPlatform(): PayPlatform {
 /**
  * App-specific UPI openers (needed on iOS — generic upi:// has no chooser there).
  * Used on the public /p/{code} customer pay page.
+ * Schemes matched to what each app accepts for merchant `pa=` intents.
  */
 export function buildUpiAppDeepLinks(input: UpiPayLinkInput): {
   id: string;
@@ -86,8 +87,9 @@ export function buildUpiAppDeepLinks(input: UpiPayLinkInput): {
   if (!q) return [];
   return [
     { id: 'gpay', name: 'GPay', href: `tez://upi/pay?${q}`, color: '#4285F4' },
-    { id: 'phonepe', name: 'PhonePe', href: `phonepe://pay?${q}`, color: '#5F259F' },
-    { id: 'paytm', name: 'Paytm', href: `paytmmp://upi/pay?${q}`, color: '#00BAF2' },
+    { id: 'phonepe', name: 'PhonePe', href: `phonepe://upi/pay?${q}`, color: '#5F259F' },
+    // paytmmp://pay (not …/upi/pay) is what Paytm opens for merchant VPAs.
+    { id: 'paytm', name: 'Paytm', href: `paytmmp://pay?${q}`, color: '#00BAF2' },
     { id: 'bhim', name: 'BHIM', href: `bhim://upi/pay?${q}`, color: '#007272' },
   ];
 }
