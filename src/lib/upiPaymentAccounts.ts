@@ -30,90 +30,28 @@ export function isValidUpiId(raw: string): boolean {
   return /^[a-z0-9.\-_]{2,256}@[a-z0-9.\-]{2,64}$/i.test(id);
 }
 
-/**
- * Query string for upi://pay.
- * `pa` must stay unencoded (`user@bank`) — encoding `@` as `%40` makes apps say
- * “VPA not available” even when the same ID works via copy-paste.
- */
-export function buildUpiPayQuery(
-  input: UpiPayLinkInput,
-  opts?: { lean?: boolean }
-): string | null {
+/** Query string for upi://pay (QR payload). */
+export function buildUpiPayQuery(input: UpiPayLinkInput): string | null {
   const pa = normalizeUpiId(input.upiId);
   if (!isValidUpiId(pa)) return null;
   const parts = [`pa=${pa}`, 'cu=INR'];
+  const pn = String(input.payeeName || '').trim().slice(0, 100);
+  if (pn) parts.push(`pn=${encodeURIComponent(pn)}`);
   const am = Number(input.amount);
   if (Number.isFinite(am) && am > 0) {
     parts.push(`am=${am.toFixed(2)}`);
   }
-  if (!opts?.lean) {
-    const pn = String(input.payeeName || '').trim().slice(0, 100);
-    if (pn) parts.push(`pn=${encodeURIComponent(pn)}`);
-    const tn = String(input.note || '')
-      .trim()
-      .replace(/\s+/g, ' ')
-      .slice(0, 80);
-    if (tn) parts.push(`tn=${encodeURIComponent(tn)}`);
-  }
+  const tn = String(input.note || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 80);
+  if (tn) parts.push(`tn=${encodeURIComponent(tn)}`);
   return parts.join('&');
 }
 
-export function buildUpiPayDeepLink(
-  input: UpiPayLinkInput,
-  opts?: { lean?: boolean }
-): string | null {
-  const q = buildUpiPayQuery(input, opts);
+export function buildUpiPayDeepLink(input: UpiPayLinkInput): string | null {
+  const q = buildUpiPayQuery(input);
   return q ? `upi://pay?${q}` : null;
-}
-
-/** Open UPI deep link without browser rewriting `@` → `%40`. */
-export function openUpiDeepLink(href: string): void {
-  const url = String(href || '').trim();
-  if (!url) return;
-  try {
-    window.location.assign(url);
-  } catch {
-    window.location.href = url;
-  }
-}
-
-export type PayPlatform = 'android' | 'ios' | 'other';
-
-/** Best-effort UA detection (WhatsApp / Chrome in-app included). */
-export function detectPayPlatform(): PayPlatform {
-  if (typeof navigator === 'undefined') return 'other';
-  const ua = navigator.userAgent || '';
-  if (/android/i.test(ua)) return 'android';
-  if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
-  if (
-    typeof navigator.platform === 'string' &&
-    navigator.platform === 'MacIntel' &&
-    Number(navigator.maxTouchPoints || 0) > 1
-  ) {
-    return 'ios';
-  }
-  return 'other';
-}
-
-/**
- * App-specific UPI openers (needed on iOS — generic upi:// has no chooser there).
- * Used on the public /p/{code} customer pay page.
- * Schemes matched to what each app accepts for merchant `pa=` intents.
- */
-export function buildUpiAppDeepLinks(input: UpiPayLinkInput): {
-  id: string;
-  name: string;
-  href: string;
-  color: string;
-}[] {
-  const q = buildUpiPayQuery(input, { lean: true });
-  if (!q) return [];
-  return [
-    { id: 'gpay', name: 'GPay', href: `tez://upi/pay?${q}`, color: '#4285F4' },
-    { id: 'phonepe', name: 'PhonePe', href: `phonepe://upi/pay?${q}`, color: '#5F259F' },
-    { id: 'paytm', name: 'Paytm', href: `paytmmp://pay?${q}`, color: '#00BAF2' },
-    { id: 'bhim', name: 'BHIM', href: `bhim://upi/pay?${q}`, color: '#007272' },
-  ];
 }
 
 export type UpiPayLinkRecord = {
